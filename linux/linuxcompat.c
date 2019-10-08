@@ -539,7 +539,7 @@ out:
 static void *read_udp_packets_thread_fn(void *thread_info)
 {
 	unsigned short *p = thread_info;
-	int rc, bcast;
+	int rc, bcast = -1;
 	struct sockaddr_in bcast_addr;
 	struct sockaddr remote_addr;
 	socklen_t remote_addr_len;
