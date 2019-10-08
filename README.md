@@ -1,8 +1,8 @@
 # badge2019interp
-badge2019 hardware with the c interpreter working
+Software for the HackRVA 2020 badge
 
 ***NOTE***
-no microchip project file yet. use "make"
+Use "make" to build
 
 
 
