@@ -91,6 +91,12 @@ achievements.o:	${BADGE_SRC}/achievements.c ${BADGE_INC}/achievements.h
 xorshift.o:	${APPDIR}/xorshift.c ${APPDIR}/xorshift.h
 	$(CC) ${CFLAGS} ${GTKCFLAGS} -c ${APPDIR}/xorshift.c -o xorshift.o
 
+scan-build:
+	make clean
+	rm -fr /tmp/badge-scan-build-output
+	scan-build -o /tmp/badge-scan-build-output make CC=clang
+	xdg-open /tmp/badge-scan-build-output/*/index.html
+
 clean:
 	rm -f *.o
 	rm -fr bin
