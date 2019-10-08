@@ -23,13 +23,12 @@
 #include <sys/time.h> /* for gettimeofday */
 #include <string.h> /* for memset */
 
-#include "linuxcompat.h"
-#include "bline.h"
+#include "../linux/linuxcompat.h"
+#include "../linux/bline.h"
 #else
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
-#include "achievements.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -42,7 +41,7 @@ extern char *strcat(char *dest, const char *src);
 
 #include "build_bug_on.h"
 #include "xorshift.h"
-
+#include "achievements.h"
 
 /* TODO figure out where these should really come from */
 #define SCREEN_XDIM 132

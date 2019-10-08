@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
+#include <stdint.h>
 
 #include "../linux/linuxcompat.h"
 
@@ -56,7 +57,12 @@ void save_username_to_flash(char *uname, int length)
 	valuekey can be anything, buts its address is unique, so...
 	int flashWriteKeyValue(unsigned int valuekey, char *value, unsigned int valuelen);
    */
+#ifndef __linux__
+   /* TODO: cast to intptr_t instead of unsigned int for the first argument if the compiler supports it */
    flashWriteKeyValue((unsigned int)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
+#else
+   flashWriteKeyValue((intptr_t)&G_sysData, (char *)&G_sysData, sizeof(struct sysData_t));
+#endif
 }
 
 #define INIT_APP_STATE 0

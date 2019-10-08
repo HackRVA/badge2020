@@ -109,8 +109,15 @@ static struct rgbcolor {
 };
 
 extern char username[10];
+
+/* TODO: implement these in linuxcompat */
+#ifndef __linux__
 extern unsigned char screen_save_lockout;
 static unsigned char orig_screen_save_lockout;
+#else
+static unsigned char screen_save_lockout = 0;
+static unsigned char orig_screen_save_lockout = 0;
+#endif
 
 /* Builds up a 32 bit badge packet.
  * 1 bit for start
@@ -941,6 +948,7 @@ static void check_for_incoming_packets(void)
 /* wrapper of flareled() to throttle calls to it to not disturb the pwm code too much */
 static void lasertag_flareled(unsigned char r, unsigned char g, unsigned char b)
 {
+#ifndef __linux__
 	static int throttler = 0;
 	throttler++;
 	if (throttler == 100) {
@@ -950,6 +958,7 @@ static void lasertag_flareled(unsigned char r, unsigned char g, unsigned char b)
 		blue(100 * b / 256);
 		throttler = 0;
 	}
+#endif
 }
 
 static void advance_time()
