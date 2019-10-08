@@ -527,7 +527,7 @@ static void render_monster(void)
 
 static void trade_monsters(void)
 {
-	static counter = 0;
+	static int counter = 0;
 
 	counter++;
 	if ((counter % 10000) == 0) { /* transmit our monster IR packet */
@@ -796,8 +796,6 @@ static void ir_packet_callback(struct IRpacket_t packet)
 
 static void app_init(void)
 {
-    int i;
-
     FbInit();
     app_state = INIT_APP_STATE;
     register_ir_packet_callback(ir_packet_callback);
