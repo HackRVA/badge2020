@@ -614,7 +614,7 @@ void setup_ir_sensor(unsigned short port_to_recv_from)
 	pthread_t thr;
 	int rc;
 
-	unsigned short *p = malloc(sizeof(p));
+	unsigned short *p = malloc(sizeof(*p));
 	*p = port_to_recv_from;
 	rc = pthread_create(&thr, NULL, read_udp_packets_thread_fn, p);
 	if (rc < 0)
@@ -626,7 +626,7 @@ void setup_ir_transmitter(unsigned short port_to_transmit_from)
 	pthread_t thr;
 	int rc;
 
-	unsigned short *p = malloc(sizeof(p));
+	unsigned short *p = malloc(sizeof(*p));
 	*p = port_to_transmit_from;
 	rc = pthread_create(&thr, NULL, write_udp_packets_thread_fn, p);
 	if (rc < 0)
