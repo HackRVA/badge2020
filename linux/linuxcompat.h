@@ -1,30 +1,43 @@
 #include "../include/build_bug_on.h"
 
+/* Dimensions of the screen in pixels */
 #define SCREEN_XDIM 132
 #define SCREEN_YDIM 132
 
-void FbInit(void);
-void plot_point(int x, int y, void *context);
-void FbSwapBuffers(void);
-void FbPushBuffer(void);
+void FbInit(void); /* initialize the frame buffer */
+void plot_point(int x, int y, void *context); /* Plot a point on the offscreen buffer */
+void FbSwapBuffers(void); /* Push the data from offscreen buffer onscreen */
+void FbPushBuffer(void) /* Push the data from offscreen buffer onscreen */;
+
+/* Draw a line */
 void FbLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2);
+
+/* Draw a horizontal line (faster than FbLine) */
 void FbHorizontalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2);
+
+/* Draw a vertical line (faster than FbLine) */
 void FbVerticalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2);
+
+/* Clear the frame buffer */
 void FbClear(void);
+
+/* Move the graphics "cursor" to x, y (e.g. for subsequent FbWriteLine()) */
 void FbMove(unsigned char x, unsigned char y);
+
+/* Write a string to the frame buffer */
 void FbWriteLine(char *s);
+
+/* Convert integer to ascii string */
 void itoa(char *string, int value, int base);
+
+/* Absolute value */
 int abs(int x);
+
+/* Yield back to the main loop */
 void returnToMenus(void);
+
+/* Set the current color */
 void FbColor(int color);
-void setNote(int note, int duration);
-
-/* Port numbers are in host byte order here. UDP is used if serial_port is NULL, otherwise serial port is used */
-void setup_linux_ir_simulator(char *serial_port, unsigned short port_to_recv_from, unsigned short port_to_xmit_on);
-
-void disable_interrupts(void);
-void enable_interrupts(void);
-void start_gtk(int *argc, char ***argv, int (*main_badge_function)(void), int callback_hz);
 
 #define BLUE    0
 #define GREEN   1
@@ -35,11 +48,28 @@ void start_gtk(int *argc, char ***argv, int (*main_badge_function)(void), int ca
 #define YELLOW  6
 #define MAGENTA 7
 
+/* Play a note for a given duration.  This is synchronous. */
+void setNote(int note, int duration);
+
+/* Port numbers are in host byte order here. UDP is used if serial_port is NULL, otherwise serial port is used */
+void setup_linux_ir_simulator(char *serial_port, unsigned short port_to_recv_from, unsigned short port_to_xmit_on);
+
+void disable_interrupts(void);
+void enable_interrupts(void);
+void start_gtk(int *argc, char ***argv, int (*main_badge_function)(void), int callback_hz);
+
+/* Functions for checking status of D-PAD and button (Use the macros below instead) */
 int button_pressed_and_consume();
 int up_btn_and_consume();
 int down_btn_and_consume();
 int left_btn_and_consume();
 int right_btn_and_consume();
+
+#define BUTTON_PRESSED_AND_CONSUME button_pressed_and_consume()
+#define DOWN_BTN_AND_CONSUME down_btn_and_consume()
+#define UP_BTN_AND_CONSUME up_btn_and_consume()
+#define LEFT_BTN_AND_CONSUME left_btn_and_consume()
+#define RIGHT_BTN_AND_CONSUME right_btn_and_consume()
 
 /* Emulate some stuff from ir.c */
 extern int IRpacketOutNext;
@@ -47,11 +77,6 @@ extern int IRpacketOutCurr;
 #define MAXPACKETQUEUE 16
 #define IR_OUTPUT_QUEUE_FULL (((IRpacketOutNext+1) % MAXPACKETQUEUE) == IRpacketOutCurr)
 
-#define BUTTON_PRESSED_AND_CONSUME button_pressed_and_consume()
-#define DOWN_BTN_AND_CONSUME down_btn_and_consume()
-#define UP_BTN_AND_CONSUME up_btn_and_consume()
-#define LEFT_BTN_AND_CONSUME left_btn_and_consume()
-#define RIGHT_BTN_AND_CONSUME right_btn_and_consume()
 
 struct IRpacket_t {
 	/* Note: this is different than what the badge code actually uses.
@@ -73,6 +98,9 @@ union IRpacket_u {
 extern struct sysData_t {
 	char name[16];
 	unsigned short badgeId;
+	/* TODO: There is more stuff in the badge which we might want to expose if
+	 * an app needs it.
+	 */
 } G_sysData;
 
 void IRqueueSend(union IRpacket_u pkt);
@@ -83,6 +111,7 @@ void IRqueueSend(union IRpacket_u pkt);
 void register_ir_packet_callback(void (*callback)(struct IRpacket_t));
 void unregister_ir_packet_callback(void);
 
+/* Set the Flair LED color */
 void flareled(unsigned char r, unsigned char g, unsigned char b);
 
 #define IR_APP1 19
