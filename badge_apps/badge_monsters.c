@@ -602,110 +602,111 @@ static void check_the_buttons(void)
 		}
     }
 
-    if (UP_BTN_AND_CONSUME)
-    {
-        switch(menu_level){
-            case MAIN_MENU:
+    switch(menu_level){
+        case MAIN_MENU:
+            if (UP_BTN_AND_CONSUME)
+            {
                 menu_change_current_selection(-1);
-                break;
-            case MONSTER_MENU:
+                something_changed = 1;
+            }
+            else if (DOWN_BTN_AND_CONSUME)
+            {
+                menu_change_current_selection(1);
+                something_changed = 1;
+            }
+            else if (LEFT_BTN_AND_CONSUME)
+            {
+            }
+            else if (RIGHT_BTN_AND_CONSUME)
+            {
+            }
+            else if (BUTTON_PRESSED_AND_CONSUME)
+            {
+                switch(menu.current_item){
+                    case 0:
+                        change_menu_level(MONSTER_MENU);
+                        current_monster = menu.item[menu.current_item].cookie;
+                        break;
+                    case 1:
+                        app_state = TRADE_MONSTERS;
+                        break;
+                    case 2:
+                        app_state = EXIT_APP;
+                        break;
+                }
+            }
+
+            break;
+        case MONSTER_MENU:
+            if (UP_BTN_AND_CONSUME)
+            {
                 menu_change_current_selection(-1);
                 current_monster = menu.item[menu.current_item].cookie;
                 render_monster();
-                break;
-            case DESCRIPTION:
-                change_menu_level(MONSTER_MENU);
-                break;
-        }
-        something_changed = 1;
-        #ifdef __linux__
-            print_menu_info();
-        #endif
-    }
-    else if (DOWN_BTN_AND_CONSUME)
-    {
-        switch(menu_level){
-            case MAIN_MENU:
-                menu_change_current_selection(1);
-                break;
-            case MONSTER_MENU:
+            }
+            else if (DOWN_BTN_AND_CONSUME)
+            {
                 menu_change_current_selection(1);
                 current_monster = menu.item[menu.current_item].cookie;
                 render_monster();
-                break;
-            case DESCRIPTION:
-                change_menu_level(MONSTER_MENU);
-                break;
-        }
-        something_changed = 1;
-        #ifdef __linux__
-            print_menu_info();
-        #endif
-    }
-    else if (LEFT_BTN_AND_CONSUME)
-    {
-        switch(menu_level){
-            case MAIN_MENU:
-                break;
-            case MONSTER_MENU:
+            }
+            else if (LEFT_BTN_AND_CONSUME)
+            {
                 change_menu_level(MAIN_MENU);
-                break;
-            case DESCRIPTION:
+                something_changed = 1;
+            }
+            else if (RIGHT_BTN_AND_CONSUME)
+            {
+                if(current_monster >= 100)
+                {
+                    show_message(vendor_monsters[current_monster-100].blurb);
+                }
+                else
+                {
+                    show_message(monsters[current_monster].blurb);
+                }
+            }
+            else if (BUTTON_PRESSED_AND_CONSUME)
+            {
+                #ifdef __linux__
+                    print_menu_info();
+                #endif
+                if(current_monster >= 100)
+                {
+                    show_message(vendor_monsters[current_monster-100].blurb);
+                }
+                else
+                {
+                    show_message(monsters[current_monster].blurb);
+                }
+            }
+            break;
+        case DESCRIPTION:
+            if (UP_BTN_AND_CONSUME)
+            {
                 change_menu_level(MONSTER_MENU);
-                break;
-        }
-        something_changed = 1;
-    }
-    else if (RIGHT_BTN_AND_CONSUME)
-    {
-        if(menu_level == MONSTER_MENU)
-        {
-            if(current_monster >= 100)
+            }
+            else if (DOWN_BTN_AND_CONSUME)
             {
-                show_message(vendor_monsters[current_monster-100].blurb);
+                change_menu_level(MONSTER_MENU);
             }
-            else
+            else if (LEFT_BTN_AND_CONSUME)
             {
-                show_message(monsters[current_monster].blurb);
+                change_menu_level(MONSTER_MENU);
             }
-        }
-    }
-    else if (BUTTON_PRESSED_AND_CONSUME)
-    {
-        int back = 0;
-        if (menu_level == MONSTER_MENU)
-        {
-            if(menu.current_item == menu.nitems - 1){
-                back = 1;
-                something_changed = 1;
-            } else {
-                something_changed = 1;
-                app_state = RENDER_MONSTER;
+            else if (RIGHT_BTN_AND_CONSUME)
+            {
+                change_menu_level(MONSTER_MENU);
             }
+            else if (BUTTON_PRESSED_AND_CONSUME)
+            {
+                change_menu_level(MONSTER_MENU);
+            }
+            break;
+        default:
+            break;
         }
 
-        if (menu_level == MAIN_MENU)
-        {
-            switch(menu.current_item){
-                case 0:
-                    change_menu_level(MONSTER_MENU);
-                    current_monster = menu.item[menu.current_item].cookie;
-                    something_changed = 1;
-                    break;
-                case 1:
-		    app_state = TRADE_MONSTERS;
-		    something_changed = 1;
-                    break;
-                case 2:
-                    app_state = EXIT_APP;
-                    break;
-            }
-        }
-
-        /* if the back button is pressed we will return to the main menu */
-        if(back || menu_level == DESCRIPTION)
-            change_menu_level(MAIN_MENU);
-    }
     if (trading_monsters_enabled && !something_changed) {
 	app_state = TRADE_MONSTERS;
 	return;
