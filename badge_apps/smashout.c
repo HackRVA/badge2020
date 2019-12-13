@@ -190,9 +190,10 @@ static void smashout_move_ball()
 			ball.vx = -ball.vx;
 	}
 	if (ball.y > SCREEN_YDIM - 2) {
-		ball.y = SCREEN_YDIM - 2;
-		if (ball.vy > 0)
-			ball.vy = -ball.vy;
+		ball.x = SCREEN_XDIM / 2;
+		ball.y = SCREEN_YDIM / 2;
+		ball.vx = 0;
+		ball.vy = 2;
 	}
 	if (ball.x < 1) {
 		ball.x = 1;
