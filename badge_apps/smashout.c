@@ -41,6 +41,8 @@ extern char *strcat(char *dest, const char *src);
 #define BALL_STARTY (SCREEN_YDIM / 2)
 #define BALL_START_VX 3
 #define BALL_START_VY 2
+#define BRICK_WIDTH 8
+#define BRICK_HEIGHT 4
 
 static struct smashout_paddle {
 	int x, y, w;
@@ -50,6 +52,10 @@ static struct smashout_ball {
 	int x, y, vx, vy;
 } ball, oldball;
 
+static struct smashout_brick {
+	int x, y, alive; /* upper left corner of brick */
+} brick[4 * 16];
+
 /* Program states.  Initial state is SMASHOUT_GAME_INIT */
 enum smashout_program_state_t {
 	SMASHOUT_GAME_INIT,
@@ -57,12 +63,28 @@ enum smashout_program_state_t {
 	SMASHOUT_GAME_EXIT,
 };
 
+static int brick_color[4] = { YELLOW, GREEN, RED, BLUE };
+
 static enum smashout_program_state_t smashout_program_state = SMASHOUT_GAME_INIT;
+
+static void init_bricks(void)
+{
+	int i, j;
+
+	for (i = 0; i < 4; i++) {
+		for (j = 0; j < 16; j++) {
+			brick[i * 16 + j].x = j * BRICK_WIDTH;
+			brick[i * 16 + j].y = 20 + i * BRICK_HEIGHT;
+			brick[i * 16 + j].alive = 1;
+		}
+	}
+}
 
 static void smashout_game_init(void)
 {
 	FbInit();
 	FbClear();
+	init_bricks();
 	paddle.x = SCREEN_XDIM / 2;
 	paddle.y = SCREEN_YDIM - PADDLE_HEIGHT;
 	paddle.w = PADDLE_WIDTH;
@@ -96,6 +118,28 @@ static void smashout_draw_paddle()
 	FbColor(WHITE);
 	FbHorizontalLine(paddle.x - dx, paddle.y, paddle.x + dx, paddle.y);
 	old_paddle = paddle;
+}
+
+static void smashout_draw_brick(int row, int col)
+{
+	struct smashout_brick *b = &brick[row * 16 + col];
+	if (b->alive)
+		FbColor(brick_color[row]);
+	else
+		FbColor(BLACK);
+	FbHorizontalLine(b->x, b->y, b->x + BRICK_WIDTH - 1, b->y);
+	FbHorizontalLine(b->x, b->y + BRICK_HEIGHT - 1, b->x + BRICK_WIDTH - 1, b->y + BRICK_HEIGHT - 1);
+	FbVerticalLine(b->x, b->y + 1, b->x, b->y + BRICK_HEIGHT - 1);
+	FbVerticalLine(b->x + BRICK_WIDTH - 1, b->y + 1, b->x + BRICK_WIDTH - 1, b->y + BRICK_HEIGHT - 1);
+}
+
+static void smashout_draw_bricks()
+{
+	int i, j;
+
+	for (i = 0; i < 4; i++)
+		for (j = 0; j < 16; j++)
+			smashout_draw_brick(i, j);
 }
 
 static void smashout_draw_ball()
@@ -150,6 +194,7 @@ static void smashout_draw_screen()
 {
 	smashout_draw_paddle();
 	smashout_draw_ball();
+	smashout_draw_bricks();
 	FbSwapBuffers();
 }
 
