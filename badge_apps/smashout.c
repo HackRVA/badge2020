@@ -62,6 +62,16 @@ static void smashout_game_init(void)
 
 static void smashout_check_buttons()
 {
+	const int paddle_speed = 5;
+	if (LEFT_BTN_AND_CONSUME) {
+		paddle.x = paddle.x - paddle_speed;
+		if (paddle.x < paddle.w / 2)
+			paddle.x = paddle.w / 2;
+	} else if (RIGHT_BTN_AND_CONSUME) {
+		paddle.x = paddle.x + paddle_speed;
+		if (paddle.x > SCREEN_XDIM - paddle.w / 2)
+			paddle.x = SCREEN_XDIM - paddle.w / 2;
+	}
 }
 
 static void smashout_draw_paddle()
