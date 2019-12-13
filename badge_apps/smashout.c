@@ -61,6 +61,7 @@ static struct smashout_brick {
 enum smashout_program_state_t {
 	SMASHOUT_GAME_INIT,
 	SMASHOUT_GAME_PLAY,
+	SMASHOUT_GAME_,
 	SMASHOUT_GAME_EXIT,
 };
 
@@ -137,10 +138,17 @@ static void smashout_draw_brick(int row, int col)
 static void smashout_draw_bricks()
 {
 	int i, j;
+	int count = 0;
 
 	for (i = 0; i < 4; i++)
-		for (j = 0; j < 16; j++)
+		for (j = 0; j < 16; j++) {
 			smashout_draw_brick(i, j);
+			if (brick[i * 16 + j].alive)
+				count++;
+		}
+
+	if (count == 0) /* Start over when all the bricks are dead. */
+		smashout_program_state = SMASHOUT_GAME_INIT;
 }
 
 static void smashout_draw_ball()
