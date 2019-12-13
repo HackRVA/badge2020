@@ -10,6 +10,7 @@ LINUX_OBJS=linuxcompat.o bline.o achievements.o xorshift.o
 APPDIR=../badge_apps
 IRXMIT=irxmit
 LASERTAG=lasertag
+SMASHOUT=smashout
 MAZE=maze
 USERNAME=username
 
@@ -58,6 +59,9 @@ bin/${IRXMIT}:	${BIN} ${APPDIR}/${IRXMIT}.c linuxcompat.o bline.o
 
 bin/${LASERTAG}:	${BIN} ${APPDIR}/${LASERTAG}.c linuxcompat.o bline.o
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${LASERTAG} -I . -I ${BADGE_INC} ${APPDIR}/${LASERTAG}.c ${GTKLDFLAGS}
+
+bin/${SMASHOUT}:	${BIN} ${APPDIR}/${SMASHOUT}.c linuxcompat.o
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${SMASHOUT} -I . -I ${BADGE_INC} ${APPDIR}/${SMASHOUT}.c ${GTKLDFLAGS}
 
 bin/${MAZE}:	${BIN} ${APPDIR}/${MAZE}.c linuxcompat.o bline.o xorshift.o achievements.o\
 			${APPDIR}/bones_points.h \
