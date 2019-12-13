@@ -39,7 +39,7 @@ extern char *strcat(char *dest, const char *src);
 #define PADDLE_SPEED 7
 #define BALL_STARTX (SCREEN_XDIM / 2)
 #define BALL_STARTY (SCREEN_YDIM / 2)
-#define BALL_START_VX 3
+#define BALL_START_VX 1
 #define BALL_START_VY 2
 #define BRICK_WIDTH 8
 #define BRICK_HEIGHT 4
@@ -209,6 +209,12 @@ static void smashout_move_ball()
 			ball.x < paddle.x + PADDLE_WIDTH / 2 + 1) {
 			/* Ball has hit paddle, bounce. */
 			ball.vy = - ball.vy;
+			/* Impart some paddle energy to ball. */
+			ball.vx += paddle.vx / 2;
+			if (ball.vx > 10)
+				ball.vx = 10;
+			if (ball.vx < -10)
+				ball.vx = -10;
 		}
 	}
 	if (ball.y > SPACE_ABOVE_BRICKS && ball.y < SPACE_ABOVE_BRICKS + 4 * BRICK_HEIGHT) {
