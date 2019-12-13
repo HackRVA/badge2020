@@ -14,7 +14,7 @@ SMASHOUT=smashout
 MAZE=maze
 USERNAME=username
 
-all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/badge_monsters bin/fixup_monster bin/username bin/sample_app
+all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/badge_monsters bin/fixup_monster bin/username bin/sample_app bin/smashout
 
 # we need to depend on ${BIN}/.t not on ${BIN} because BIN is a directory and the
 # timestamp changes whenever the directory contents change, and we need to depend
