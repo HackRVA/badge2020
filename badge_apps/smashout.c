@@ -34,7 +34,7 @@ extern char *strcat(char *dest, const char *src);
 /* TODO figure out where these should really come from */
 #define SCREEN_XDIM 132
 #define SCREEN_YDIM 132
-#define PADDLE_HEIGHT 15
+#define PADDLE_HEIGHT 25
 #define PADDLE_WIDTH 20
 #define PADDLE_SPEED 10
 #define BALL_STARTX (SCREEN_XDIM / 2)
@@ -136,6 +136,13 @@ static void smashout_move_ball()
 		ball.y = 1;
 		if (ball.vy < 0)
 			ball.vy = -ball.vy;
+	}
+	if (ball.y >= paddle.y - 2 && ball.y <= paddle.y) {
+		if (ball.x > paddle.x - PADDLE_WIDTH / 2 - 1 &&
+			ball.x < paddle.x + PADDLE_WIDTH / 2 + 1) {
+			/* Ball has hit paddle, bounce. */
+			ball.vy = - ball.vy;
+		}
 	}
 }
 
