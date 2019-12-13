@@ -105,7 +105,9 @@ static void smashout_game_init(void)
 
 static void smashout_check_buttons()
 {
-	if (LEFT_BTN_AND_CONSUME) {
+	if (BUTTON_PRESSED_AND_CONSUME) {
+		smashout_program_state = SMASHOUT_GAME_EXIT;
+	} else if (LEFT_BTN_AND_CONSUME) {
 		paddle.vx = -PADDLE_SPEED;
 	} else if (RIGHT_BTN_AND_CONSUME) {
 		paddle.vx = PADDLE_SPEED;
@@ -271,6 +273,8 @@ static void smashout_game_play()
 
 static void smashout_game_exit()
 {
+	smashout_program_state = SMASHOUT_GAME_INIT;
+	returnToMenus();
 }
 
 int smashout_cb(void)
