@@ -37,10 +37,10 @@ extern char *strcat(char *dest, const char *src);
 #define PADDLE_HEIGHT 25
 #define PADDLE_WIDTH 20
 #define PADDLE_SPEED 7
-#define BALL_STARTX (SCREEN_XDIM / 2)
-#define BALL_STARTY (SCREEN_YDIM / 2)
-#define BALL_START_VX 1
-#define BALL_START_VY 2
+#define BALL_STARTX (8 * SCREEN_XDIM / 2)
+#define BALL_STARTY (8 * SCREEN_YDIM / 2)
+#define BALL_START_VX (1 * 8)
+#define BALL_START_VY (2 * 8)
 #define BRICK_WIDTH 8
 #define BRICK_HEIGHT 4
 #define SPACE_ABOVE_BRICKS 20
@@ -149,16 +149,24 @@ static void smashout_draw_bricks()
 
 static void smashout_draw_ball()
 {
+	int x, y;
+
+	x = oldball.x / 8;
+	y = oldball.y / 8;
+
 	FbColor(BLACK);
-	FbHorizontalLine(oldball.x - 1, oldball.y - 1, oldball.x + 1, oldball.y - 1);
-	FbHorizontalLine(oldball.x - 1, oldball.y + 1, oldball.x + 1, oldball.y + 1);
-	FbVerticalLine(oldball.x - 1, oldball.y - 1, oldball.x - 1, oldball.y + 1);
-	FbVerticalLine(oldball.x + 1, oldball.y - 1, oldball.x + 1, oldball.y + 1);
+	FbHorizontalLine(x - 1, y - 1, x + 1, y - 1);
+	FbHorizontalLine(x - 1, y + 1, x + 1, y + 1);
+	FbVerticalLine(x - 1, y - 1, x - 1, y + 1);
+	FbVerticalLine(x + 1, y - 1, x + 1, y + 1);
+
+	x = ball.x / 8;
+	y = ball.y / 8;
 	FbColor(WHITE);
-	FbHorizontalLine(ball.x - 1, ball.y - 1, ball.x + 1, ball.y - 1);
-	FbHorizontalLine(ball.x - 1, ball.y + 1, ball.x + 1, ball.y + 1);
-	FbVerticalLine(ball.x - 1, ball.y - 1, ball.x - 1, ball.y + 1);
-	FbVerticalLine(ball.x + 1, ball.y - 1, ball.x + 1, ball.y + 1);
+	FbHorizontalLine(x - 1, y - 1, x + 1, y - 1);
+	FbHorizontalLine(x - 1, y + 1, x + 1, y + 1);
+	FbVerticalLine(x - 1, y - 1, x - 1, y + 1);
+	FbVerticalLine(x + 1, y - 1, x + 1, y + 1);
 }
 
 static void smashout_move_paddle()
@@ -184,49 +192,49 @@ static void smashout_move_ball()
 	oldball = ball;
 	ball.x = ball.x + ball.vx;
 	ball.y = ball.y + ball.vy;
-	if (ball.x > SCREEN_XDIM - 2) {
-		ball.x = SCREEN_XDIM - 2;
+	if (ball.x > 8 * SCREEN_XDIM - 2 * 8) {
+		ball.x = 8 * SCREEN_XDIM - 2 * 8;
 		if (ball.vx > 0)
 			ball.vx = -ball.vx;
 	}
-	if (ball.y > SCREEN_YDIM - 2) {
-		ball.x = SCREEN_XDIM / 2;
-		ball.y = SCREEN_YDIM / 2;
-		ball.vx = 0;
-		ball.vy = 2;
+	if (ball.y > 8 * SCREEN_YDIM - 2 * 8) {
+		ball.x = BALL_STARTX;
+		ball.y = BALL_STARTY;
+		ball.vx = BALL_START_VX;
+		ball.vy = BALL_START_VY;
 	}
-	if (ball.x < 1) {
-		ball.x = 1;
+	if (ball.x < 8) {
+		ball.x = 8;
 		if (ball.vx < 0)
 			ball.vx = -ball.vx;
 	}
-	if (ball.y < 1) {
-		ball.y = 1;
+	if (ball.y < 8) {
+		ball.y = 8;
 		if (ball.vy < 0)
 			ball.vy = -ball.vy;
 	}
-	if (ball.y >= paddle.y - 2 && ball.y <= paddle.y) {
-		if (ball.x > paddle.x - PADDLE_WIDTH / 2 - 1 &&
-			ball.x < paddle.x + PADDLE_WIDTH / 2 + 1) {
+	if (ball.y >= (paddle.y - 2) * 8 && ball.y <= (paddle.y * 8)) {
+		if (ball.x > (paddle.x - PADDLE_WIDTH / 2 - 1) * 8 &&
+			ball.x < (paddle.x + PADDLE_WIDTH / 2 + 1) * 8) {
 			/* Ball has hit paddle, bounce. */
 			ball.vy = - ball.vy;
 			/* Impart some paddle energy to ball. */
-			ball.vx += paddle.vx / 2;
-			if (ball.vx > 10)
-				ball.vx = 10;
-			if (ball.vx < -10)
-				ball.vx = -10;
+			ball.vx += paddle.vx * 4;
+			if (ball.vx > 80)
+				ball.vx = 80;
+			if (ball.vx < -80)
+				ball.vx = -80;
 		}
 	}
-	if (ball.y > SPACE_ABOVE_BRICKS && ball.y < SPACE_ABOVE_BRICKS + 4 * BRICK_HEIGHT) {
+	if (ball.y > 8 * SPACE_ABOVE_BRICKS && ball.y < 8 * (SPACE_ABOVE_BRICKS + 4 * BRICK_HEIGHT)) {
 		/* Figure out which brick we are intersecting */
-		int col = ball.x / BRICK_WIDTH;
-		int row = (ball.y - SPACE_ABOVE_BRICKS) / BRICK_HEIGHT;
+		int col = ball.x / (BRICK_WIDTH * 8);
+		int row = (ball.y - 8 * SPACE_ABOVE_BRICKS) / (8 * BRICK_HEIGHT);
 		if (col >= 0 && col <= 15 && row >= 0 && row <= 3) {
 			struct smashout_brick *b = &brick[row * 16 + col];
 			if (b->alive) {
 				b->alive = 0;
-				ball.vy = - ball.vy;
+				ball.vy = -ball.vy;
 			}
 		}
 	}
