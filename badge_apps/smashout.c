@@ -36,7 +36,7 @@ extern char *strcat(char *dest, const char *src);
 #define SCREEN_YDIM 132
 #define PADDLE_HEIGHT 25
 #define PADDLE_WIDTH 20
-#define PADDLE_SPEED 10
+#define PADDLE_SPEED 7
 #define BALL_STARTX (SCREEN_XDIM / 2)
 #define BALL_STARTY (SCREEN_YDIM / 2)
 #define BALL_START_VX 3
@@ -46,7 +46,7 @@ extern char *strcat(char *dest, const char *src);
 #define SPACE_ABOVE_BRICKS 20
 
 static struct smashout_paddle {
-	int x, y, w;
+	int x, y, w, vx;
 } paddle, old_paddle;
 
 static struct smashout_ball {
@@ -90,6 +90,7 @@ static void smashout_game_init(void)
 	paddle.x = SCREEN_XDIM / 2;
 	paddle.y = SCREEN_YDIM - PADDLE_HEIGHT;
 	paddle.w = PADDLE_WIDTH;
+	paddle.vx = 0;
 	old_paddle = paddle;
 	ball.x = BALL_STARTX;
 	ball.y = BALL_STARTY;
@@ -102,13 +103,9 @@ static void smashout_game_init(void)
 static void smashout_check_buttons()
 {
 	if (LEFT_BTN_AND_CONSUME) {
-		paddle.x = paddle.x - PADDLE_SPEED;
-		if (paddle.x < paddle.w / 2)
-			paddle.x = paddle.w / 2;
+		paddle.vx = -PADDLE_SPEED;
 	} else if (RIGHT_BTN_AND_CONSUME) {
-		paddle.x = paddle.x + PADDLE_SPEED;
-		if (paddle.x > SCREEN_XDIM - paddle.w / 2)
-			paddle.x = SCREEN_XDIM - paddle.w / 2;
+		paddle.vx = PADDLE_SPEED;
 	}
 }
 
@@ -119,7 +116,6 @@ static void smashout_draw_paddle()
 	FbHorizontalLine(old_paddle.x - dx, old_paddle.y, old_paddle.x + dx, old_paddle.y);
 	FbColor(WHITE);
 	FbHorizontalLine(paddle.x - dx, paddle.y, paddle.x + dx, paddle.y);
-	old_paddle = paddle;
 }
 
 static void smashout_draw_brick(int row, int col)
@@ -163,6 +159,24 @@ static void smashout_draw_ball()
 	FbHorizontalLine(ball.x - 1, ball.y + 1, ball.x + 1, ball.y + 1);
 	FbVerticalLine(ball.x - 1, ball.y - 1, ball.x - 1, ball.y + 1);
 	FbVerticalLine(ball.x + 1, ball.y - 1, ball.x + 1, ball.y + 1);
+}
+
+static void smashout_move_paddle()
+{
+	old_paddle = paddle;
+	paddle.x += paddle.vx;
+	if (paddle.vx > 0)
+		paddle.vx -= 1;
+	if (paddle.vx < 0)
+		paddle.vx += 1;
+	if (paddle.x < PADDLE_WIDTH / 2) {
+		paddle.x = PADDLE_WIDTH / 2;
+		paddle.vx = 0;
+	}
+	if (paddle.x > SCREEN_XDIM - PADDLE_WIDTH / 2) {
+		paddle.x = SCREEN_XDIM - PADDLE_WIDTH / 2;
+		paddle.vx = 0;
+	}
 }
 
 static void smashout_move_ball()
@@ -222,6 +236,7 @@ static void smashout_draw_screen()
 static void smashout_game_play()
 {
 	smashout_check_buttons();
+	smashout_move_paddle();
 	smashout_move_ball();
 	smashout_draw_screen();
 }
