@@ -15,7 +15,6 @@
 #include "conductor.h"
 #include "blinkenlights.h"
 #include "adc.h"
-#include "maze.h"
 #include "smashout.h"
 #include "QC.h"
 #include "lasertag.h"
@@ -499,7 +498,6 @@ const struct menu_t games_m[] = {
    {"Blinkenlights", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)blinkenlights_cb}}, // Set other badges LED
    {"Conductor",     VERT_ITEM, FUNCTION, {(struct menu_t *)conductor_cb}}, // Tell other badges to play notes
    {"Sensors",       VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
-   {"Maze",          VERT_ITEM, FUNCTION, {(struct menu_t *)maze_cb} },
    {"Smash Out",     VERT_ITEM, FUNCTION, {(struct menu_t *)smashout_cb} },
    {"Laser Tag",     VERT_ITEM, FUNCTION, {(struct menu_t *)lasertag_cb} },
    {"Badge Monsters",VERT_ITEM, FUNCTION, {(struct menu_t *)badge_monsters_cb} },
