@@ -170,7 +170,11 @@ struct monster vendor_monsters[] = {
 
 int initial_mon;
 
-#ifndef __linux__
+/* We used to share draw_objects between maze.c and badge_monsters.c, but doing this
+ * prevents commenting out maze.c without breaking badge monsters.
+ */
+/* #ifndef __linux__ */
+#if 0
 /* Use draw_object() from maze.c */
 extern void draw_object(const struct point drawing[], int npoints, int scale_index, int color, int x, int y);
 #else
