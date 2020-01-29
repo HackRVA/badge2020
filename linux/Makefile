@@ -14,8 +14,9 @@ SMASHOUT=smashout
 GHOSTDETECTOR=ghost-detector
 MAZE=maze
 USERNAME=username
+HACKING_SIMULATOR=hacking_simulator
 
-all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/badge_monsters bin/fixup_monster bin/username bin/sample_app bin/smashout bin/ghost-detector
+all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/${HACKING_SIMULATOR} bin/badge_monsters bin/fixup_monster bin/username bin/sample_app bin/smashout bin/ghost-detector
 
 # we need to depend on ${BIN}/.t not on ${BIN} because BIN is a directory and the
 # timestamp changes whenever the directory contents change, and we need to depend
@@ -46,7 +47,10 @@ bin/badge_monsters:	${BIN} ${APPDIR}/badge_monsters.c linuxcompat.o bline.o ${LI
 			${APPDIR}/tuxmon.h \
 			${APPDIR}/worm.h \
 			${APPDIR}/zombieload.h
-	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/badge_monsters -I . -I ${BADGE_INC} ${APPDIR}/badge_monsters.c ${GTKLDFLAGS}
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/badge_monsters -I . -I ${BADGE_INC} ${APPDIR}/badge_monsters.c ${GTKLDFLAGS}	
+
+bin/hacking_simulator:	${BIN} ${APPDIR}/${HACKING_SIMULATOR}.c linuxcompat.o bline.o ${LINUX_OBJS} 
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${HACKING_SIMULATOR} -I . -I ${BADGE_INC} ${APPDIR}/${HACKING_SIMULATOR}.c ${GTKLDFLAGS}
 
 bin/sample_app:	${BIN} ${APPDIR}/sample_app.c linuxcompat.o bline.o ${LINUX_OBJS} \
 			${APPDIR}/smileymon.h
