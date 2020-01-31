@@ -622,6 +622,7 @@ void flarePWM()
 	because of hardware design (shared ground)
 	only one led can be on at a time
     */
+#ifdef B2019
     switch (onled) {
 	case 0:
 	    LATCbits.LATC4 = 0;
@@ -658,4 +659,25 @@ void flarePWM()
     }
     onled++;
     onled %= 3;
+
+#else
+//  RA9 RC4 RC5
+	    G_flare_red_cnt++;
+	    if (G_flare_red_cnt < G_flare_red_pwm)
+		LATCbits.LATC5 = 1;
+	    else
+		LATCbits.LATC5 = 0;
+
+	    G_flare_green_cnt++;
+	    if (G_flare_green_cnt < G_flare_green_pwm)
+		LATCbits.LATC4 = 1;
+	    else
+		LATCbits.LATC4 = 0;
+
+	    G_flare_blue_cnt++;
+	    if (G_flare_blue_cnt < G_flare_blue_pwm)
+		LATAbits.LATA9 = 1;
+	    else
+		LATAbits.LATA9 = 0;
+#endif
 }

@@ -190,6 +190,7 @@ void UserInit(void)
 
       LATA9 ground/open drain
     */
+#ifdef BADGE2019
     TRISCbits.TRISC5 = 0; // output
     CNPUCbits.CNPUC5 = 0; // pullup off
     CNPDCbits.CNPDC5 = 0; // pulldown off
@@ -210,6 +211,33 @@ void UserInit(void)
     CNPDAbits.CNPDA9 = 0; // pulldown off
     ODCAbits.ODCA9 = 1;   // open drain ON makes this effectively a ground pin
     LATAbits.LATA9 = 0;   // draining
+#else
+    // white LED
+    TRISAbits.TRISA4 = 0; // output
+    CNPUAbits.CNPUA4 = 0; // pullup off
+    CNPDAbits.CNPDA4 = 0; // pulldown off
+    LATAbits.LATA4 = 0;   // off initially
+
+
+    // red
+    TRISCbits.TRISC5 = 0; // output
+    CNPUCbits.CNPUC5 = 0; // pullup off
+    CNPDCbits.CNPDC5 = 0; // pulldown off
+    LATCbits.LATC5 = 0;   // off initially
+
+    // green
+    TRISCbits.TRISC4 = 0; // output
+    CNPUCbits.CNPUC4 = 0; // pullup off
+    CNPDCbits.CNPDC4 = 0; // pulldown off
+    LATCbits.LATC4 = 0;   // off initially
+
+    // blue
+    TRISAbits.TRISA9 = 0; // output
+    CNPUAbits.CNPUA9 = 0; // pullup off
+    CNPDAbits.CNPDA9 = 0; // pulldown off
+    LATAbits.LATA9 = 0;   // off initially
+#endif
+
 
 
     /*
