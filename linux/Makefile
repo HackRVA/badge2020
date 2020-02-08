@@ -8,6 +8,7 @@ BADGE_INC=../include
 LINUX_OBJS=linuxcompat.o bline.o achievements.o xorshift.o
 
 APPDIR=../badge_apps
+MAZEPICS=${APPDIR}/maze_drawings
 IRXMIT=irxmit
 LASERTAG=lasertag
 SMASHOUT=smashout
@@ -68,24 +69,22 @@ bin/${GHOSTDETECTOR}:	${BIN} ${APPDIR}/${GHOSTDETECTOR}.c linuxcompat.o
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${GHOSTDETECTOR} -I . -I ${BADGE_INC} ${APPDIR}/${GHOSTDETECTOR}.c ${GTKLDFLAGS}
 
 bin/${MAZE}:	${BIN} ${APPDIR}/${MAZE}.c linuxcompat.o bline.o xorshift.o achievements.o\
-			${APPDIR}/bones_points.h \
+			${MAZEPICS}/bones_points.h \
 			${BADGE_INC}/build_bug_on.h \
-			${APPDIR}/chalice_points.h \
-			${APPDIR}/chest_points.h \
-			${APPDIR}/cobra_points.h \
-			${APPDIR}/down_ladder_points.h \
-			${APPDIR}/dragon_points.h \
-			${APPDIR}/grenade_points.h \
-			${BADGE_INC}/lasertag.h \
-			${APPDIR}/lasertag-protocol.h \
-			${APPDIR}/orc_points.h \
-			${APPDIR}/phantasm_points.h \
-			${APPDIR}/player_points.h \
-			${APPDIR}/potion_points.h \
-			${APPDIR}/scroll_points.h \
-			${APPDIR}/shield_points.h \
-			${APPDIR}/sword_points.h \
-			${APPDIR}/up_ladder_points.h
+			${MAZEPICS}/chalice_points.h \
+			${MAZEPICS}/chest_points.h \
+			${MAZEPICS}/cobra_points.h \
+			${MAZEPICS}/down_ladder_points.h \
+			${MAZEPICS}/dragon_points.h \
+			${MAZEPICS}/grenade_points.h \
+			${MAZEPICS}/orc_points.h \
+			${MAZEPICS}/phantasm_points.h \
+			${MAZEPICS}/player_points.h \
+			${MAZEPICS}/potion_points.h \
+			${MAZEPICS}/scroll_points.h \
+			${MAZEPICS}/shield_points.h \
+			${MAZEPICS}/sword_points.h \
+			${MAZEPICS}/up_ladder_points.h
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${MAZE} -I . -I ${BADGE_INC} ${APPDIR}/${MAZE}.c ${GTKLDFLAGS}
 
 bin/${USERNAME}:	${BIN} ${APPDIR}/${USERNAME}.c
