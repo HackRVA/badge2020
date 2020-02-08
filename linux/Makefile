@@ -9,6 +9,7 @@ LINUX_OBJS=linuxcompat.o bline.o achievements.o xorshift.o
 
 APPDIR=../badge_apps
 MAZEPICS=${APPDIR}/maze_drawings
+MONSTERS=${APPDIR}/badge_monster_drawings
 IRXMIT=irxmit
 LASERTAG=lasertag
 SMASHOUT=smashout
@@ -30,27 +31,27 @@ ${BIN}:
 	fi
 
 bin/badge_monsters:	${BIN} ${APPDIR}/badge_monsters.c linuxcompat.o bline.o ${LINUX_OBJS} \
-			${APPDIR}/eddie.h \
-			${APPDIR}/freshmon.h \
-			${APPDIR}/goat_mon.h \
-			${APPDIR}/godzilla.h \
-			${APPDIR}/gophermon.h \
-			${APPDIR}/heartbleed.h \
-			${APPDIR}/hrvamon.h \
-			${APPDIR}/mcturtle.h \
-			${APPDIR}/octocat.h \
-			${APPDIR}/octomon.h \
-			${APPDIR}/othermon.h \
-			${APPDIR}/smileymon.h \
-			${APPDIR}/spectre.h \
-			${APPDIR}/stacksmasher.h \
-			${APPDIR}/tuxmon.h \
-			${APPDIR}/worm.h \
-			${APPDIR}/zombieload.h
+			${MONSTERS}/eddie.h \
+			${MONSTERS}/freshmon.h \
+			${MONSTERS}/goat_mon.h \
+			${MONSTERS}/godzilla.h \
+			${MONSTERS}/gophermon.h \
+			${MONSTERS}/heartbleed.h \
+			${MONSTERS}/hrvamon.h \
+			${MONSTERS}/mcturtle.h \
+			${MONSTERS}/octocat.h \
+			${MONSTERS}/octomon.h \
+			${MONSTERS}/othermon.h \
+			${MONSTERS}/smileymon.h \
+			${MONSTERS}/spectre.h \
+			${MONSTERS}/stacksmasher.h \
+			${MONSTERS}/tuxmon.h \
+			${MONSTERS}/worm.h \
+			${MONSTERS}/zombieload.h
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/badge_monsters -I . -I ${BADGE_INC} ${APPDIR}/badge_monsters.c ${GTKLDFLAGS}
 
 bin/sample_app:	${BIN} ${APPDIR}/sample_app.c linuxcompat.o bline.o ${LINUX_OBJS} \
-			${APPDIR}/smileymon.h
+			${MONSTERS}/smileymon.h
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/sample_app -I . -I ${BADGE_INC} ${APPDIR}/sample_app.c ${GTKLDFLAGS}
 
 bin/fixup_monster:	${BIN} fixup_monster.c

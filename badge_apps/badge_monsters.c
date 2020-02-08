@@ -96,37 +96,37 @@ static int app_state = INIT_APP_STATE;
 static int trading_monsters_enabled = 0;
 
 static const struct point smiley_points[] =
-#include "smileymon.h"
+#include "badge_monster_drawings/smileymon.h"
 static const struct point freshmon_points[] =
-#include "freshmon.h"
+#include "badge_monster_drawings/freshmon.h"
 static const struct point mcturtle_points[] =
-#include "mcturtle.h"
+#include "badge_monster_drawings/mcturtle.h"
 static const struct point goat_mon_points[] =
-#include "goat_mon.h"
+#include "badge_monster_drawings/goat_mon.h"
 static const struct point hrvamon_points[] =
-#include "hrvamon.h"
+#include "badge_monster_drawings/hrvamon.h"
 static const struct point octomon_points[] =
-#include "octomon.h"
+#include "badge_monster_drawings/octomon.h"
 static const struct point zombieload_points[] =
-#include "zombieload.h"
+#include "badge_monster_drawings/zombieload.h"
 static const struct point spectre_points[] =
-#include "spectre.h"
+#include "badge_monster_drawings/spectre.h"
 static const struct point heartbleed_points[] =
-#include "heartbleed.h"
+#include "badge_monster_drawings/heartbleed.h"
 static const struct point stacksmasher_points[] =
-#include "stacksmasher.h"
+#include "badge_monster_drawings/stacksmasher.h"
 static const struct point worm_points[] =
-#include "worm.h"
+#include "badge_monster_drawings/worm.h"
 static const struct point godzilla_points[] =
-#include "godzilla.h"
+#include "badge_monster_drawings/godzilla.h"
 static const struct point eddie_points[] =
-#include "eddie.h"
+#include "badge_monster_drawings/eddie.h"
 static const struct point gopher_points[] =
-#include "gophermon.h"
+#include "badge_monster_drawings/gophermon.h"
 static const struct point tux_points[] =
-#include "tuxmon.h"
+#include "badge_monster_drawings/tuxmon.h"
 static const struct point octocat_points[] =
-#include "octocat.h"
+#include "badge_monster_drawings/octocat.h"
 
 struct monster
 {

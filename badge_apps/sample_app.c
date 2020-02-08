@@ -41,7 +41,7 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 };
 
 static struct point smiley[] =
-#include "smileymon.h"
+#include "badge_monster_drawings/smileymon.h"
 
 static int app_state = INIT_APP_STATE;
 
