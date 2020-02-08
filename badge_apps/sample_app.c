@@ -9,6 +9,8 @@
 #include "menu.h"
 #include "buttons.h"
 
+extern int timestamp;
+
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
 extern char *strcpy(char *dest, const char *src);
@@ -52,8 +54,13 @@ static int smiley_x, smiley_y;
 
 static void render_screen(void)
 {
+	char buffer[10];
 	FbClear();
 	FbDrawObject(smiley, ARRAYSIZE(smiley), WHITE, smiley_x, smiley_y, 410);
+	/* Display the time stamp for no particular reason */
+	itoa(buffer, (volatile int) timestamp, 10);
+	FbMove(10, 100);
+	FbWriteLine(buffer);
 	FbSwapBuffers();
 	app_state = CHECK_THE_BUTTONS;
 }

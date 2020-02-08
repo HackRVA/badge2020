@@ -139,3 +139,8 @@ struct point
  */
 void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int scale);
 
+/* This timestamp thing is just a counter that periodically increments. The linux one won't increment
+ * at the same rate as the one on the badge though.
+ */
+extern volatile int timestamp;
+

@@ -161,6 +161,8 @@ struct sysData_t G_sysData = { "TESTUSER00", 1 /* badge ID */ };
 int IRpacketOutNext;
 int IRpacketOutCurr;
 
+volatile int timestamp = 0;
+
 static GtkWidget *vbox, *window, *drawing_area;
 #define SCALE_FACTOR 6
 #define GTK_SCREEN_WIDTH (SCREEN_XDIM * SCALE_FACTOR)
@@ -892,6 +894,7 @@ static gint advance_game(__attribute__((unused)) gpointer data)
 	gdk_threads_enter();
 	gtk_widget_queue_draw(drawing_area);
 	gdk_threads_leave();
+	timestamp++;
 	return TRUE;
 }
 
