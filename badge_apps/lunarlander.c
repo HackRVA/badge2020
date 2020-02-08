@@ -119,16 +119,16 @@ static void lunarlander_init(void)
 {
 	FbInit();
 	FbClear();
+	terrain_y[0] = -100;
+	terrain_y[1023] = -100;
+	init_terrain(terrain_y, 0, 1023);
 	lunarlander_state = LUNARLANDER_RUN;
 	lander.x = 100;
-	lander.y = 0;
+	lander.y = terrain_y[0] - 20;
 	lander.vx = 0;
 	lander.vy = 0;
 	lander.fuel = 1000;
 	oldlander = lander;
-	terrain_y[0] = -100;
-	terrain_y[1023] = -100;
-	init_terrain(terrain_y, 0, 1023);
 }
 
 static void check_buttons()
