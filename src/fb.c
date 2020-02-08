@@ -704,7 +704,7 @@ void FbPolygonFromPoints(short points[][2],
  * polygons can be constructed via this program: https://github.com/smcameron/vectordraw
  * as well as allowing scaling.
  */
-void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int divisor)
+void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int scale)
 {
 	int i;
 	int xcenter = x;
@@ -720,8 +720,8 @@ void FbDrawObject(const struct point drawing[], int npoints, int color, int x, i
 			i+=2;
 			continue;
 		}
-		FbLine(xcenter + ((drawing[i].x * divisor) >> 10), ycenter + ((drawing[i].y * divisor) >> 10),
-			xcenter + ((drawing[i + 1].x * divisor) >> 10), ycenter + ((drawing[i + 1].y * divisor) >> 10));
+		FbLine(xcenter + ((drawing[i].x * scale) >> 10), ycenter + ((drawing[i].y * scale) >> 10),
+			xcenter + ((drawing[i + 1].x * scale) >> 10), ycenter + ((drawing[i + 1].y * scale) >> 10));
 		i++;
 	}
 }

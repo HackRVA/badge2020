@@ -130,5 +130,12 @@ struct point
     signed char x, y;
 };
 
-void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int divisor);
+/* FbDrawObject() draws an object at x, y.  The coordinates of drawing[] should be centered at
+ * (0, 0).  The coordinates in drawing[] are multiplied by scale, then divided by 1024 (via a shift)
+ * so for 1:1 size, use scale of 1024.  Smaller values will scale the object down. This is different
+ * than FbPolygonFromPoints() or FbDrawVectors() in that drawing[] contains signed chars, and the
+ * polygons can be constructed via this program: https://github.com/smcameron/vectordraw
+ * as well as allowing scaling.
+ */
+void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int scale);
 

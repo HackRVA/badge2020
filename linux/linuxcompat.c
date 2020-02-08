@@ -961,7 +961,14 @@ int flashWriteKeyValue(unsigned int valuekey, char *value, unsigned int valuelen
 	return 0;
 }
 
-void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int divisor)
+/* FbDrawObject() draws an object at x, y.  The coordinates of drawing[] should be centered at
+ * (0, 0).  The coordinates in drawing[] are multiplied by scale, then divided by 1024 (via a shift)
+ * so for 1:1 size, use scale of 1024.  Smaller values will scale the object down. This is different
+ * than FbPolygonFromPoints() or FbDrawVectors() in that drawing[] contains signed chars, and the
+ * polygons can be constructed via this program: https://github.com/smcameron/vectordraw
+ * as well as allowing scaling.
+ */
+void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int scale)
 {
 	int i;
 	int xcenter = x;
@@ -977,8 +984,8 @@ void FbDrawObject(const struct point drawing[], int npoints, int color, int x, i
 			i+=2;
 			continue;
 		}
-		FbLine(xcenter + ((drawing[i].x * divisor) >> 10), ycenter + ((drawing[i].y * divisor) >> 10),
-			xcenter + ((drawing[i + 1].x * divisor) >> 10), ycenter + ((drawing[i + 1].y * divisor) >> 10));
+		FbLine(xcenter + ((drawing[i].x * scale) >> 10), ycenter + ((drawing[i].y * scale) >> 10),
+			xcenter + ((drawing[i + 1].x * scale) >> 10), ycenter + ((drawing[i + 1].y * scale) >> 10));
 		i++;
 	}
 }
