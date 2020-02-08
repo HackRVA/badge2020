@@ -123,8 +123,8 @@ static void lunarlander_init(void)
 	terrain_y[1023] = -100;
 	init_terrain(terrain_y, 0, 1023);
 	lunarlander_state = LUNARLANDER_RUN;
-	lander.x = 100;
-	lander.y = terrain_y[0] - 20;
+	lander.x = 100 << 8;
+	lander.y = (terrain_y[0] - 30) << 8;
 	lander.vx = 0;
 	lander.vy = 0;
 	lander.fuel = 1000;
@@ -137,11 +137,11 @@ static void check_buttons()
 		/* Pressing the button exits the program. You probably want to change this. */
 		lunarlander_state = LUNARLANDER_EXIT;
 	} else if (LEFT_BTN_AND_CONSUME) {
-		lander.vx = lander.vx - 1;
+		lander.vx = lander.vx - (1 << 7);
 	} else if (RIGHT_BTN_AND_CONSUME) {
-		lander.vx = lander.vx + 1;
+		lander.vx = lander.vx + (1 << 7);
 	} else if (UP_BTN_AND_CONSUME) {
-		lander.vy = lander.vy - 3;
+		lander.vy = lander.vy - (1 << 7);
 	} else if (DOWN_BTN_AND_CONSUME) {
 	}
 }
@@ -157,10 +157,10 @@ static void draw_lander(void)
 static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 {
 	int x1, y1, x2, y2, sx1, sy1, sx2, sy2;
-	int left = lander->x - DIMFACT * SCREEN_XDIM / 2;
-	int right = lander->x + DIMFACT * SCREEN_XDIM / 2;
-	int top = lander->y - DIMFACT * SCREEN_YDIM / 3;
-	int bottom = lander->y + DIMFACT * 2 * SCREEN_YDIM / 3;
+	int left = (lander->x >> 8) - DIMFACT * SCREEN_XDIM / 2;
+	int right = (lander->x >> 8) + DIMFACT * SCREEN_XDIM / 2;
+	int top = (lander->y >> 8) - DIMFACT * SCREEN_YDIM / 3;
+	int bottom = (lander->y >> 8) + DIMFACT * 2 * SCREEN_YDIM / 3;
 
 	if (i < 0)
 		return;
@@ -169,31 +169,35 @@ static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 	x1 = i * TERRAIN_SEGMENT_WIDTH;
 	if (x1 <= left || x1 >= right)
 		return;
-	sx1 = x1 - lander->x + SCREEN_XDIM / 2;
+	sx1 = x1 - (lander->x >> 8) + SCREEN_XDIM / 2;
 	if (sx1 < 0 || sx1 >= SCREEN_XDIM)
 		return;
 	x2 = (i + 1) * TERRAIN_SEGMENT_WIDTH;
 	if (x2 <= left || x2 >= right)
 		return;
-	sx2 = x2 - lander->x + SCREEN_XDIM / 2;
+	sx2 = x2 - (lander->x >> 8) + SCREEN_XDIM / 2;
 	if (sx2 < 0 || sx2 >= SCREEN_XDIM)
 		return;
 	y1 = terrain_y[i];
 	if (y1 < top || y1 >= bottom)
 		return;
-	sy1 = y1 - lander->y + SCREEN_YDIM / 3;
+	sy1 = y1 - (lander->y >> 8) + SCREEN_YDIM / 3;
 	if (sy1 < 0 || sy1 >= SCREEN_YDIM)
 		return;
 	y2 = terrain_y[i + 1];
 	if (y2 < top || y2 >= bottom)
 		return;
-	sy2 = y2 - lander->y + SCREEN_YDIM / 3;
+	sy2 = y2 - (lander->y >> 8) + SCREEN_YDIM / 3;
 	if (sy2 < 0 || sy2 >= SCREEN_YDIM)
 		return;
-	if (x1 <= lander->x && x2 >= lander->x && color != BLACK)
-		FbColor(RED);
-	else
+	if (x1 <= (lander->x >> 8) && x2 >= (lander->x >> 8) && color != BLACK) {
+		if ((lander->y >> 8) >= y2 - 8)
+			FbColor(RED);
+		else
+			FbColor(BLUE);
+	} else {
 		FbColor(color);
+	}
 	FbLine(sx1, sy1, sx2, sy2);
 }
 
@@ -201,12 +205,12 @@ static void draw_terrain(struct lander_data *lander, int color)
 {
 	int start, stop, i;
 
-	start = (lander->x - TERRAIN_SEGMENT_WIDTH * SCREEN_XDIM / 2) / TERRAIN_SEGMENT_WIDTH;
+	start = ((lander->x >> 8) - TERRAIN_SEGMENT_WIDTH * SCREEN_XDIM / 2) / TERRAIN_SEGMENT_WIDTH;
 	if (start < 0)
 		start = 0;
 	if (start > 1023)
 		return;
-	stop = (lander->x + TERRAIN_SEGMENT_WIDTH * SCREEN_XDIM / 2) / TERRAIN_SEGMENT_WIDTH;
+	stop = ((lander->x >> 8) + TERRAIN_SEGMENT_WIDTH * SCREEN_XDIM / 2) / TERRAIN_SEGMENT_WIDTH;
 
 	FbColor(color);
 	for (i = start; i < stop; i++)
@@ -220,7 +224,7 @@ static void move_lander(void)
 	if (lander_time > 10000)
 		lander_time = 0;
 	if ((lander_time & 0x08) == 0) {
-		lander.vy += 1;
+		lander.vy += 10;
 	}
 	lander.y += lander.vy;
 	lander.x += lander.vx;
@@ -230,8 +234,8 @@ static void draw_instruments_color(struct lander_data *lander, int color)
 {
 	char buf1[10], buf2[10];
 
-	itoa(buf1, lander->x, 10);
-	itoa(buf2, lander->y, 10);
+	itoa(buf1, (lander->x >> 8), 10);
+	itoa(buf2, (lander->y >> 8), 10);
 	FbMove(10, 110);
 	FbColor(color);
 	FbWriteLine(buf1);
