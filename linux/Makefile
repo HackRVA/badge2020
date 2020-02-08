@@ -71,7 +71,7 @@ bin/${SMASHOUT}:	${BIN} ${APPDIR}/${SMASHOUT}.c linuxcompat.o
 bin/${GHOSTDETECTOR}:	${BIN} ${APPDIR}/${GHOSTDETECTOR}.c linuxcompat.o
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${GHOSTDETECTOR} -I . -I ${BADGE_INC} ${APPDIR}/${GHOSTDETECTOR}.c ${GTKLDFLAGS}
 
-bin/${LUNARLANDER}:	${BIN} ${APPDIR}/${LUNARLANDER}.c linuxcompat.o ${LINUX_OBJS} 
+bin/${LUNARLANDER}:	${BIN} ${APPDIR}/${LUNARLANDER}.c linuxcompat.o ${LINUX_OBJS}
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${LUNARLANDER} -I . -I ${BADGE_INC} ${APPDIR}/${LUNARLANDER}.c ${GTKLDFLAGS}
 
 bin/${MAZE}:	${BIN} ${APPDIR}/${MAZE}.c linuxcompat.o bline.o xorshift.o achievements.o\
