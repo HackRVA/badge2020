@@ -154,7 +154,7 @@ static void draw_lander(void)
 	FbDrawObject(lander_points, ARRAYSIZE(lander_points), WHITE, x, y, 1024);
 }
 
-static void draw_terrain_segment(struct lander_data *lander, int i)
+static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 {
 	int x1, y1, x2, y2, sx1, sy1, sx2, sy2;
 	int left = lander->x - DIMFACT * SCREEN_XDIM / 2;
@@ -190,6 +190,10 @@ static void draw_terrain_segment(struct lander_data *lander, int i)
 	sy2 = y2 - lander->y + SCREEN_YDIM / 3;
 	if (sy2 < 0 || sy2 >= SCREEN_YDIM)
 		return;
+	if (x1 <= lander->x && x2 >= lander->x && color != BLACK)
+		FbColor(RED);
+	else
+		FbColor(color);
 	FbLine(sx1, sy1, sx2, sy2);
 }
 
@@ -206,7 +210,7 @@ static void draw_terrain(struct lander_data *lander, int color)
 
 	FbColor(color);
 	for (i = start; i < stop; i++)
-		draw_terrain_segment(lander, i);
+		draw_terrain_segment(lander, i, color);
 }
 
 static void move_lander(void)
