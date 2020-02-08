@@ -961,3 +961,25 @@ int flashWriteKeyValue(unsigned int valuekey, char *value, unsigned int valuelen
 	return 0;
 }
 
+void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int divisor)
+{
+	int i;
+	int xcenter = x;
+	int ycenter = y;
+
+	FbColor(color);
+	for (i = 0; i < npoints - 1;) {
+		if (drawing[i].x == -128) {
+			i++;
+			continue;
+		}
+		if (drawing[i + 1].x == -128) {
+			i+=2;
+			continue;
+		}
+		FbLine(xcenter + ((drawing[i].x * divisor) >> 10), ycenter + ((drawing[i].y * divisor) >> 10),
+			xcenter + ((drawing[i + 1].x * divisor) >> 10), ycenter + ((drawing[i + 1].y * divisor) >> 10));
+		i++;
+	}
+}
+

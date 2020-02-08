@@ -697,3 +697,32 @@ void FbPolygonFromPoints(short points[][2],
     FbDrawVectors(points, n_points, center_x, center_y, 1);
 }
 
+/* FbDrawObject() draws an object at x, y.  The coordinates of drawing[] should be centered at
+ * (0, 0).  The coordinates in drawing[] are multiplied by scale, then divided by 1024 (via a shift)
+ * so for 1:1 size, use scale of 1024.  Smaller values will scale the object down. This is different
+ * than FbPolygonFromPoints() or FbDrawVectors() in that drawing[] contains signed chars, and the
+ * polygons can be constructed via this program: https://github.com/smcameron/vectordraw
+ * as well as allowing scaling.
+ */
+void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int divisor)
+{
+	int i;
+	int xcenter = x;
+	int ycenter = y;
+
+	FbColor(color);
+	for (i = 0; i < npoints - 1;) {
+		if (drawing[i].x == -128) {
+			i++;
+			continue;
+		}
+		if (drawing[i + 1].x == -128) {
+			i+=2;
+			continue;
+		}
+		FbLine(xcenter + ((drawing[i].x * divisor) >> 10), ycenter + ((drawing[i].y * divisor) >> 10),
+			xcenter + ((drawing[i + 1].x * divisor) >> 10), ycenter + ((drawing[i + 1].y * divisor) >> 10));
+		i++;
+	}
+}
+

@@ -125,3 +125,10 @@ void flareled(unsigned char r, unsigned char g, unsigned char b);
 extern char username[10];
 int flashWriteKeyValue(unsigned int valuekey, char *value, unsigned int valuelen);
 
+struct point
+{
+    signed char x, y;
+};
+
+void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int divisor);
+

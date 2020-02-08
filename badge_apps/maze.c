@@ -29,6 +29,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "fb.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -140,10 +141,6 @@ static struct player_state {
     unsigned char armor;
     int gp;
 } player, combatant;
-
-struct point {
-    signed char x, y;
-};
 
 static struct potion_descriptor {
     char *adjective;
