@@ -1,5 +1,5 @@
 
-CFLAGS=-pthread -fsanitize=address -Wall --pedantic -g
+CFLAGS=-g -pthread -fsanitize=address -Wall --pedantic -g
 GTKCFLAGS:=$(subst -I,-isystem ,$(shell pkg-config --cflags gtk+-2.0))
 GTKLDFLAGS:=$(shell pkg-config --libs gtk+-2.0) $(shell pkg-config --libs gthread-2.0)
 
@@ -16,8 +16,10 @@ SMASHOUT=smashout
 GHOSTDETECTOR=ghost-detector
 MAZE=maze
 USERNAME=username
+LUNARLANDER=lunarlander
 
-all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/badge_monsters bin/fixup_monster bin/username bin/sample_app bin/smashout bin/ghost-detector
+all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/badge_monsters bin/fixup_monster bin/username \
+	bin/sample_app bin/smashout bin/ghost-detector bin/lunarlander
 
 # we need to depend on ${BIN}/.t not on ${BIN} because BIN is a directory and the
 # timestamp changes whenever the directory contents change, and we need to depend
@@ -68,6 +70,9 @@ bin/${SMASHOUT}:	${BIN} ${APPDIR}/${SMASHOUT}.c linuxcompat.o
 
 bin/${GHOSTDETECTOR}:	${BIN} ${APPDIR}/${GHOSTDETECTOR}.c linuxcompat.o
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${GHOSTDETECTOR} -I . -I ${BADGE_INC} ${APPDIR}/${GHOSTDETECTOR}.c ${GTKLDFLAGS}
+
+bin/${LUNARLANDER}:	${BIN} ${APPDIR}/${LUNARLANDER}.c linuxcompat.o ${LINUX_OBJS} 
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${LUNARLANDER} -I . -I ${BADGE_INC} ${APPDIR}/${LUNARLANDER}.c ${GTKLDFLAGS}
 
 bin/${MAZE}:	${BIN} ${APPDIR}/${MAZE}.c linuxcompat.o bline.o xorshift.o achievements.o\
 			${MAZEPICS}/bones_points.h \
