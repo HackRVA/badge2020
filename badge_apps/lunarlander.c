@@ -84,15 +84,79 @@ static struct point lander_points[] = {
 
 static int terrain_y[1024] = { 0 };
 
-struct lander_data {
+static struct lander_data {
 	/* All values are 8x what is displayed. */
 	int x, y;
 	int vx, vy;
 	int fuel;
 } lander, oldlander;
 
-static enum lunarlander_state_t lunarlander_state = LUNARLANDER_INIT;
+#define MAXSPARKS 20
+static struct spark_data {
+	int x, y, vx, vy, alive;
+} spark[MAXSPARKS] = { 0 };
+
 static unsigned int xorshift_state = 0xa5a5a5a5;
+
+static void add_spark(int x, int y, int vx, int vy)
+{
+	int i;
+
+	for (i = 0; i < MAXSPARKS; i++) {
+		if (!spark[i].alive) {
+			spark[i].x = x;
+			spark[i].y = y;
+			spark[i].vx = vx + (xorshift(&xorshift_state) & 0x03f) - 32;
+			spark[i].vy = vy + (xorshift(&xorshift_state) & 0x03f) - 32;
+			spark[i].alive = 2 + (xorshift(&xorshift_state) & 0x7);
+			return;
+		}
+	}
+}
+
+static void add_sparks(struct lander_data *lander, int x, int y, int n)
+{
+	int i;
+
+	for (i = 0; i < n; i++)
+		add_spark(lander->x, lander->y, x, y);
+}
+
+static void move_sparks(void)
+{
+	int i;
+
+	for (i = 0; i < MAXSPARKS; i++) {
+		if (!spark[i].alive)
+			continue;
+		spark[i].x += spark[i].vx;
+		spark[i].y += spark[i].vy;
+		if (spark[i].alive > 0)
+			spark[i].alive--;
+	}
+}
+
+static void draw_sparks(struct lander_data *lander, int color)
+{
+	int i, x1, y1, x2, y2;
+	const int sx = SCREEN_XDIM / 2;
+	const int sy = SCREEN_YDIM / 3;
+
+	FbColor(color);
+	for (i = 0; i < MAXSPARKS; i++) {
+		if (!spark[i].alive)
+			continue;
+		x1 = ((spark[i].x - lander->x - spark[i].vx) >> 8) + sx;
+		y1 = ((spark[i].y - lander->y - spark[i].vy) >> 8) + sy;
+		x2 = ((spark[i].x - lander->x) >> 8) + sx;
+		y2 = ((spark[i].y - lander->y) >> 8) + sy;
+		if (x1 >= 0 && x1 <= 127 && y1 >= 0 && y1 <= 127 &&
+			x2 >= 0 && x2 <= 127 && y2 >= 0 && y2 <= 127)
+			FbLine(x1, y1, x2, y2);
+	}
+}
+
+static enum lunarlander_state_t lunarlander_state = LUNARLANDER_INIT;
 
 static void init_terrain(int t[], int start, int stop)
 {
@@ -138,10 +202,13 @@ static void check_buttons()
 		lunarlander_state = LUNARLANDER_EXIT;
 	} else if (LEFT_BTN_AND_CONSUME) {
 		lander.vx = lander.vx - (1 << 7);
+		add_sparks(&lander, lander.vx + (5 << 8), lander.vy + 0, 5);
 	} else if (RIGHT_BTN_AND_CONSUME) {
 		lander.vx = lander.vx + (1 << 7);
+		add_sparks(&lander, lander.vx - (5 << 8), lander.vy + 0, 5);
 	} else if (UP_BTN_AND_CONSUME) {
 		lander.vy = lander.vy - (1 << 7);
+		add_sparks(&lander, lander.vx + 0, lander.vy + (5 << 8), 5);
 	} else if (DOWN_BTN_AND_CONSUME) {
 	}
 }
@@ -261,9 +328,12 @@ static void draw_screen()
 {
 	FbColor(WHITE);
 	draw_terrain(&lander, BLACK); /* Erase previously drawn terrain */
+	draw_sparks(&lander, BLACK);
 	move_lander();
+	move_sparks();
 	draw_terrain(&lander, WHITE); /* Draw terrain */
 	draw_lander();
+	draw_sparks(&lander, YELLOW);
 	draw_instruments();
 	FbSwapBuffers();
 }
