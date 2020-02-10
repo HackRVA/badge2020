@@ -182,15 +182,36 @@ static void init_terrain(int t[], int start, int stop)
 		return;
 	midy = (terrain_y[start] + terrain_y[stop]) / 2;
 
+	/* Make sure we don't make accidental landing zones */
+	if (midy == terrain_y[start])
+		midy = midy + 1;
+	if (midy == terrain_y[stop])
+		midy = midy + 1;
+
 	/* Displace midy randomly here in proportion to (stop - start). */
 	n = (xorshift(&xorshift_state) % 10000) - 5000;
-	n = 2 * (n * (stop - start)) / 10000;
+	n = 3 * (n * (stop - start)) / 10000;
 	midy += n;
 
 	terrain_y[mid] = midy;
 	init_terrain(terrain_y, start, mid);
 	init_terrain(terrain_y, mid, stop);
 	lander_time = 0;
+}
+
+static void add_landing_zones(int t[], int start, int stop, int count)
+{
+	int d = (stop - start) / (count + 1);
+	int i, x;
+
+	x = d;
+
+	/* Flatten out some terrain for a landing zone. */
+	for (i = 0; i < count; i++) {
+		t[x] = t[x + 1];
+		t[x + 2] = t[x];
+		x += d;
+	}
 }
 
 static void lunarlander_init(void)
@@ -200,6 +221,7 @@ static void lunarlander_init(void)
 	terrain_y[0] = -100;
 	terrain_y[1023] = -100;
 	init_terrain(terrain_y, 0, 1023);
+	add_landing_zones(terrain_y, 0, 1023, 5);
 	lunarlander_state = LUNARLANDER_RUN;
 	lander.x = 100 << 8;
 	lander.y = (terrain_y[9] - 60) << 8;
@@ -275,15 +297,23 @@ static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 		return;
 	if (x1 <= (lander->x >> 8) && x2 >= (lander->x >> 8) && color != BLACK) {
 		if ((lander->y >> 8) >= y2 - 8) {
-			if (lander->alive > 0) {
+			if (lander->alive > 0 && y2 != y1) {
 				FbColor(RED);
 				explosion(lander);
 				lander->alive = -100;
+			} else {
+				/* Allow lander to land */
+				if (lander->vy > 0)
+					lander->vy = 0;
 			}
-		} else
+		} else {
 			FbColor(BLUE);
+		}
 	} else {
-		FbColor(color);
+		if (y2 == y1 && color != BLACK) /* Make landing zones green */
+			FbColor(GREEN);
+		else
+			FbColor(color);
 	}
 	FbLine(sx1, sy1, sx2, sy2);
 }
