@@ -47,7 +47,7 @@ enum lunarlander_state_t {
 	LUNARLANDER_EXIT
 };
 
-static struct point lander_points[] = {
+static const struct point lander_points[] = {
 	{ 0, -10 }, /* body */
 	{ 5, -8 },
 	{ 5, 0 },
@@ -94,6 +94,11 @@ static struct lander_data {
 #define VERTICAL_FUEL (768)
 	int alive;
 } lander, oldlander;
+
+#define NUM_LANDING_ZONES 5
+struct fuel_tank {
+	int x, y;
+} fueltank[NUM_LANDING_ZONES];
 
 #define MAXSPARKS 50
 static struct spark_data {
@@ -242,6 +247,8 @@ static void add_landing_zones(int t[], int start, int stop, int count)
 	for (i = 0; i < count; i++) {
 		t[x] = t[x + 1];
 		t[x + 2] = t[x];
+		fueltank[i].x = x;
+		fueltank[i].y = 0;
 		x += d;
 	}
 }
@@ -253,7 +260,7 @@ static void lunarlander_init(void)
 	terrain_y[0] = -100;
 	terrain_y[1023] = -100;
 	init_terrain(terrain_y, 0, 1023);
-	add_landing_zones(terrain_y, 0, 1023, 5);
+	add_landing_zones(terrain_y, 0, 1023, NUM_LANDING_ZONES);
 	lunarlander_state = LUNARLANDER_RUN;
 	lander.x = 100 << 8;
 	lander.y = (terrain_y[9] - 60) << 8;
@@ -310,7 +317,7 @@ static void draw_lander(void)
 
 static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 {
-	int x1, y1, x2, y2, sx1, sy1, sx2, sy2;
+	int x1, y1, x2, y2, sx1, sy1, sx2, sy2, j;
 	int left = (lander->x >> 8) - DIMFACT * SCREEN_XDIM / 2;
 	int right = (lander->x >> 8) + DIMFACT * SCREEN_XDIM / 2;
 	int top = (lander->y >> 8) - DIMFACT * SCREEN_YDIM / 3;
@@ -348,7 +355,7 @@ static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 		if ((lander->y >> 8) >= y2 - 8) {
 			if (lander->alive > 0 && y2 != y1) {
 				/* Explode lander if not on level ground */
-				FbColor(RED);
+				FbColor(color);
 				explosion(lander);
 				lander->alive = -100;
 			} else {
@@ -360,18 +367,42 @@ static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 					if (lander->vy > 0)
 						/* Allow lander to land */
 						lander->vy = 0;
+						for (j = 0; j < NUM_LANDING_ZONES; j++) {
+							if (abs((lander->x >> 8) - fueltank[j].x * TERRAIN_SEGMENT_WIDTH) < 2 * TERRAIN_SEGMENT_WIDTH) {
+								draw_fuel_gauge(lander, BLACK);
+								lander->fuel = FULL_FUEL; /* refuel lander */
+							}
+						}
 				}
 			}
 		} else {
-			FbColor(BLUE);
+			FbColor(color);
 		}
 	} else {
+#if 0
 		if (y2 == y1 && color != BLACK) /* Make landing zones green */
 			FbColor(GREEN);
 		else
+#endif
 			FbColor(color);
 	}
 	FbLine(sx1, sy1, sx2, sy2);
+	/* Draw a flag by landing zones. */
+	for (j = 0; j < NUM_LANDING_ZONES; j++) {
+		if (i == fueltank[j].x) {
+			int y2 = sy1 - 20;
+			if (y2 < 0)
+				y2 = 0;
+			if (color != BLACK)
+				FbColor(GREEN);
+			FbLine(sx2, sy1, sx2, y2);
+			if (y2 < 120 && sx2 < 120) {
+				FbLine(sx2, y2, sx2 + 7, y2 + 3);
+				FbLine(sx2 + 7, y2 + 3, sx2, y2 + 6);
+			}
+			break;
+		}
+	}
 }
 
 static void draw_terrain(struct lander_data *lander, int color)
@@ -384,7 +415,8 @@ static void draw_terrain(struct lander_data *lander, int color)
 	if (start > 1023)
 		return;
 	stop = ((lander->x >> 8) + TERRAIN_SEGMENT_WIDTH * SCREEN_XDIM / 2) / TERRAIN_SEGMENT_WIDTH;
-
+	if (stop > 1023)
+		stop = 1023;
 	FbColor(color);
 	for (i = start; i < stop; i++)
 		draw_terrain_segment(lander, i, color);
