@@ -89,6 +89,9 @@ static struct lander_data {
 	int x, y;
 	int vx, vy;
 	int fuel;
+#define FULL_FUEL (1 << 16)
+#define HORIZONTAL_FUEL (256)
+#define VERTICAL_FUEL (768)
 	int alive;
 } lander, oldlander;
 
@@ -148,6 +151,35 @@ static void move_sparks(void)
 		if (spark[i].alive > 0)
 			spark[i].alive--;
 	}
+}
+
+static void draw_fuel_gauge_ticks(void)
+{
+	int i;
+	FbColor(WHITE);
+	FbVerticalLine(127, 5, 127, 105);
+	for (i = 0; i <= 10; i++)
+		FbHorizontalLine(120, 5 + i * 10, 126, 5 + i * 10);
+}
+
+static void draw_fuel_gauge_marker(struct lander_data *lander, int color)
+{
+	int y1, y2, y3;
+
+	y2 = 106 - ((100 * lander->fuel) >> 16);
+	y1 = y2 - 5;
+	y3 = y2 + 5;
+	FbColor(color);
+	FbVerticalLine(115, y1, 115, y3);
+	FbLine(115, y1, 122, y2);
+	FbLine(115, y3, 122, y2);
+}
+
+static void draw_fuel_gauge(struct lander_data *lander, int color)
+{
+	if (color != BLACK)
+		draw_fuel_gauge_ticks();
+	draw_fuel_gauge_marker(lander, color);
 }
 
 static void draw_sparks(struct lander_data *lander, int color)
@@ -227,9 +259,17 @@ static void lunarlander_init(void)
 	lander.y = (terrain_y[9] - 60) << 8;
 	lander.vx = 0;
 	lander.vy = 0;
-	lander.fuel = 1000;
+	lander.fuel = FULL_FUEL;
 	lander.alive = 1;
 	oldlander = lander;
+}
+
+static void reduce_fuel(struct lander_data *lander, int amount)
+{
+	draw_fuel_gauge(lander, BLACK);
+	lander->fuel -= amount;
+	if (lander->fuel < 0)
+		lander->fuel = 0;
 }
 
 static void check_buttons()
@@ -238,14 +278,23 @@ static void check_buttons()
 		/* Pressing the button exits the program. You probably want to change this. */
 		lunarlander_state = LUNARLANDER_EXIT;
 	} else if (LEFT_BTN_AND_CONSUME) {
-		lander.vx = lander.vx - (1 << 7);
-		add_sparks(&lander, lander.vx + (5 << 8), lander.vy + 0, 5);
+		if (lander.fuel > 0) {
+			lander.vx = lander.vx - (1 << 7);
+			add_sparks(&lander, lander.vx + (5 << 8), lander.vy + 0, 5);
+			reduce_fuel(&lander, HORIZONTAL_FUEL);
+		}
 	} else if (RIGHT_BTN_AND_CONSUME) {
-		lander.vx = lander.vx + (1 << 7);
-		add_sparks(&lander, lander.vx - (5 << 8), lander.vy + 0, 5);
+		if (lander.fuel > 0) {
+			lander.vx = lander.vx + (1 << 7);
+			add_sparks(&lander, lander.vx - (5 << 8), lander.vy + 0, 5);
+			reduce_fuel(&lander, HORIZONTAL_FUEL);
+		}
 	} else if (UP_BTN_AND_CONSUME) {
-		lander.vy = lander.vy - (1 << 7);
-		add_sparks(&lander, lander.vx + 0, lander.vy + (5 << 8), 5);
+		if (lander.fuel > 0) {
+			lander.vy = lander.vy - (1 << 7);
+			add_sparks(&lander, lander.vx + 0, lander.vy + (5 << 8), 5);
+			reduce_fuel(&lander, VERTICAL_FUEL);
+		}
 	} else if (DOWN_BTN_AND_CONSUME) {
 	}
 }
@@ -397,6 +446,7 @@ static void draw_screen()
 	move_sparks();
 	draw_terrain(&lander, WHITE); /* Draw terrain */
 	draw_lander();
+	draw_fuel_gauge(&lander, RED);
 	draw_sparks(&lander, YELLOW);
 	draw_instruments();
 	FbSwapBuffers();
