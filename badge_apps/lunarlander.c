@@ -89,9 +89,10 @@ static struct lander_data {
 	int x, y;
 	int vx, vy;
 	int fuel;
+	int alive;
 } lander, oldlander;
 
-#define MAXSPARKS 20
+#define MAXSPARKS 50
 static struct spark_data {
 	int x, y, vx, vy, alive;
 } spark[MAXSPARKS] = { 0 };
@@ -120,6 +121,19 @@ static void add_sparks(struct lander_data *lander, int x, int y, int n)
 
 	for (i = 0; i < n; i++)
 		add_spark(lander->x, lander->y, x, y);
+}
+
+static void explosion(struct lander_data *lander)
+{
+	int i;
+
+	for (i = 0; i < MAXSPARKS; i++) {
+		spark[i].x = lander->x;
+		spark[i].y = lander->y;
+		spark[i].vx = (xorshift(&xorshift_state) & 0xff) - 128;
+		spark[i].vy = (xorshift(&xorshift_state) & 0xff) - 128;
+		spark[i].alive = 100;
+	}
 }
 
 static void move_sparks(void)
@@ -188,10 +202,11 @@ static void lunarlander_init(void)
 	init_terrain(terrain_y, 0, 1023);
 	lunarlander_state = LUNARLANDER_RUN;
 	lander.x = 100 << 8;
-	lander.y = (terrain_y[0] - 30) << 8;
+	lander.y = (terrain_y[9] - 60) << 8;
 	lander.vx = 0;
 	lander.vy = 0;
 	lander.fuel = 1000;
+	lander.alive = 1;
 	oldlander = lander;
 }
 
@@ -218,7 +233,8 @@ static void draw_lander(void)
 	const int x = SCREEN_XDIM / 2;
 	const int y = SCREEN_YDIM / 3;
 	FbDrawObject(lander_points, ARRAYSIZE(lander_points), BLACK, x, y, 1024);
-	FbDrawObject(lander_points, ARRAYSIZE(lander_points), WHITE, x, y, 1024);
+	if (lander.alive > 0)
+		FbDrawObject(lander_points, ARRAYSIZE(lander_points), WHITE, x, y, 1024);
 }
 
 static void draw_terrain_segment(struct lander_data *lander, int i, int color)
@@ -258,9 +274,13 @@ static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 	if (sy2 < 0 || sy2 >= SCREEN_YDIM)
 		return;
 	if (x1 <= (lander->x >> 8) && x2 >= (lander->x >> 8) && color != BLACK) {
-		if ((lander->y >> 8) >= y2 - 8)
-			FbColor(RED);
-		else
+		if ((lander->y >> 8) >= y2 - 8) {
+			if (lander->alive > 0) {
+				FbColor(RED);
+				explosion(lander);
+				lander->alive = -100;
+			}
+		} else
 			FbColor(BLUE);
 	} else {
 		FbColor(color);
@@ -286,6 +306,13 @@ static void draw_terrain(struct lander_data *lander, int color)
 
 static void move_lander(void)
 {
+	if (lander.alive < 0) {
+		lander.alive++;
+		if (lander.alive == 0) {
+			lunarlander_state = LUNARLANDER_INIT;
+		}
+		return;
+	}
 	oldlander = lander;
 	lander_time++;
 	if (lander_time > 10000)
