@@ -298,13 +298,20 @@ static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 	if (x1 <= (lander->x >> 8) && x2 >= (lander->x >> 8) && color != BLACK) {
 		if ((lander->y >> 8) >= y2 - 8) {
 			if (lander->alive > 0 && y2 != y1) {
+				/* Explode lander if not on level ground */
 				FbColor(RED);
 				explosion(lander);
 				lander->alive = -100;
 			} else {
-				/* Allow lander to land */
-				if (lander->vy > 0)
-					lander->vy = 0;
+				/* Explode lander if it hits too hard. */
+				if ((lander->vy > 256 || lander->vx > 256 || lander->vx < -256) && lander->alive > 0) {
+					explosion(lander);
+					lander->alive = -100;
+				} else {
+					if (lander->vy > 0)
+						/* Allow lander to land */
+						lander->vy = 0;
+				}
 			}
 		} else {
 			FbColor(BLUE);
