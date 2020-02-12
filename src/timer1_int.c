@@ -50,7 +50,7 @@ volatile unsigned char num_packets_seen = 0;
 #define T2_TICK       		(SYS_FREQ/IR_TOGGLES)
 
 // easily divisible for wall clock
-#define LED_TOGGLES		40000
+#define LED_TOGGLES		256
 //#define LED_TOGGLES		38000
 #define T3_TICK       		(SYS_FREQ/LED_TOGGLES)
 
@@ -59,7 +59,6 @@ volatile unsigned char num_packets_seen = 0;
 #define T4_TICK       		(SYS_FREQ/AUDIO_TOGGLES)
 
 void doLED_PWM();
-void flarePWM();
 
 void timerInit(void)
 {
@@ -507,14 +506,8 @@ volatile unsigned char G_green_pwm=0;
 volatile unsigned char G_blue_cnt=0;
 volatile unsigned char G_blue_pwm=0;
 
-volatile unsigned char G_flare_red_cnt=0;
-volatile unsigned char G_flare_red_pwm=0;
-
-volatile unsigned char G_flare_green_cnt=0;
-volatile unsigned char G_flare_green_pwm=0;
-
-volatile unsigned char G_flare_blue_cnt=0;
-volatile unsigned char G_flare_blue_pwm=0;
+volatile unsigned char G_white_cnt=0;
+volatile unsigned char G_white_pwm=0;
 
 volatile unsigned char G_bright=0;
 
@@ -558,38 +551,47 @@ void doLED_PWM()
 {
     if (G_no_LED_PWM) return;
 
+    /* backlight */
     G_backlight_cnt++;
     if (G_backlight_cnt < G_backlight)
         LATCbits.LATC9 = 1;
     else
         LATCbits.LATC9 = 0;
 
+
+    /* white LED 2020 */
+    G_white_cnt++;
+    if (G_white_cnt < G_white_pwm)
+        LATAbits.LATA4 = 1;
+    else
+        LATAbits.LATA4 = 0;
+
+
     /* red */
     G_red_cnt++;
     if (G_red_cnt < G_red_pwm)
-        LATCbits.LATC0 = 1;
+        LATCbits.LATC5 = 1;
     else
-        LATCbits.LATC0 = 0;
+        LATCbits.LATC5 = 0;
 
     // just let it wrap around if (G_red_cnt == 255) G_red_cnt = 0;
 
     /* Green */
     G_green_cnt++;
     if (G_green_cnt < G_green_pwm)
-        LATBbits.LATB3 = 1;
+        LATCbits.LATC4 = 1;
     else
-        LATBbits.LATB3 = 0;
+        LATCbits.LATC4 = 0;
 
     // just let it wrap around if (G_green_cnt == 255) G_green_cnt = 0;
 
     /* Blue */
     G_blue_cnt++;
     if (G_blue_cnt < G_blue_pwm)
-        LATCbits.LATC1 = 1;
+        LATAbits.LATA9 = 1;
     else
-        LATCbits.LATC1 = 0;
+        LATAbits.LATA9 = 0;
 
-    flarePWM();
 }
 
 void backlight(unsigned char bright) {
@@ -604,6 +606,15 @@ void led(unsigned char r, unsigned char g, unsigned char b)
     blue(b);
 }
 
+void flareled(unsigned char r_pwm, unsigned char g_pwm, unsigned char b_pwm)
+{
+    red(r_pwm);
+    green(g_pwm);
+    blue(b_pwm);
+}
+
+// 2020 "flareled()" LED is now main "led()"
+#ifdef B2019
 void flareled(unsigned char r_pwm, unsigned char g_pwm, unsigned char b_pwm)
 {
     G_flare_red_pwm = r_pwm;
@@ -622,7 +633,6 @@ void flarePWM()
 	because of hardware design (shared ground)
 	only one led can be on at a time
     */
-#ifdef B2019
     switch (onled) {
 	case 0:
 	    LATCbits.LATC4 = 0;
@@ -660,24 +670,5 @@ void flarePWM()
     onled++;
     onled %= 3;
 
-#else
-//  RA9 RC4 RC5
-	    G_flare_red_cnt++;
-	    if (G_flare_red_cnt < G_flare_red_pwm)
-		LATCbits.LATC5 = 1;
-	    else
-		LATCbits.LATC5 = 0;
-
-	    G_flare_green_cnt++;
-	    if (G_flare_green_cnt < G_flare_green_pwm)
-		LATCbits.LATC4 = 1;
-	    else
-		LATCbits.LATC4 = 0;
-
-	    G_flare_blue_cnt++;
-	    if (G_flare_blue_cnt < G_flare_blue_pwm)
-		LATAbits.LATA9 = 1;
-	    else
-		LATAbits.LATA9 = 0;
-#endif
 }
+#endif
