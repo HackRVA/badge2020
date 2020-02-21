@@ -8,6 +8,7 @@ void FbInit(void); /* initialize the frame buffer */
 void plot_point(int x, int y, void *context); /* Plot a point on the offscreen buffer */
 void FbSwapBuffers(void); /* Push the data from offscreen buffer onscreen */
 void FbPushBuffer(void) /* Push the data from offscreen buffer onscreen */;
+void FbPaintNewRows(void); /* Same as FbPushBuffer but only paints new rows, potentially faster */
 
 /* Draw a line */
 void FbLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2);

@@ -225,6 +225,11 @@ void FbPushBuffer(void)
 	memcpy(live_screen_color, screen_color, sizeof(live_screen_color));
 }
 
+void FbPaintNewRows(void)
+{
+	memcpy(live_screen_color, screen_color, sizeof(live_screen_color));
+}
+
 void FbLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2)
 {
     bline(x1, y1, x2, y2, plot_point, screen_color);
