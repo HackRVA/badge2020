@@ -84,7 +84,7 @@ void FbClear()
 	BUFFER(i) = G_Fb.BGcolor;
 	S6B33_pixel(G_Fb.BGcolor);
     }
-    memset(changed_row, 1, sizeof(changed_row));
+    memset(changed_row, 0xff, sizeof(changed_row));
 }
 
 void FbTransparency(unsigned short transparencyMask)
