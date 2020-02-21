@@ -260,7 +260,7 @@ static void smashout_draw_screen()
 	FbWriteLine(s);
 	FbMove(70, SCREEN_YDIM - 10);
 	FbWriteLine(b);
-	FbSwapBuffers();
+	FbPaintNewRows();
 }
 
 static void smashout_game_play()
