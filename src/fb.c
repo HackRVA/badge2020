@@ -1,9 +1,11 @@
 #include <stdlib.h>
 //#include "badge16.h"
+#include <plib.h>
 #include "fb.h"
 #include "S6B33.h"
 #include "assetList.h"
 #include "colors.h"
+#include "build_bug_on.h"
 
 #define uCHAR (unsigned char *)
 struct framebuffer_t G_Fb;
@@ -19,6 +21,10 @@ struct framebuffer_t G_Fb;
 
 /* the output buffer */
 unsigned short LCDbuffer[FBSIZE] ;
+unsigned char changed_row[1 + LCD_XSIZE / 8]; /* plus 1 because LCD_XSIZE is/might not be divisible by 8. */
+#define IS_ROW_CHANGED(i) (changed_row[(i) >> 3] & (1 << ((i) & 0x07)))
+#define MARK_ROW_CHANGED(i) do { changed_row[(i) >> 3] |= 1 << ((i) & 0x07); } while (0)
+#define MARK_ROW_UNCHANGED(i) do { changed_row[(i) >> 3] &= ~(1 << ((i) & 0x07)); } while (0)
 
 #define BUFFER( ADDR ) LCDbuffer[(ADDR)]
 
@@ -78,6 +84,7 @@ void FbClear()
 	BUFFER(i) = G_Fb.BGcolor;
 	S6B33_pixel(G_Fb.BGcolor);
     }
+    memset(changed_row, 1, sizeof(changed_row));
 }
 
 void FbTransparency(unsigned short transparencyMask)
@@ -130,6 +137,7 @@ void FbImage8bit(unsigned char assetId, unsigned char seqNum)
     if (yEnd > LCD_YSIZE) yEnd = LCD_YSIZE-1;
 
     for (y = G_Fb.pos.y; y < yEnd; y++) {
+	MARK_ROW_CHANGED(y);
 	pixdata = uCHAR(&(assetList[assetId].pixdata[ (y - G_Fb.pos.y) * assetList[assetId].x + seqNum * assetList[assetId].x * assetList[assetId].y]));
 
 	for (x = 0; x < assetList[assetId].x; x++) {
@@ -171,6 +179,7 @@ void FbImage4bit(unsigned char assetId, unsigned char seqNum)
     if (yEnd >= LCD_YSIZE) yEnd = LCD_YSIZE-1;
 
     for (y = G_Fb.pos.y; y < yEnd; y++) {
+	MARK_ROW_CHANGED(y);
 	pixdata = uCHAR(&(assetList[assetId].pixdata[ (y - G_Fb.pos.y) * (assetList[assetId].x >> 1) + seqNum * (assetList[assetId].x >> 1) * assetList[assetId].y]));
 
 	for (x = 0; x < (assetList[assetId].x); /* manual inc */ ) {
@@ -237,6 +246,7 @@ void FbImage2bit(unsigned char assetId, unsigned char seqNum)
     if (yEnd > LCD_YSIZE) yEnd = LCD_YSIZE-1;
 
     for (y = G_Fb.pos.y; y < yEnd; y++) {
+	 MARK_ROW_CHANGED(y);
 	 pixdata = uCHAR(&(assetList[assetId].pixdata[ (y - G_Fb.pos.y) * (assetList[assetId].x >> 2) + seqNum * (assetList[assetId].x >> 2) * assetList[assetId].y]));
 
 	 for (x = 0; x < (assetList[assetId].x); /* manual inc */) {
@@ -349,6 +359,7 @@ void FbImage1bit(unsigned char assetId, unsigned char seqNum)
     if (yEnd >= LCD_YSIZE) yEnd = LCD_YSIZE-1;
 
     for (y=G_Fb.pos.y; y < yEnd; y++) {
+	MARK_ROW_CHANGED(y);
 	pixdata = uCHAR(&(assetList[assetId].pixdata[ seqNum * (assetList[assetId].x >> 3) * assetList[assetId].y + (y - G_Fb.pos.y) * (assetList[assetId].x >> 3)]));
 
 	for (x=0; x < (assetList[assetId].x); x += 8) {
@@ -476,6 +487,7 @@ void FbPoint(unsigned char x, unsigned char y)
     if (y >= LCD_YSIZE) y = LCD_YSIZE-1;
 
     BUFFER(y * LCD_XSIZE + x) = G_Fb.color;
+    MARK_ROW_CHANGED(y);
 
     FbMove(x, y);
     G_Fb.changed = 1;
@@ -597,6 +609,37 @@ void FbSwapBuffers()
 
     G_Fb.pos.x = 0;
     G_Fb.pos.y = 0;
+}
+
+extern int getRotate(void);
+
+/* Copies LCDbuffer to screen one row at at time and only if that row has changed.
+ * If your app only changes small parts of the screen at a time, this can be faster.
+ */
+FbPaintNewRows(void)
+{
+	unsigned int i, j;
+	int rotated = getRotate();
+
+	if (G_Fb.changed == 0)
+		return;
+
+	for (i =0; i < LCD_YSIZE; i++) {
+		/* Skip painting rows that have not changed */
+		if (!IS_ROW_CHANGED(i))
+			continue;
+		/* Copy changed rows to screen and to old[] buffer */
+		if (!rotated)
+			S6B33_rect(i, 0, 1, LCD_XSIZE - 1);
+		else
+			S6B33_rect(0, i, LCD_XSIZE - 1, 1);
+		for (j = 0; j < LCD_XSIZE; j++)
+			S6B33_pixel(LCDbuffer[i * LCD_YSIZE + j]);
+		MARK_ROW_UNCHANGED(i);
+	}
+	G_Fb.changed = 0;
+	G_Fb.pos.x = 0;
+	G_Fb.pos.y = 0;
 }
 
 // Move buffer to screen without clearing the buffer
