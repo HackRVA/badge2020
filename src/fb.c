@@ -21,10 +21,19 @@ struct framebuffer_t G_Fb;
 
 /* the output buffer */
 unsigned short LCDbuffer[FBSIZE] ;
-unsigned char changed_row[1 + LCD_XSIZE / 8]; /* plus 1 because LCD_XSIZE is/might not be divisible by 8. */
-#define IS_ROW_CHANGED(i) (changed_row[(i) >> 3] & (1 << ((i) & 0x07)))
-#define MARK_ROW_CHANGED(i) do { changed_row[(i) >> 3] |= 1 << ((i) & 0x07); } while (0)
-#define MARK_ROW_UNCHANGED(i) do { changed_row[(i) >> 3] &= ~(1 << ((i) & 0x07)); } while (0)
+unsigned char min_changed_x[LCD_YSIZE];
+unsigned char max_changed_x[LCD_YSIZE];
+#define IS_ROW_CHANGED(i) (min_changed_x[(i)] != 255)
+
+void fb_mark_row_changed(int x, int y)
+{
+	if (x < min_changed_x[y])
+		min_changed_x[y] = x;
+	if (x > max_changed_x[y])
+		max_changed_x[y] = x;
+}
+
+#define MARK_ROW_UNCHANGED(i) do { max_changed_x[(i)] = 0; min_changed_x[(i)] = 255; } while (0)
 
 #define BUFFER( ADDR ) LCDbuffer[(ADDR)]
 
@@ -84,7 +93,8 @@ void FbClear()
 	BUFFER(i) = G_Fb.BGcolor;
 	S6B33_pixel(G_Fb.BGcolor);
     }
-    memset(changed_row, 0xff, sizeof(changed_row));
+    memset(max_changed_x, 0, sizeof(max_changed_x));
+    memset(min_changed_x, 255, sizeof(min_changed_x));
 }
 
 void FbTransparency(unsigned short transparencyMask)
@@ -137,7 +147,6 @@ void FbImage8bit(unsigned char assetId, unsigned char seqNum)
     if (yEnd > LCD_YSIZE) yEnd = LCD_YSIZE-1;
 
     for (y = G_Fb.pos.y; y < yEnd; y++) {
-	MARK_ROW_CHANGED(y);
 	pixdata = uCHAR(&(assetList[assetId].pixdata[ (y - G_Fb.pos.y) * assetList[assetId].x + seqNum * assetList[assetId].x * assetList[assetId].y]));
 
 	for (x = 0; x < assetList[assetId].x; x++) {
@@ -157,6 +166,7 @@ void FbImage8bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((g >> 3) & 0b11111) <<  6 )
 			  |  (((b >> 3) & 0b11111)       )) ;
 
+		    fb_mark_row_changed(x + G_Fb.pos.x, y);
 		    if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		    else
@@ -179,7 +189,6 @@ void FbImage4bit(unsigned char assetId, unsigned char seqNum)
     if (yEnd >= LCD_YSIZE) yEnd = LCD_YSIZE-1;
 
     for (y = G_Fb.pos.y; y < yEnd; y++) {
-	MARK_ROW_CHANGED(y);
 	pixdata = uCHAR(&(assetList[assetId].pixdata[ (y - G_Fb.pos.y) * (assetList[assetId].x >> 1) + seqNum * (assetList[assetId].x >> 1) * assetList[assetId].y]));
 
 	for (x = 0; x < (assetList[assetId].x); /* manual inc */ ) {
@@ -201,6 +210,7 @@ void FbImage4bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		    /* G_Fb.pos.x == offset into scan buffer */
+		    fb_mark_row_changed(x + G_Fb.pos.x, y);
 		    if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		    else
@@ -224,6 +234,7 @@ void FbImage4bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		    /* G_Fb.pos.x == offset into scan buffer */
+		    fb_mark_row_changed(x + G_Fb.pos.x, y);
 		    if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		    else
@@ -246,7 +257,6 @@ void FbImage2bit(unsigned char assetId, unsigned char seqNum)
     if (yEnd > LCD_YSIZE) yEnd = LCD_YSIZE-1;
 
     for (y = G_Fb.pos.y; y < yEnd; y++) {
-	 MARK_ROW_CHANGED(y);
 	 pixdata = uCHAR(&(assetList[assetId].pixdata[ (y - G_Fb.pos.y) * (assetList[assetId].x >> 2) + seqNum * (assetList[assetId].x >> 2) * assetList[assetId].y]));
 
 	 for (x = 0; x < (assetList[assetId].x); /* manual inc */) {
@@ -268,6 +278,7 @@ void FbImage2bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		/* G_Fb.pos.x == offset into scan buffer */
+		fb_mark_row_changed(x + G_Fb.pos.x, y);
 		if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		else
@@ -291,6 +302,7 @@ void FbImage2bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		/* G_Fb.pos.x == offset into scan buffer */
+		fb_mark_row_changed(x + G_Fb.pos.x, y);
 		if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		else
@@ -314,6 +326,8 @@ void FbImage2bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		/* G_Fb.pos.x == offset into scan buffer */
+		fb_mark_row_changed(x + G_Fb.pos.x, y);
+		if (G_Fb.transMask > 0)
 		if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		else
@@ -337,6 +351,7 @@ void FbImage2bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		/* G_Fb.pos.x == offset into scan buffer */
+		fb_mark_row_changed(x + G_Fb.pos.x, y);
 		if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		else
@@ -359,7 +374,6 @@ void FbImage1bit(unsigned char assetId, unsigned char seqNum)
     if (yEnd >= LCD_YSIZE) yEnd = LCD_YSIZE-1;
 
     for (y=G_Fb.pos.y; y < yEnd; y++) {
-	MARK_ROW_CHANGED(y);
 	pixdata = uCHAR(&(assetList[assetId].pixdata[ seqNum * (assetList[assetId].x >> 3) * assetList[assetId].y + (y - G_Fb.pos.y) * (assetList[assetId].x >> 3)]));
 
 	for (x=0; x < (assetList[assetId].x); x += 8) {
@@ -373,6 +387,7 @@ void FbImage1bit(unsigned char assetId, unsigned char seqNum)
 		ci = ((pixbyte >> bit) & 0x1); /* ci = color index */
 		if (ci != G_Fb.transIndex) { // transparent?
 		    if (ci == 0) {
+			fb_mark_row_changed(x + G_Fb.pos.x + bit, y);
 			if (G_Fb.transMask > 0) 
 			    BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x + bit) = (BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x + bit) & (~G_Fb.transMask)) | (G_Fb.BGcolor & G_Fb.transMask);
 			else
@@ -487,7 +502,7 @@ void FbPoint(unsigned char x, unsigned char y)
     if (y >= LCD_YSIZE) y = LCD_YSIZE-1;
 
     BUFFER(y * LCD_XSIZE + x) = G_Fb.color;
-    MARK_ROW_CHANGED(y);
+    fb_mark_row_changed(x, y);
 
     FbMove(x, y);
     G_Fb.changed = 1;
@@ -630,10 +645,10 @@ FbPaintNewRows(void)
 			continue;
 		/* Copy changed rows to screen and to old[] buffer */
 		if (!rotated)
-			S6B33_rect(i, 0, 1, LCD_XSIZE - 1);
+			S6B33_rect(i, min_changed_x[i], 1, max_changed_x[i] - min_changed_x[i] + 1);
 		else
-			S6B33_rect(0, i, LCD_XSIZE - 1, 1);
-		for (j = 0; j < LCD_XSIZE; j++)
+			S6B33_rect(min_changed_x[i], i, max_changed_x[i] - min_changed_x[i], 1);
+		for (j = min_changed_x[i]; j <= max_changed_x[i]; j++)
 			S6B33_pixel(LCDbuffer[i * LCD_YSIZE + j]);
 		MARK_ROW_UNCHANGED(i);
 	}
