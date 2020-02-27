@@ -647,7 +647,7 @@ FbPaintNewRows(void)
 		if (!rotated)
 			S6B33_rect(i, min_changed_x[i], 1, max_changed_x[i] - min_changed_x[i] + 1);
 		else
-			S6B33_rect(min_changed_x[i], i, max_changed_x[i] - min_changed_x[i], 1);
+			S6B33_rect(min_changed_x[i], i, max_changed_x[i] - min_changed_x[i] + 1, 1);
 		for (j = min_changed_x[i]; j <= max_changed_x[i]; j++)
 			S6B33_pixel(LCDbuffer[i * LCD_YSIZE + j]);
 		MARK_ROW_UNCHANGED(i);
