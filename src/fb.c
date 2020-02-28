@@ -386,8 +386,8 @@ void FbImage1bit(unsigned char assetId, unsigned char seqNum)
 
 		ci = ((pixbyte >> bit) & 0x1); /* ci = color index */
 		if (ci != G_Fb.transIndex) { // transparent?
+		fb_mark_row_changed(x + G_Fb.pos.x + bit, y);
 		    if (ci == 0) {
-			fb_mark_row_changed(x + G_Fb.pos.x + bit, y);
 			if (G_Fb.transMask > 0) 
 			    BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x + bit) = (BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x + bit) & (~G_Fb.transMask)) | (G_Fb.BGcolor & G_Fb.transMask);
 			else
