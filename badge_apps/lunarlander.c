@@ -39,6 +39,8 @@ extern char *strcat(char *dest, const char *src);
 #define DIMFACT 64
 
 static int lander_time = 0;
+char lunar_lander_msg[20] = { 0 };
+int lunar_lander_msg_timer = 30;
 
 /* Program states.  Initial state is LUNARLANDER_INIT */
 enum lunarlander_state_t {
@@ -158,6 +160,23 @@ static void move_sparks(void)
 	}
 }
 
+static void draw_lunar_lander_msg(int color)
+{
+	FbMove(5, 15);
+	FbColor(color);
+	FbWriteLine(lunar_lander_msg);
+}
+
+static void set_message(char *msg, int time)
+{
+	draw_lunar_lander_msg(BLACK);
+	strncpy(lunar_lander_msg, msg, sizeof(lunar_lander_msg));
+	lunar_lander_msg[19] = '\0';
+	lunar_lander_msg_timer = time;
+	draw_lunar_lander_msg(YELLOW);
+}
+
+
 static void draw_fuel_gauge_ticks(void)
 {
 	int i;
@@ -268,6 +287,7 @@ static void lunarlander_init(void)
 	lander.vy = 0;
 	lander.fuel = FULL_FUEL;
 	lander.alive = 1;
+	set_message("MOVE RIGHT", 30);
 }
 
 static void reduce_fuel(struct lander_data *lander, int amount)
@@ -399,6 +419,7 @@ static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 				FbLine(sx2, y2, sx2 + 7, y2 + 3);
 				FbLine(sx2 + 7, y2 + 3, sx2, y2 + 6);
 			}
+			set_message("REFUEL AT FLAG", 30);
 			break;
 		}
 	}
@@ -440,6 +461,14 @@ static void move_lander(void)
 	lander.x += lander.vx;
 }
 
+static void update_message(void)
+{
+	if (lunar_lander_msg_timer > 0)
+		lunar_lander_msg_timer--;
+	if (lunar_lander_msg_timer == 0)
+		set_message("", 1);
+}
+
 static void draw_screen()
 {
 	FbColor(WHITE);
@@ -447,6 +476,7 @@ static void draw_screen()
 	draw_sparks(&lander, BLACK);
 	move_lander();
 	move_sparks();
+	update_message();
 	draw_terrain(&lander, WHITE); /* Draw terrain */
 	draw_lander();
 	draw_fuel_gauge(&lander, RED);
