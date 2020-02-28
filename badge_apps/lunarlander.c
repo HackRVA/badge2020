@@ -41,6 +41,8 @@ extern char *strcat(char *dest, const char *src);
 static int lander_time = 0;
 char lunar_lander_msg[20] = { 0 };
 int lunar_lander_msg_timer = 30;
+int mission_success = 0;
+int astronauts_rescued = 0;
 
 /* Program states.  Initial state is LUNARLANDER_INIT */
 enum lunarlander_state_t {
@@ -112,6 +114,52 @@ static const struct point astronaut_points[] = {
 	{ 3, -6 },
 };
 
+static const struct point lunar_base_points[] = {
+	{ -27, 6 },
+	{ -28, 0 },
+	{ 24, -1 },
+	{ 31, 4 },
+	{ -27, 4 },
+	{ -128, -128 },
+	{ -26, -2 },
+	{ -24, -8 },
+	{ -22, -15 },
+	{ -14, -19 },
+	{ -5, -22 },
+	{ 5, -22 },
+	{ 14, -17 },
+	{ 21, -9 },
+	{ 23, -2 },
+	{ -128, -128 },
+	{ -19, -11 },
+	{ -19, -7 },
+	{ -15, -7 },
+	{ -15, -11 },
+	{ -19, -10 },
+	{ -128, -128 },
+	{ -8, -11 },
+	{ -9, -7 },
+	{ -6, -7 },
+	{ -6, -11 },
+	{ -7, -11 },
+	{ -128, -128 },
+	{ 4, -10 },
+	{ 5, -6 },
+	{ 8, -6 },
+	{ 7, -10 },
+	{ 3, -10 },
+	{ -128, -128 },
+	{ 13, -1 },
+	{ 13, -13 },
+	{ 18, -12 },
+	{ 18, -1 },
+	{ -128, -128 },
+	{ -26, -1 },
+	{ -25, -27 },
+	{ -31, -24 },
+	{ -26, -23 },
+};
+
 static int terrain_y[1024] = { 0 };
 
 static struct lander_data {
@@ -135,6 +183,10 @@ struct astronaut {
 	int x, y;
 	unsigned char picked_up;
 } astronaut[NUM_ASTRONAUTS];
+
+struct lunar_base {
+	int x, y;
+} lunar_base;
 
 #define MAXSPARKS 50
 static struct spark_data {
@@ -318,6 +370,14 @@ static void place_astronauts(void)
 	}
 }
 
+static void place_lunar_base(void)
+{
+	int j;
+	j = (xorshift(&xorshift_state) % 50) + 925;
+	lunar_base.y = terrain_y[j] - 5;
+	lunar_base.x = j * TERRAIN_SEGMENT_WIDTH;
+}
+
 static void lunarlander_init(void)
 {
 	FbInit();
@@ -327,6 +387,7 @@ static void lunarlander_init(void)
 	init_terrain(terrain_y, 0, 1023);
 	add_landing_zones(terrain_y, 0, 1023, NUM_LANDING_ZONES);
 	place_astronauts();
+	place_lunar_base();
 	lunarlander_state = LUNARLANDER_RUN;
 	lander.x = 100 << 8;
 	lander.y = (terrain_y[9] - 60) << 8;
@@ -334,6 +395,7 @@ static void lunarlander_init(void)
 	lander.vy = 0;
 	lander.fuel = FULL_FUEL;
 	lander.alive = 1;
+	mission_success = 0;
 	set_message("MOVE RIGHT", 30);
 }
 
@@ -507,6 +569,29 @@ static void draw_astronaut(struct lander_data *lander, int i, int color)
 	}
 }
 
+static void draw_lunar_base(struct lander_data *lander, int color)
+{
+	int i, x, y;
+
+	x = lunar_base.x - (lander->x >> 8) + SCREEN_XDIM / 2;
+	y = lunar_base.y - (lander->y >> 8) + SCREEN_YDIM / 3;
+	if (x < 20 || x > SCREEN_XDIM - 20)
+		return;
+	if (y < 20 || y > SCREEN_YDIM - 20)
+		return;
+	FbDrawObject(lunar_base_points, ARRAYSIZE(lunar_base_points), color, x, y, 512);
+	set_message("LAND ON BASE!", 30);
+	if (abs(lunar_base.x - (lander->x >> 8)) < 20 && abs(lunar_base.y - (lander->y >>8)) < 20) {
+		set_message("MISSION SUCCESS", 120);
+		if (mission_success == 0)
+			mission_success = 60;
+		astronauts_rescued = 0;
+		for (i = 0; i < NUM_ASTRONAUTS; i++)
+			if (astronaut[i].picked_up)
+				astronauts_rescued++;
+	}
+}
+
 static void draw_astronauts(struct lander_data *lander, int color)
 {
 	int i;
@@ -547,18 +632,43 @@ static void update_message(void)
 		set_message("", 1);
 }
 
+static void draw_stats(void)
+{
+	char buffer[10];
+
+	FbColor(YELLOW);
+	FbMove(5, 75);
+	FbWriteLine("BUDDIES");
+	FbMove(5, 90);
+	itoa(buffer, astronauts_rescued, 10);
+	FbWriteLine("RESCUED: ");
+	FbMove(80, 90);
+	FbWriteLine(buffer);
+	FbMove(5, 105);
+	FbWriteLine("OUT OF 5");
+}
+
 static void draw_screen()
 {
 	FbColor(WHITE);
 	draw_terrain(&lander, BLACK); /* Erase previously drawn terrain */
 	draw_sparks(&lander, BLACK);
 	draw_astronauts(&lander, BLACK);
-	move_lander();
+	draw_lunar_base(&lander, BLACK);
+	if (mission_success == 0) {
+		move_lander();
+	} else {
+		mission_success--;
+		if (mission_success == 0)
+			lunarlander_state = LUNARLANDER_INIT; /* start over */
+		draw_stats();
+	}
 	move_sparks();
 	update_message();
 	draw_terrain(&lander, WHITE); /* Draw terrain */
 	draw_lander();
 	draw_astronauts(&lander, GREEN);
+	draw_lunar_base(&lander, CYAN);
 	draw_fuel_gauge(&lander, RED);
 	draw_sparks(&lander, YELLOW);
 	FbPaintNewRows();
@@ -566,7 +676,8 @@ static void draw_screen()
 
 static void lunarlander_run()
 {
-	check_buttons();
+	if (mission_success == 0)
+		check_buttons();
 	draw_screen();
 }
 
