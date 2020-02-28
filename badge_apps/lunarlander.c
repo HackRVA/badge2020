@@ -93,7 +93,7 @@ static struct lander_data {
 #define HORIZONTAL_FUEL (256)
 #define VERTICAL_FUEL (768)
 	int alive;
-} lander, oldlander;
+} lander;
 
 #define NUM_LANDING_ZONES 5
 struct fuel_tank {
@@ -268,7 +268,6 @@ static void lunarlander_init(void)
 	lander.vy = 0;
 	lander.fuel = FULL_FUEL;
 	lander.alive = 1;
-	oldlander = lander;
 }
 
 static void reduce_fuel(struct lander_data *lander, int amount)
@@ -431,7 +430,6 @@ static void move_lander(void)
 		}
 		return;
 	}
-	oldlander = lander;
 	lander_time++;
 	if (lander_time > 10000)
 		lander_time = 0;
@@ -440,33 +438,6 @@ static void move_lander(void)
 	}
 	lander.y += lander.vy;
 	lander.x += lander.vx;
-}
-
-static void draw_instruments_color(struct lander_data *lander, int color)
-{
-	char buf1[10], buf2[10];
-
-	itoa(buf1, (lander->x >> 8), 10);
-	itoa(buf2, (lander->y >> 8), 10);
-	FbMove(10, 110);
-	FbColor(color);
-	FbWriteLine(buf1);
-	FbMove(60, 110);
-	FbWriteLine(buf2);
-
-	itoa(buf1, lander->vx, 10);
-	itoa(buf2, lander->vy, 10);
-	FbMove(10, 120);
-	FbColor(color);
-	FbWriteLine(buf1);
-	FbMove(60, 120);
-	FbWriteLine(buf2);
-}
-
-static void draw_instruments(void)
-{
-	draw_instruments_color(&oldlander, BLACK);
-	draw_instruments_color(&lander, WHITE);
 }
 
 static void draw_screen()
@@ -480,7 +451,6 @@ static void draw_screen()
 	draw_lander();
 	draw_fuel_gauge(&lander, RED);
 	draw_sparks(&lander, YELLOW);
-	draw_instruments();
 	FbPaintNewRows();
 }
 
@@ -517,7 +487,7 @@ int lunarlander_cb(void)
 #ifdef __linux__
 int main(int argc, char *argv[])
 {
-        start_gtk(&argc, &argv, lunarlander_cb, 10);
+        start_gtk(&argc, &argv, lunarlander_cb, 30);
         return 0;
 }
 #endif
