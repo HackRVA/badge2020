@@ -203,9 +203,9 @@ static void add_spark(int x, int y, int vx, int vy)
 		if (!spark[i].alive) {
 			spark[i].x = x;
 			spark[i].y = y;
-			spark[i].vx = vx + (xorshift(&xorshift_state) & 0x03f) - 32;
-			spark[i].vy = vy + (xorshift(&xorshift_state) & 0x03f) - 32;
-			spark[i].alive = 2 + (xorshift(&xorshift_state) & 0x7);
+			spark[i].vx = vx + ((xorshift(&xorshift_state) >> 16) & 0x0ff) - 128;
+			spark[i].vy = vy + ((xorshift(&xorshift_state) >> 16) & 0x0ff) - 128;
+			spark[i].alive = 2 + ((xorshift(&xorshift_state) >> 16) & 0x7);
 			return;
 		}
 	}
@@ -227,12 +227,12 @@ static void set_message(char *msg, int time)
 	draw_lunar_lander_msg(YELLOW);
 }
 
-static void add_sparks(struct lander_data *lander, int x, int y, int n)
+static void add_sparks(struct lander_data *lander, int vx, int vy, int n)
 {
 	int i;
 
 	for (i = 0; i < n; i++)
-		add_spark(lander->x, lander->y, x, y);
+		add_spark(lander->x + vx, lander->y + vy, vx, vy);
 }
 
 static void explosion(struct lander_data *lander)
@@ -242,8 +242,8 @@ static void explosion(struct lander_data *lander)
 	for (i = 0; i < MAXSPARKS; i++) {
 		spark[i].x = lander->x;
 		spark[i].y = lander->y;
-		spark[i].vx = (xorshift(&xorshift_state) & 0xff) - 128;
-		spark[i].vy = (xorshift(&xorshift_state) & 0xff) - 128;
+		spark[i].vx = ((xorshift(&xorshift_state) >> 16) & 0xff) - 128;
+		spark[i].vy = ((xorshift(&xorshift_state) >> 16) & 0xff) - 128;
 		spark[i].alive = 100;
 	}
 	set_message("MISSION FAILED", 60);
@@ -415,19 +415,19 @@ static void check_buttons()
 	} else if (LEFT_BTN_AND_CONSUME) {
 		if (lander.fuel > 0) {
 			lander.vx = lander.vx - (1 << 7);
-			add_sparks(&lander, lander.vx + (5 << 8), lander.vy + 0, 5);
+			add_sparks(&lander, lander.vx + (5 << 8), lander.vy + 0, 10);
 			reduce_fuel(&lander, HORIZONTAL_FUEL);
 		}
 	} else if (RIGHT_BTN_AND_CONSUME) {
 		if (lander.fuel > 0) {
 			lander.vx = lander.vx + (1 << 7);
-			add_sparks(&lander, lander.vx - (5 << 8), lander.vy + 0, 5);
+			add_sparks(&lander, lander.vx - (5 << 8), lander.vy + 0, 10);
 			reduce_fuel(&lander, HORIZONTAL_FUEL);
 		}
 	} else if (UP_BTN_AND_CONSUME) {
 		if (lander.fuel > 0) {
 			lander.vy = lander.vy - (1 << 7);
-			add_sparks(&lander, lander.vx + 0, lander.vy + (5 << 8), 5);
+			add_sparks(&lander, lander.vx + 0, lander.vy + (5 << 8), 10);
 			reduce_fuel(&lander, VERTICAL_FUEL);
 		}
 	} else if (DOWN_BTN_AND_CONSUME) {
