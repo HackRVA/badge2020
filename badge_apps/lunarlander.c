@@ -582,7 +582,10 @@ static void draw_lunar_base(struct lander_data *lander, int color)
 	FbDrawObject(lunar_base_points, ARRAYSIZE(lunar_base_points), color, x, y, 512);
 	set_message("LAND ON BASE!", 30);
 	if (abs(lunar_base.x - (lander->x >> 8)) < 20 && abs(lunar_base.y - (lander->y >>8)) < 20) {
-		set_message("MISSION SUCCESS", 120);
+		if (astronauts_rescued > 0)
+			set_message("MISSION SUCCESS", 120);
+		else
+			set_message("MISSION FAILED", 120);
 		if (mission_success == 0)
 			mission_success = 60;
 		astronauts_rescued = 0;
@@ -650,6 +653,13 @@ static void draw_stats(void)
 	FbWriteLine(buffer);
 	FbMove(5, 105);
 	FbWriteLine("OUT OF 5");
+	FbMove(5, 120);
+	if (astronauts_rescued < 1)
+		FbWriteLine("DISASTER!");
+	else if (astronauts_rescued < 5)
+		FbWriteLine("TRAGEDY!");
+	else
+		FbWriteLine("GOOD JOB!");
 }
 
 static void draw_screen()
