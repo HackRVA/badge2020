@@ -622,6 +622,10 @@ static void move_lander(void)
 	}
 	lander.y += lander.vy;
 	lander.x += lander.vx;
+	if (lander.x < TERRAIN_SEGMENT_WIDTH << 8)
+		lander.x += ((int) (ARRAYSIZE(terrain_y) - 2) * 10 - TERRAIN_SEGMENT_WIDTH) << 8;
+	if (lander.x >= (((int) (ARRAYSIZE(terrain_y) - 1) * 10) << 8))
+		lander.x = (TERRAIN_SEGMENT_WIDTH << 8);
 }
 
 static void update_message(void)
