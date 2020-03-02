@@ -227,12 +227,12 @@ static void set_message(char *msg, int time)
 	draw_lunar_lander_msg(YELLOW);
 }
 
-static void add_sparks(struct lander_data *lander, int vx, int vy, int n)
+static void add_sparks(int x, int y, int vx, int vy, int n)
 {
 	int i;
 
 	for (i = 0; i < n; i++)
-		add_spark(lander->x + vx, lander->y + vy, vx, vy);
+		add_spark(x, y, vx, vy);
 }
 
 static void explosion(struct lander_data *lander)
@@ -415,19 +415,19 @@ static void check_buttons()
 	} else if (LEFT_BTN_AND_CONSUME) {
 		if (lander.fuel > 0) {
 			lander.vx = lander.vx - (1 << 7);
-			add_sparks(&lander, lander.vx + (5 << 8), lander.vy + 0, 10);
+			add_sparks(lander.x + (5 << 8), lander.y, lander.vx + (5 << 8), lander.vy, 10);
 			reduce_fuel(&lander, HORIZONTAL_FUEL);
 		}
 	} else if (RIGHT_BTN_AND_CONSUME) {
 		if (lander.fuel > 0) {
 			lander.vx = lander.vx + (1 << 7);
-			add_sparks(&lander, lander.vx - (5 << 8), lander.vy + 0, 10);
+			add_sparks(lander.x - (5 << 8), lander.y, lander.vx - (5 << 8), lander.vy, 10);
 			reduce_fuel(&lander, HORIZONTAL_FUEL);
 		}
 	} else if (UP_BTN_AND_CONSUME) {
 		if (lander.fuel > 0) {
 			lander.vy = lander.vy - (1 << 7);
-			add_sparks(&lander, lander.vx + 0, lander.vy + (5 << 8), 10);
+			add_sparks(lander.x, lander.y + (5 << 8), lander.vx, lander.vy + (5 << 8), 10);
 			reduce_fuel(&lander, VERTICAL_FUEL);
 		}
 	} else if (DOWN_BTN_AND_CONSUME) {
