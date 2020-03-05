@@ -29,6 +29,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "fb.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -140,10 +141,6 @@ static struct player_state {
     unsigned char armor;
     int gp;
 } player, combatant;
-
-struct point {
-    signed char x, y;
-};
 
 static struct potion_descriptor {
     char *adjective;
@@ -305,49 +302,49 @@ struct maze_object {
 };
 
 static const struct point scroll_points[] =
-#include "scroll_points.h"
+#include "maze_drawings/scroll_points.h"
 
 static const struct point dragon_points[] =
-#include "dragon_points.h"
+#include "maze_drawings/dragon_points.h"
 
 static const struct point chest_points[] =
-#include "chest_points.h"
+#include "maze_drawings/chest_points.h"
 
 static const struct point cobra_points[] =
-#include "cobra_points.h"
+#include "maze_drawings/cobra_points.h"
 
 static const struct point grenade_points[] =
-#include "grenade_points.h"
+#include "maze_drawings/grenade_points.h"
 
 static const struct point orc_points[] =
-#include "orc_points.h"
+#include "maze_drawings/orc_points.h"
 
 static const struct point phantasm_points[] =
-#include "phantasm_points.h"
+#include "maze_drawings/phantasm_points.h"
 
 static const struct point potion_points[] =
-#include "potion_points.h"
+#include "maze_drawings/potion_points.h"
 
 static const struct point shield_points[] =
-#include "shield_points.h"
+#include "maze_drawings/shield_points.h"
 
 static const struct point sword_points[] =
-#include "sword_points.h"
+#include "maze_drawings/sword_points.h"
 
 static const struct point up_ladder_points[] =
-#include "up_ladder_points.h"
+#include "maze_drawings/up_ladder_points.h"
 
 static const struct point down_ladder_points[] =
-#include "down_ladder_points.h"
+#include "maze_drawings/down_ladder_points.h"
 
 static const struct point player_points[] =
-#include "player_points.h"
+#include "maze_drawings/player_points.h"
 
 static const struct point bones_points[] =
-#include "bones_points.h"
+#include "maze_drawings/bones_points.h"
 
 static const struct point chalice_points[] =
-#include "chalice_points.h"
+#include "maze_drawings/chalice_points.h"
 
 #define MAZE_NOBJECT_TYPES 14
 static int nobject_types = MAZE_NOBJECT_TYPES;

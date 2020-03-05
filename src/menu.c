@@ -17,6 +17,7 @@
 #include "adc.h"
 #include "smashout.h"
 #include "ghost-detector.h"
+#include "lunarlander.h"
 #include "QC.h"
 #include "lasertag.h"
 #include "username.h"
@@ -501,6 +502,7 @@ const struct menu_t games_m[] = {
    {"Sensors",       VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
    {"Smash Out",     VERT_ITEM, FUNCTION, {(struct menu_t *)smashout_cb} },
    {"Ghost Detector",VERT_ITEM, FUNCTION, {(struct menu_t *)ghostdetector_cb} },
+   {"Lunar Rescue",  VERT_ITEM, FUNCTION, {(struct menu_t *)lunarlander_cb} },
    {"Laser Tag",     VERT_ITEM, FUNCTION, {(struct menu_t *)lasertag_cb} },
    {"Badge Monsters",VERT_ITEM, FUNCTION, {(struct menu_t *)badge_monsters_cb} },
 #ifdef INCLUDE_IRXMIT

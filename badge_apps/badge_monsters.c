@@ -26,6 +26,7 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 #include "buttons.h"
 #include "flash.h"
 #include "ir.h"
+#include "fb.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -94,43 +95,38 @@ static int nvendor_monsters = 0;
 static int app_state = INIT_APP_STATE;
 static int trading_monsters_enabled = 0;
 
-struct point
-{
-    signed char x, y;
-};
-
 static const struct point smiley_points[] =
-#include "smileymon.h"
+#include "badge_monster_drawings/smileymon.h"
 static const struct point freshmon_points[] =
-#include "freshmon.h"
+#include "badge_monster_drawings/freshmon.h"
 static const struct point mcturtle_points[] =
-#include "mcturtle.h"
+#include "badge_monster_drawings/mcturtle.h"
 static const struct point goat_mon_points[] =
-#include "goat_mon.h"
+#include "badge_monster_drawings/goat_mon.h"
 static const struct point hrvamon_points[] =
-#include "hrvamon.h"
+#include "badge_monster_drawings/hrvamon.h"
 static const struct point octomon_points[] =
-#include "octomon.h"
+#include "badge_monster_drawings/octomon.h"
 static const struct point zombieload_points[] =
-#include "zombieload.h"
+#include "badge_monster_drawings/zombieload.h"
 static const struct point spectre_points[] =
-#include "spectre.h"
+#include "badge_monster_drawings/spectre.h"
 static const struct point heartbleed_points[] =
-#include "heartbleed.h"
+#include "badge_monster_drawings/heartbleed.h"
 static const struct point stacksmasher_points[] =
-#include "stacksmasher.h"
+#include "badge_monster_drawings/stacksmasher.h"
 static const struct point worm_points[] =
-#include "worm.h"
+#include "badge_monster_drawings/worm.h"
 static const struct point godzilla_points[] =
-#include "godzilla.h"
+#include "badge_monster_drawings/godzilla.h"
 static const struct point eddie_points[] =
-#include "eddie.h"
+#include "badge_monster_drawings/eddie.h"
 static const struct point gopher_points[] =
-#include "gophermon.h"
+#include "badge_monster_drawings/gophermon.h"
 static const struct point tux_points[] =
-#include "tuxmon.h"
+#include "badge_monster_drawings/tuxmon.h"
 static const struct point octocat_points[] =
-#include "octocat.h"
+#include "badge_monster_drawings/octocat.h"
 
 struct monster
 {
@@ -169,50 +165,6 @@ struct monster vendor_monsters[] = {
 };
 
 int initial_mon;
-
-/* We used to share draw_objects between maze.c and badge_monsters.c, but doing this
- * prevents commenting out maze.c without breaking badge monsters.
- */
-/* #ifndef __linux__ */
-#if 0
-/* Use draw_object() from maze.c */
-extern void draw_object(const struct point drawing[], int npoints, int scale_index, int color, int x, int y);
-#else
-static void draw_object(const struct point drawing[], int npoints,
-			__attribute__((unused)) int scale_index, int color, int x, int y)
-{
-	int i;
-	int xcenter = x;
-	int ycenter = y;
-	int num;
-
-	num = 410;	/* Yeah, ok, this is a bit too magic. Basically, it's */
-			/* roughly 40% of 1024. the >> 10 below is where 1024 is */
-			/* coming from.  Because 2^10 == 1024. So this is basically */
-			/* scaling the drawing to 40% of its normal size. */
-
-	FbColor(color);
-	for (i = 0; i < npoints - 1;) {
-		if (drawing[i].x == -128) {
-			i++;
-			continue;
-		}
-		if (drawing[i + 1].x == -128) {
-			i+=2;
-			continue;
-		}
-#if 0
-		if (drawing[i].x < 0 || drawing[i].x > SCREEN_XDIM)
-			continue;
-		if (drawing[i].y < 0 || drawing[i].y > SCREEN_YDIM)
-			continue;
-#endif
-		FbLine(xcenter + ((drawing[i].x * num) >> 10), ycenter + ((drawing[i].y * num) >> 10),
-			xcenter + ((drawing[i + 1].x * num) >> 10), ycenter + ((drawing[i + 1].y * num) >> 10));
-		i++;
-	}
-}
-#endif
 
 #ifndef __linux__
 static void (*old_callback)(struct IRpacket_t) = NULL;
@@ -510,7 +462,7 @@ static void render_monster(void)
     }
     FbMove(0,0);
     FbWriteLine(name);
-    draw_object(drawing, npoints, 0, color, smiley_x, smiley_y);
+    FbDrawObject(drawing, npoints, color, smiley_x, smiley_y, 410);
 
     FbColor(WHITE);
     FbMove(43,120);
@@ -566,7 +518,7 @@ void render_screen_save_monsters(void) {
     color = monsters[current_index].color;
     FbClear();
     FbColor(BLACK);
-    draw_object(drawing, npoints, 0, color, 64, 64);
+    FbDrawObject(drawing, npoints, color, 64, 64, 410);
 }
 
 static void render_screen(void)

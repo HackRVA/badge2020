@@ -51,7 +51,8 @@ SRC_APPS_C = \
 	badge_apps/blinkenlights.c badge_apps/conductor.c \
 	badge_apps/lasertag.c badge_apps/QC.c ${IRXMIT} \
 	badge_apps/username.c badge_apps/badge_monsters.c \
-	badge_apps/smashout.c badge_apps/ghost-detector.c
+	badge_apps/smashout.c badge_apps/ghost-detector.c \
+	badge_apps/lunarlander.c
 
 SRC_USB_C = USB/usb_device.c  USB/usb_function_cdc.c USB/usb_descriptors.c
 

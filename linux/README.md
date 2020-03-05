@@ -28,7 +28,10 @@ Step 2: Write your code:
 
 	(hack on your code.  Add your app under the badge_apps directory)
 
-	See badge_apps/sample_app.c for an example.	
+	See badge_apps/sample_app.c for an example and badge_apps/badge-app-template.c
+	for a template that you can copy and customize to make your badge app. There are
+	instructions at the top of badge-app-template.c that explain how to do this, and
+	most of the details explained below are already done for you in this file.
 
 	Modify linux/Makefile to add your badge app following the other
 	examples there.

@@ -161,6 +161,8 @@ struct sysData_t G_sysData = { "TESTUSER00", 1 /* badge ID */ };
 int IRpacketOutNext;
 int IRpacketOutCurr;
 
+volatile int timestamp = 0;
+
 static GtkWidget *vbox, *window, *drawing_area;
 #define SCALE_FACTOR 6
 #define GTK_SCREEN_WIDTH (SCREEN_XDIM * SCALE_FACTOR)
@@ -219,6 +221,11 @@ void FbSwapBuffers(void)
 }
 
 void FbPushBuffer(void)
+{
+	memcpy(live_screen_color, screen_color, sizeof(live_screen_color));
+}
+
+void FbPaintNewRows(void)
 {
 	memcpy(live_screen_color, screen_color, sizeof(live_screen_color));
 }
@@ -892,6 +899,7 @@ static gint advance_game(__attribute__((unused)) gpointer data)
 	gdk_threads_enter();
 	gtk_widget_queue_draw(drawing_area);
 	gdk_threads_leave();
+	timestamp++;
 	return TRUE;
 }
 
@@ -959,5 +967,34 @@ char username[10] = "TESTUSER\0\0";
 int flashWriteKeyValue(unsigned int valuekey, char *value, unsigned int valuelen)
 {
 	return 0;
+}
+
+/* FbDrawObject() draws an object at x, y.  The coordinates of drawing[] should be centered at
+ * (0, 0).  The coordinates in drawing[] are multiplied by scale, then divided by 1024 (via a shift)
+ * so for 1:1 size, use scale of 1024.  Smaller values will scale the object down. This is different
+ * than FbPolygonFromPoints() or FbDrawVectors() in that drawing[] contains signed chars, and the
+ * polygons can be constructed via this program: https://github.com/smcameron/vectordraw
+ * as well as allowing scaling.
+ */
+void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int scale)
+{
+	int i;
+	int xcenter = x;
+	int ycenter = y;
+
+	FbColor(color);
+	for (i = 0; i < npoints - 1;) {
+		if (drawing[i].x == -128) {
+			i++;
+			continue;
+		}
+		if (drawing[i + 1].x == -128) {
+			i+=2;
+			continue;
+		}
+		FbLine(xcenter + ((drawing[i].x * scale) >> 10), ycenter + ((drawing[i].y * scale) >> 10),
+			xcenter + ((drawing[i + 1].x * scale) >> 10), ycenter + ((drawing[i + 1].y * scale) >> 10));
+		i++;
+	}
 }
 

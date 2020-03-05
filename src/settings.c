@@ -147,6 +147,11 @@ struct menu_t backlight_m[] = {
     {"Back", VERT_ITEM|LAST_ITEM|DEFAULT_ITEM, BACK, {NULL} },
 };
 
+int getRotate(void)
+{
+	extern unsigned char G_outputMode;
+	return (G_outputMode & 0x01);
+}
 
 void setRotate(int yes)
 {

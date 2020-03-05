@@ -59,6 +59,8 @@ static struct smashout_brick {
 
 static int score = 0;
 static int balls = 0;
+static int score_inc = 0;
+static int balls_inc = 0;
 
 /* Program states.  Initial state is SMASHOUT_GAME_INIT */
 enum smashout_program_state_t {
@@ -207,7 +209,7 @@ static void smashout_move_ball()
 		ball.y = BALL_STARTY;
 		ball.vx = BALL_START_VX;
 		ball.vy = BALL_START_VY;
-		balls++;
+		balls_inc++;
 	}
 	if (ball.x < 8) {
 		ball.x = 8;
@@ -240,27 +242,37 @@ static void smashout_move_ball()
 			struct smashout_brick *b = &brick[row * 16 + col];
 			if (b->alive) {
 				b->alive = 0;
-				score++;
+				score_inc++;
 				ball.vy = -ball.vy;
 			}
 		}
 	}
 }
 
-static void smashout_draw_screen()
+static void draw_score_and_balls(int color)
 {
 	char s[20], b[20];
-	smashout_draw_paddle();
-	smashout_draw_ball();
-	smashout_draw_bricks();
+	FbColor(color);
 	itoa(s, score, 10);
 	itoa(b, balls, 10);
-	FbColor(WHITE);
 	FbMove(10, SCREEN_YDIM - 10);
 	FbWriteLine(s);
 	FbMove(70, SCREEN_YDIM - 10);
 	FbWriteLine(b);
-	FbSwapBuffers();
+}
+
+static void smashout_draw_screen()
+{
+	smashout_draw_paddle();
+	smashout_draw_ball();
+	smashout_draw_bricks();
+	draw_score_and_balls(BLACK);
+	score += score_inc;
+	balls += balls_inc;
+	score_inc = 0;
+	balls_inc = 0;
+	draw_score_and_balls(WHITE);
+	FbPaintNewRows();
 }
 
 static void smashout_game_play()

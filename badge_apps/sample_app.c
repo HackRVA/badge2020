@@ -9,6 +9,8 @@
 #include "menu.h"
 #include "buttons.h"
 
+extern int timestamp;
+
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
 extern char *strcpy(char *dest, const char *src);
@@ -38,10 +40,8 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 	exit_app,
 };
 
-static struct point {
-	int x, y;
-} smiley[] =
-#include "smileymon.h"
+static struct point smiley[] =
+#include "badge_monster_drawings/smileymon.h"
 
 static int app_state = INIT_APP_STATE;
 
@@ -52,44 +52,15 @@ static int smiley_x, smiley_y;
 
 #define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-static void draw_object(struct point drawing[], int npoints, int color, int x, int y)
-{
-	int i;
-	int xcenter = x;
-	int ycenter = y;
-	int num;
-
-	num = 410;	/* Yeah, ok, this is a bit too magic. Basically, it's */
-			/* roughly 40% of 1024. the >> 10 below is where 1024 is */
-			/* coming from.  Because 2^10 == 1024. So this is basically */
-			/* scaling the drawing to 40% of its normal size. */
-
-	FbColor(color);
-	for (i = 0; i < npoints - 1;) {
-		if (drawing[i].x == -128) {
-			i++;
-			continue;
-		}
-		if (drawing[i + 1].x == -128) {
-			i+=2;
-			continue;
-		}
-#if 0
-		if (drawing[i].x < 0 || drawing[i].x > SCREEN_XDIM)
-			continue;
-		if (drawing[i].y < 0 || drawing[i].y > SCREEN_YDIM)
-			continue;
-#endif
-		FbLine(xcenter + ((drawing[i].x * num) >> 10), ycenter + ((drawing[i].y * num) >> 10),
-			xcenter + ((drawing[i + 1].x * num) >> 10), ycenter + ((drawing[i + 1].y * num) >> 10));
-		i++;
-	}
-}
-
 static void render_screen(void)
 {
+	char buffer[10];
 	FbClear();
-	draw_object(smiley, ARRAYSIZE(smiley), WHITE, smiley_x, smiley_y);
+	FbDrawObject(smiley, ARRAYSIZE(smiley), WHITE, smiley_x, smiley_y, 410);
+	/* Display the time stamp for no particular reason */
+	itoa(buffer, (volatile int) timestamp, 10);
+	FbMove(10, 100);
+	FbWriteLine(buffer);
 	FbSwapBuffers();
 	app_state = CHECK_THE_BUTTONS;
 }

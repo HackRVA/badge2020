@@ -23,6 +23,7 @@ extern struct menu_t screen_lock_m[];
 void screen_save_lock_cb(struct menu_t *h);
 void rotate_cb(struct menu_t *h);
 void setRotate(int yes);
+int getRotate(void);
 
 
 #ifdef	__cplusplus

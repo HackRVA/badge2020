@@ -8,6 +8,7 @@ void FbInit(void); /* initialize the frame buffer */
 void plot_point(int x, int y, void *context); /* Plot a point on the offscreen buffer */
 void FbSwapBuffers(void); /* Push the data from offscreen buffer onscreen */
 void FbPushBuffer(void) /* Push the data from offscreen buffer onscreen */;
+void FbPaintNewRows(void); /* Same as FbPushBuffer but only paints new rows, potentially faster */
 
 /* Draw a line */
 void FbLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2);
@@ -124,4 +125,23 @@ void flareled(unsigned char r, unsigned char g, unsigned char b);
 
 extern char username[10];
 int flashWriteKeyValue(unsigned int valuekey, char *value, unsigned int valuelen);
+
+struct point
+{
+    signed char x, y;
+};
+
+/* FbDrawObject() draws an object at x, y.  The coordinates of drawing[] should be centered at
+ * (0, 0).  The coordinates in drawing[] are multiplied by scale, then divided by 1024 (via a shift)
+ * so for 1:1 size, use scale of 1024.  Smaller values will scale the object down. This is different
+ * than FbPolygonFromPoints() or FbDrawVectors() in that drawing[] contains signed chars, and the
+ * polygons can be constructed via this program: https://github.com/smcameron/vectordraw
+ * as well as allowing scaling.
+ */
+void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int scale);
+
+/* This timestamp thing is just a counter that periodically increments. The linux one won't increment
+ * at the same rate as the one on the badge though.
+ */
+extern volatile int timestamp;
 

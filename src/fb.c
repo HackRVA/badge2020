@@ -1,9 +1,11 @@
 #include <stdlib.h>
 //#include "badge16.h"
+#include <plib.h>
 #include "fb.h"
 #include "S6B33.h"
 #include "assetList.h"
 #include "colors.h"
+#include "build_bug_on.h"
 
 #define uCHAR (unsigned char *)
 struct framebuffer_t G_Fb;
@@ -19,6 +21,19 @@ struct framebuffer_t G_Fb;
 
 /* the output buffer */
 unsigned short LCDbuffer[FBSIZE] ;
+unsigned char min_changed_x[LCD_YSIZE];
+unsigned char max_changed_x[LCD_YSIZE];
+#define IS_ROW_CHANGED(i) (min_changed_x[(i)] != 255)
+
+void fb_mark_row_changed(int x, int y)
+{
+	if (x < min_changed_x[y])
+		min_changed_x[y] = x;
+	if (x > max_changed_x[y])
+		max_changed_x[y] = x;
+}
+
+#define MARK_ROW_UNCHANGED(i) do { max_changed_x[(i)] = 0; min_changed_x[(i)] = 255; } while (0)
 
 #define BUFFER( ADDR ) LCDbuffer[(ADDR)]
 
@@ -78,6 +93,8 @@ void FbClear()
 	BUFFER(i) = G_Fb.BGcolor;
 	S6B33_pixel(G_Fb.BGcolor);
     }
+    memset(max_changed_x, 0, sizeof(max_changed_x));
+    memset(min_changed_x, 255, sizeof(min_changed_x));
 }
 
 void FbTransparency(unsigned short transparencyMask)
@@ -149,6 +166,7 @@ void FbImage8bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((g >> 3) & 0b11111) <<  6 )
 			  |  (((b >> 3) & 0b11111)       )) ;
 
+		    fb_mark_row_changed(x + G_Fb.pos.x, y);
 		    if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		    else
@@ -192,6 +210,7 @@ void FbImage4bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		    /* G_Fb.pos.x == offset into scan buffer */
+		    fb_mark_row_changed(x + G_Fb.pos.x, y);
 		    if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		    else
@@ -215,6 +234,7 @@ void FbImage4bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		    /* G_Fb.pos.x == offset into scan buffer */
+		    fb_mark_row_changed(x + G_Fb.pos.x, y);
 		    if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		    else
@@ -258,6 +278,7 @@ void FbImage2bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		/* G_Fb.pos.x == offset into scan buffer */
+		fb_mark_row_changed(x + G_Fb.pos.x, y);
 		if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		else
@@ -281,6 +302,7 @@ void FbImage2bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		/* G_Fb.pos.x == offset into scan buffer */
+		fb_mark_row_changed(x + G_Fb.pos.x, y);
 		if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		else
@@ -304,6 +326,8 @@ void FbImage2bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		/* G_Fb.pos.x == offset into scan buffer */
+		fb_mark_row_changed(x + G_Fb.pos.x, y);
+		if (G_Fb.transMask > 0)
 		if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		else
@@ -327,6 +351,7 @@ void FbImage2bit(unsigned char assetId, unsigned char seqNum)
 			  |  (((b >> 3) & 0b11111)       )) ;
 
 		/* G_Fb.pos.x == offset into scan buffer */
+		fb_mark_row_changed(x + G_Fb.pos.x, y);
 		if (G_Fb.transMask > 0)
 			BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x) = (BUFFER(x + G_Fb.pos.x) & (~G_Fb.transMask)) | (pixel & G_Fb.transMask);
 		else
@@ -361,6 +386,7 @@ void FbImage1bit(unsigned char assetId, unsigned char seqNum)
 
 		ci = ((pixbyte >> bit) & 0x1); /* ci = color index */
 		if (ci != G_Fb.transIndex) { // transparent?
+		fb_mark_row_changed(x + G_Fb.pos.x + bit, y);
 		    if (ci == 0) {
 			if (G_Fb.transMask > 0) 
 			    BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x + bit) = (BUFFER(y * LCD_XSIZE + x + G_Fb.pos.x + bit) & (~G_Fb.transMask)) | (G_Fb.BGcolor & G_Fb.transMask);
@@ -476,6 +502,7 @@ void FbPoint(unsigned char x, unsigned char y)
     if (y >= LCD_YSIZE) y = LCD_YSIZE-1;
 
     BUFFER(y * LCD_XSIZE + x) = G_Fb.color;
+    fb_mark_row_changed(x, y);
 
     FbMove(x, y);
     G_Fb.changed = 1;
@@ -599,6 +626,37 @@ void FbSwapBuffers()
     G_Fb.pos.y = 0;
 }
 
+extern int getRotate(void);
+
+/* Copies LCDbuffer to screen one row at at time and only if that row has changed.
+ * If your app only changes small parts of the screen at a time, this can be faster.
+ */
+FbPaintNewRows(void)
+{
+	unsigned int i, j;
+	int rotated = getRotate();
+
+	if (G_Fb.changed == 0)
+		return;
+
+	for (i =0; i < LCD_YSIZE; i++) {
+		/* Skip painting rows that have not changed */
+		if (!IS_ROW_CHANGED(i))
+			continue;
+		/* Copy changed rows to screen and to old[] buffer */
+		if (!rotated)
+			S6B33_rect(i, min_changed_x[i], 1, max_changed_x[i] - min_changed_x[i] + 1);
+		else
+			S6B33_rect(min_changed_x[i], i, max_changed_x[i] - min_changed_x[i] + 1, 1);
+		for (j = min_changed_x[i]; j <= max_changed_x[i]; j++)
+			S6B33_pixel(LCDbuffer[i * LCD_YSIZE + j]);
+		MARK_ROW_UNCHANGED(i);
+	}
+	G_Fb.changed = 0;
+	G_Fb.pos.x = 0;
+	G_Fb.pos.y = 0;
+}
+
 // Move buffer to screen without clearing the buffer
 // - Useful for making incremental changes to a consistent scene
 void FbPushBuffer()
@@ -695,5 +753,34 @@ void FbPolygonFromPoints(short points[][2],
 {
 
     FbDrawVectors(points, n_points, center_x, center_y, 1);
+}
+
+/* FbDrawObject() draws an object at x, y.  The coordinates of drawing[] should be centered at
+ * (0, 0).  The coordinates in drawing[] are multiplied by scale, then divided by 1024 (via a shift)
+ * so for 1:1 size, use scale of 1024.  Smaller values will scale the object down. This is different
+ * than FbPolygonFromPoints() or FbDrawVectors() in that drawing[] contains signed chars, and the
+ * polygons can be constructed via this program: https://github.com/smcameron/vectordraw
+ * as well as allowing scaling.
+ */
+void FbDrawObject(const struct point drawing[], int npoints, int color, int x, int y, int scale)
+{
+	int i;
+	int xcenter = x;
+	int ycenter = y;
+
+	FbColor(color);
+	for (i = 0; i < npoints - 1;) {
+		if (drawing[i].x == -128) {
+			i++;
+			continue;
+		}
+		if (drawing[i + 1].x == -128) {
+			i+=2;
+			continue;
+		}
+		FbLine(xcenter + ((drawing[i].x * scale) >> 10), ycenter + ((drawing[i].y * scale) >> 10),
+			xcenter + ((drawing[i + 1].x * scale) >> 10), ycenter + ((drawing[i + 1].y * scale) >> 10));
+		i++;
+	}
 }
 
