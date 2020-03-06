@@ -145,3 +145,6 @@ void FbDrawObject(const struct point drawing[], int npoints, int color, int x, i
  */
 extern volatile int timestamp;
 
+short sine(int a);
+short cosine(int a);
+
