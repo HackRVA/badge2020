@@ -57,7 +57,7 @@ extern int timestamp;
 #define WITHIN_GRID(x, y) ((x) >= 0 && (x) <= GRID_SIZE && (y) >= 0 && (y) <= GRID_SIZE - 1)
 #define IS_NEIGHBOR(sX, sY, tX, tY) (((sX - 1) == (tX) && (sY) == (tY)) || ((sX - 1) == (tX) && (sY + 1) == (tY)) || ((sX + 1) == (tX) && (sY) == (tY)) || ((sX + 1) == (tX) && (sY - 1) == (tY)) || ((sX) == (tX) && (sY - 1) == (tY)) || ((sX - 1) == (tX) && (sY - 1) == (tY)) || ((sX) == (tX) && (sY + 1) == (tY)) || ((sX + 1) == (tX) && (sY + 1) == (tY)))
 #define IS_SOURCE(x,y) ((x) == 0 && (y) == source)
-#define GAME_TIME_LIMIT 200
+#define GAME_TIME_LIMIT 75
 #define HANDX 0
 #define HANDY GRID_SIZE
 #define TIMERX GRID_SIZE
@@ -173,6 +173,7 @@ static struct cell grid[GRID_SIZE + 1][GRID_SIZE];
 
 /* hand is used to temporarily hold a pipe that you can swap */
 static int hand;
+static int hsim_seed;
 static int fill_line;
 static int source;
 static int target;
@@ -209,67 +210,55 @@ static void do_flow()
 *  or a neighbor of source or target
 * and we don't want to overwrite a blocker
 *
-* note: there is some recursion here, but it doesn't seem like enough to be concerned about.
 */
 static void place_blocker()
 {
-	int x = xorshift((unsigned int *)&timestamp) % GRID_SIZE;
-	int y = xorshift((unsigned int *)&timestamp) % GRID_SIZE;
+	int x,y;
 
 #ifdef __linux__
 	printf("\nplacing blocker");
 #endif
 
-	if (grid[x][y].pipe_index != INVALID_PIPE_INDEX)
+	do
 	{
-		place_blocker();
-		return;
-	}
+		hsim_seed++; /* update seed allows us to get a slightly different seed for a different random number */
+		x = xorshift((unsigned int *)&hsim_seed) % GRID_SIZE;
+		y = xorshift((unsigned int *)&hsim_seed) % GRID_SIZE;
 
-	if (x == 0 && y == source)
-	{
-		place_blocker();
-		return;
-	}
+		/* prevent blocker from being placed on an invalid pipe spot */
+		if (grid[x][y].pipe_index != INVALID_PIPE_INDEX)
+			continue;
 
-	if (x == GRID_SIZE && y == target)
-	{
-		place_blocker();
-		return;
-	}
+		/* prevent blocker from being placed on the source cell */
+		if (x == 0 && y == source)
+			continue;
 
-	if (IS_NEIGHBOR(0, source, x, y) || IS_NEIGHBOR(GRID_SIZE, target, x, y))
-	{
-		place_blocker();
-		return;
-	}
+		/* prevent blocker from being placed from being placed on the target cell */
+		if (x == GRID_SIZE && y == target)
+			continue;
 
-	if (grid[x][y].pipe_index == BLOCKING_INDEX)
-	{
-		place_blocker();
-		return;
-	}
+		/* prevent blocker from being placed near the source or target */
+		if (IS_NEIGHBOR(0, source, x, y) || IS_NEIGHBOR(GRID_SIZE, target, x, y))
+			continue;
 
-	/* place blocking sqaure in random spot on grid */
-	grid[x][y].pipe_index = BLOCKING_INDEX;
+		/* prevent blocker from being placed on top of another blocker */
+		if (grid[x][y].pipe_index == BLOCKING_INDEX)
+			continue;
+
+		grid[x][y].pipe_index = BLOCKING_INDEX; /* place blocking sqaure in random spot on grid */
+	} while (grid[x][y].pipe_index == BLOCKING_INDEX);
 }
 
 /* find_win determines a winning path and places those pieces on the board */
 static void find_win()
 {
 	int vertical_direction;
-	int currentX = 0;
+	int currentX;
 	int currentY = source;
 
 	/* move horizontally */
-	while (currentX != GRID_SIZE)
-	{
+	for (currentX = 0; currentX < GRID_SIZE; currentX++)
 		grid[currentX][currentY].pipe_index = HORIZONTAL;
-		if (currentX <= GRID_SIZE)
-		{
-			currentX++;
-		}
-	}
 
 	/* handle the case where the target is on the same row as the source */
 	if (currentY == target)
@@ -327,21 +316,32 @@ static void find_win()
 static void shuffle()
 {
 	int i, j, tmpX, tmpY, tmp_pindex;
+	int source_neighbor_is_set = FALSE;
 	for (i = 0; i <= GRID_SIZE; i++)
 	{
 		for (j = 0; j < GRID_SIZE; j++)
 		{
-			tmpX = xorshift((unsigned int *)&timestamp) % GRID_SIZE;
-			tmpY = xorshift((unsigned int *)&timestamp) % GRID_SIZE;
+			tmpX = xorshift((unsigned int *)&hsim_seed) % GRID_SIZE;
+			tmpY = xorshift((unsigned int *)&hsim_seed) % GRID_SIZE;
 
+			/* put a VERTICAL pipe next to the source so that we block the flow at start */
+			if (grid[i][j].pipe_index == VERTICAL && !source_neighbor_is_set)
+			{
+				source_neighbor_is_set = TRUE;
+				grid[i][j].pipe_index = grid[1][source].pipe_index;
+				grid[1][source].pipe_index = VERTICAL;
+			}
 			/* don't swap blockers */
 			if (grid[i][j].pipe_index == BLOCKING_INDEX || grid[tmpX][tmpY].pipe_index == BLOCKING_INDEX)
 			{
 				continue;
 			}
 
-			/* don't swap the source */
-			if ((i == 0 && j == source) || (tmpX == 0 && tmpY == source))
+			/* don't swap the source or the cell next to source
+			this ensures that we don't start the flow until 
+			the player decides to swap something */
+			if ((i == 0 && j == source) || (tmpX == 0 && tmpY == source) ||
+				(i == 1 && j == source) || (tmpX == 1 && tmpY == source))
 			{
 				continue;
 			}
@@ -363,7 +363,7 @@ static void place_random_pipe(struct cell *cell)
 	{
 		return;
 	}
-	cell->pipe_index = xorshift((unsigned int *)&timestamp) % ARRAYSIZE(pipes);
+	cell->pipe_index = xorshift((unsigned int *)&hsim_seed) % ARRAYSIZE(pipes);
 }
 
 /* handle difficulty setting
@@ -406,8 +406,8 @@ static void initialize_grid()
 	*
 	*  adding source to target so that we how often these are on the same row
 	*/
-	source = xorshift((unsigned int *)&timestamp) % GRID_SIZE;
-	target = (xorshift((unsigned int *)&timestamp) + source) % GRID_SIZE;
+	source = xorshift((unsigned int *)&hsim_seed) % GRID_SIZE;
+	target = (xorshift((unsigned int *)&hsim_seed) + source) % GRID_SIZE;
 
 	for (x = 0; x <= GRID_SIZE; x++)
 	{
@@ -427,9 +427,6 @@ static void initialize_grid()
 			grid[x][y].pipe_index = INVALID_PIPE_INDEX;
 		}
 	}
-
-	/* place soruce and target */
-	grid[0][source].pipe_index = 0;
 
 	/* TODO: it might make it more difficult if we place blockers and then find the win-path */
 	find_win();
@@ -483,6 +480,7 @@ static void hackingsimulator_splash_screen()
 
 	if (BUTTON_PRESSED_AND_CONSUME)
 	{
+		hsim_seed = timestamp;
 		initialize_grid();
 		hacking_simulator_state = HACKINGSIMULATOR_RUN;
 	}
@@ -892,7 +890,6 @@ static void draw_pipe(struct cell cell)
 		if (cell.in_path)
 		{
 			FbMove(STARTX(cell.x), STARTY(cell.y));
-			// FbWriteLine("in");
 		}
 #endif
 	}
@@ -1020,7 +1017,7 @@ static void draw_screen()
 
 	draw_grid();
 	draw_cursor();
-	FbPaintNewRows();
+	FbSwapBuffers();
 }
 
 static void hackingsimulator_run()
