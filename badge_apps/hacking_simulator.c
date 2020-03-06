@@ -215,6 +215,7 @@ static void place_blocker()
 {
 	int x,y;
 
+	int placed_blocker = FALSE;
 #ifdef __linux__
 	printf("\nplacing blocker");
 #endif
@@ -245,8 +246,9 @@ static void place_blocker()
 		if (grid[x][y].pipe_index == BLOCKING_INDEX)
 			continue;
 
+		placed_blocker = TRUE;
 		grid[x][y].pipe_index = BLOCKING_INDEX; /* place blocking sqaure in random spot on grid */
-	} while (grid[x][y].pipe_index == BLOCKING_INDEX);
+	} while (!placed_blocker);
 }
 
 /* find_win determines a winning path and places those pieces on the board */
