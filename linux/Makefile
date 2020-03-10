@@ -17,9 +17,10 @@ GHOSTDETECTOR=ghost-detector
 MAZE=maze
 USERNAME=username
 LUNARLANDER=lunarlander
+HACKING_SIMULATOR=hacking_simulator
 
 all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/badge_monsters bin/fixup_monster bin/username \
-	bin/sample_app bin/smashout bin/ghost-detector bin/lunarlander
+	bin/sample_app bin/smashout bin/ghost-detector bin/lunarlander bin/${HACKING_SIMULATOR}
 
 # we need to depend on ${BIN}/.t not on ${BIN} because BIN is a directory and the
 # timestamp changes whenever the directory contents change, and we need to depend
@@ -73,6 +74,9 @@ bin/${GHOSTDETECTOR}:	${BIN} ${APPDIR}/${GHOSTDETECTOR}.c linuxcompat.o
 
 bin/${LUNARLANDER}:	${BIN} ${APPDIR}/${LUNARLANDER}.c linuxcompat.o ${LINUX_OBJS}
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${LUNARLANDER} -I . -I ${BADGE_INC} ${APPDIR}/${LUNARLANDER}.c ${GTKLDFLAGS}
+
+bin/hacking_simulator:	${BIN} ${APPDIR}/${HACKING_SIMULATOR}.c linuxcompat.o bline.o ${LINUX_OBJS} 
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${HACKING_SIMULATOR} -I . -I ${BADGE_INC} ${APPDIR}/${HACKING_SIMULATOR}.c ${GTKLDFLAGS}
 
 bin/${MAZE}:	${BIN} ${APPDIR}/${MAZE}.c linuxcompat.o bline.o xorshift.o achievements.o\
 			${MAZEPICS}/bones_points.h \
