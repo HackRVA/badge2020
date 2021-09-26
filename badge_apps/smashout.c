@@ -54,7 +54,7 @@ static struct smashout_ball {
 } ball, oldball;
 
 static struct smashout_brick {
-	int x, y, alive; /* upper left corner of brick */
+	unsigned char x, y, alive; /* upper left corner of brick */
 } brick[4 * 16];
 
 static int score = 0;
