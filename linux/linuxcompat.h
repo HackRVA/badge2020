@@ -38,8 +38,9 @@ int abs(int x);
 /* Yield back to the main loop */
 void returnToMenus(void);
 
-/* Set the current color */
+/* Set the current foreground or background color */
 void FbColor(int color);
+void FbBackgroundColor(int color);
 
 #define BLUE    0
 #define GREEN   1

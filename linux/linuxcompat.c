@@ -179,6 +179,7 @@ static int (*badge_function)(void);
 static int time_to_quit = 0;
 
 static unsigned char current_color = BLUE;
+static unsigned char current_background_color = BLACK;
 static int serial_port_fd = -1;
 
 #define BUTTON 0
@@ -192,6 +193,11 @@ static int button_pressed[5] = { 0 };
 void FbColor(int color)
 {
     current_color = (unsigned char) (color % 8);
+}
+
+void FbBackgroundColor(int color)
+{
+	current_background_color = color;
 }
 
 void FbInit(void)
@@ -258,7 +264,7 @@ void FbVerticalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsign
 
 void FbClear(void)
 {
-    memset(screen_color, BLACK, SCREEN_XDIM * SCREEN_YDIM);
+    memset(screen_color, current_background_color, SCREEN_XDIM * SCREEN_YDIM);
 }
 
 unsigned char char_to_index(unsigned char charin){
