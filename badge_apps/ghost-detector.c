@@ -71,7 +71,7 @@ static void draw_radar_beam(int color)
 	FbLine(cx, cy, ex, ey);
 }
 
-static void draw_reticle_line(int distance, int width, int color)
+static void draw_reticle_line(int distance, int width)
 {
 	const int cx = 64;
 	const int cy = 64;
@@ -86,9 +86,9 @@ static void draw_reticle(int color)
 	FbColor(color);
 	FbVerticalLine(64, 1, 64, 127);
 	FbHorizontalLine(1, 64, 127, 64);
-	draw_reticle_line(63, 16, color);
-	draw_reticle_line(43, 8, color);
-	draw_reticle_line(23, 8, color);
+	draw_reticle_line(63, 16);
+	draw_reticle_line(43, 8);
+	draw_reticle_line(23, 8);
 }
 
 static void draw_screen()

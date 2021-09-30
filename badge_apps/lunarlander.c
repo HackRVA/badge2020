@@ -314,7 +314,7 @@ static void draw_sparks(struct lander_data *lander, int color)
 
 static enum lunarlander_state_t lunarlander_state = LUNARLANDER_INIT;
 
-static void init_terrain(int t[], int start, int stop)
+static void init_terrain(int start, int stop)
 {
 	int mid, midy, n;
 
@@ -336,8 +336,8 @@ static void init_terrain(int t[], int start, int stop)
 	midy += n;
 
 	terrain_y[mid] = midy;
-	init_terrain(terrain_y, start, mid);
-	init_terrain(terrain_y, mid, stop);
+	init_terrain(start, mid);
+	init_terrain(mid, stop);
 	lander_time = 0;
 }
 
@@ -384,7 +384,7 @@ static void lunarlander_init(void)
 	FbClear();
 	terrain_y[0] = -100;
 	terrain_y[1023] = -100;
-	init_terrain(terrain_y, 0, 1023);
+	init_terrain(0, 1023);
 	add_landing_zones(terrain_y, 0, 1023, NUM_LANDING_ZONES);
 	place_astronauts();
 	place_lunar_base();

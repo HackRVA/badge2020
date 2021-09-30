@@ -400,7 +400,7 @@ static void draw_menu(void)
 	FbWriteLine(badgeidstr + 4); /* only print last 4 digits, it's a 16 bit number. */
 
 	/* Draw any powerups we might have accumulated... */
-	for (i = 0; i < ARRAYSIZE(powerup); i++)
+	for (i = 0; (size_t) i < ARRAYSIZE(powerup); i++)
 		if (powerup[i].obtained) {
 			char buf[2];
 			buf[0] = powerup[i].name[0];
@@ -415,11 +415,12 @@ static void draw_menu(void)
 static void menu_change_current_selection(int direction)
 {
 	int old = menu.current_item;
-	menu.current_item += direction;
-	if (menu.current_item < 0)
-		menu.current_item = menu.nitems - 1;
-	else if (menu.current_item >= menu.nitems)
-		menu.current_item = 0;
+	int new = old + direction;
+	if (new < 0)
+		new = menu.nitems - 1;
+	else if (new >= menu.nitems)
+		new = 0;
+	menu.current_item = new;
 	screen_changed |= (menu.current_item != old);
 }
 
@@ -435,7 +436,7 @@ static void ir_packet_callback(struct IRpacket_t packet)
 	queue_in = next_queue_in;
 }
 
-static int is_vendor_badge(unsigned short badgeId)
+static int is_vendor_badge(void)
 {
 	return (G_sysData.badgeId & 0x1ff) < NUM_VENDOR_BADGES && (G_sysData.badgeId & 0x1ff) >= 0;
 }
@@ -446,7 +447,7 @@ static void setup_main_menu(void)
 	menu.menu_active = 1;
 	strcpy(menu.title, "");
 	menu_add_item("SHOOT", GAME_SHOOT, 0);
-	if (is_vendor_badge(G_sysData.badgeId)) {
+	if (is_vendor_badge()) {
 		menu_add_item("GIVE 1 POWERUP", GAME_GRANT_POWERUP, 0);
 		if (continuous_powerup_granting_enabled)
 			menu_add_item("STOP POWERUPS", GAME_STOP_POWERUPS, 0);
@@ -821,7 +822,7 @@ static void game_grant_powerup(void)
 {
         int powerup = G_sysData.badgeId;
 
-	if (!is_vendor_badge(G_sysData.badgeId))
+	if (!is_vendor_badge())
 		return;
 
         send_ir_packet(build_ir_packet(1, 1, BADGE_IR_GAME_ADDRESS, BADGE_IR_BROADCAST_ID,
@@ -859,7 +860,7 @@ static int all_game_data_received(void)
 		game_duration != -1 &&
 		team != -1 &&
 		game_variant != GAME_VARIANT_NONE &&
-		game_id != -1);
+		game_id != (unsigned int) -1);
 }
 
 static void process_packet(unsigned int packet)
@@ -958,6 +959,10 @@ static void lasertag_flareled(unsigned char r, unsigned char g, unsigned char b)
 		blue(100 * b / 256);
 		throttler = 0;
 	}
+#else
+	(void) r; /* prevent -Wextra warnings complaining about unused params. */
+	(void) g;
+	(void) b;
 #endif
 }
 
@@ -991,7 +996,7 @@ static void advance_time()
 		case 1: /* team battle */
 		case 2: /* zombies */
 		case 3: /* capture badge */
-			if (team >= 0 && team < ARRAYSIZE(team_color)) /* Set LED flare to team colors */
+			if (team >= 0 && (size_t) team < ARRAYSIZE(team_color)) /* Set LED flare to team colors */
 				lasertag_flareled(team_color[team].r, team_color[team].g, team_color[team].b);
 			else
 				lasertag_flareled(0, 0, 0);

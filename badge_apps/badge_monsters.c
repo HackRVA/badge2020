@@ -213,7 +213,7 @@ static struct menu
 
 static void enable_monster(int monster_id)
 {
-    if(monster_id < 0 || monster_id > ARRAYSIZE(monsters) - 1)
+    if(monster_id < 0 || (size_t) monster_id > ARRAYSIZE(monsters) - 1)
         return;
 
     monsters[monster_id].status = 1;
@@ -371,11 +371,12 @@ static void draw_menu(void)
 static void menu_change_current_selection(int direction)
 {
     int old = menu.current_item;
-    menu.current_item += direction;
-    if (menu.current_item < 0)
-        menu.current_item = menu.nitems - 1;
-    else if (menu.current_item >= menu.nitems)
-        menu.current_item = 0;
+    int new = old + direction;
+    if (new < 0)
+        new = menu.nitems - 1;
+    else if (new >= menu.nitems)
+        new = 0;
+    menu.current_item = new;
     screen_changed |= (menu.current_item != old);
 }
 

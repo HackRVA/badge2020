@@ -326,7 +326,7 @@ static void draw_menu(void)
 	char item[20];
 
 	FbClear();
-	for (i = 0; i < MAX_MENU_CHOICES; i++) {
+	for (i = 0; (size_t) i < MAX_MENU_CHOICES; i++) {
 		if (i == menu_choice) {
 			FbMove(5, i * 10);
 			FbWriteLine("=>");
@@ -355,7 +355,7 @@ static void check_the_buttons(void)
 		something_changed = 1;
 	} else if (DOWN_BTN_AND_CONSUME) {
 		menu_choice++;
-		if (menu_choice >= MAX_MENU_CHOICES)
+		if ((size_t) menu_choice >= MAX_MENU_CHOICES)
 			menu_choice = 0;
 		something_changed = 1;
 	} else if (LEFT_BTN_AND_CONSUME) {

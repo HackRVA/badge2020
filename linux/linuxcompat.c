@@ -20,6 +20,7 @@
 
 #include <gtk/gtk.h>
 #include <gdk/gdkkeysyms.h>
+#define UNUSED __attribute__((unused))
 
 #include "bline.h"
 #include "linuxcompat.h"
@@ -246,7 +247,7 @@ void FbPoint(int x, int y)
 	plot_point(x, y, screen_color);
 }
 
-void FbHorizontalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2)
+void FbHorizontalLine(unsigned char x1, unsigned char y1, unsigned char x2, UNUSED unsigned char y2)
 {
     unsigned char x;
 
@@ -254,7 +255,7 @@ void FbHorizontalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsi
         plot_point(x, y1, screen_color);
 }
 
-void FbVerticalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2)
+void FbVerticalLine(unsigned char x1, unsigned char y1, UNUSED unsigned char x2, unsigned char y2)
 {
     unsigned char y;
 
@@ -368,7 +369,7 @@ void FbWriteLine(char *s)
 	}
 }
 
-void itoa(char *string, int value, __attribute__((unused)) int base)
+void itoa(char *string, int value, UNUSED int base)
 {
 	sprintf(string, "%d", value);
 }
@@ -383,7 +384,7 @@ void returnToMenus(void)
 	exit(0);
 }
 
-static void ir_packet_ignore(struct IRpacket_t packet)
+static void ir_packet_ignore(UNUSED struct IRpacket_t packet)
 {
 }
 
@@ -730,8 +731,8 @@ static void setup_window_geometry(GtkWidget *window)
 	gtk_window_set_geometry_hints(GTK_WINDOW(window), NULL, &geom, GDK_HINT_ASPECT);
 }
 
-static gboolean delete_event(GtkWidget *widget,
-        GdkEvent *event, gpointer data)
+static gboolean delete_event(UNUSED GtkWidget *widget,
+        UNUSED GdkEvent *event, UNUSED gpointer data)
 {
 	/* If you return FALSE in the "delete_event" signal handler,
 	 * GTK will emit the "destroy" signal. Returning TRUE means
@@ -744,12 +745,12 @@ static gboolean delete_event(GtkWidget *widget,
 	return FALSE;
 }
 
-static void destroy(GtkWidget *widget, gpointer data)
+static void destroy(UNUSED GtkWidget *widget, UNUSED gpointer data)
 {
 	gtk_main_quit();
 }
 
-static gint key_press_cb(GtkWidget* widget, GdkEventKey* event, gpointer data)
+static gint key_press_cb(UNUSED GtkWidget* widget, GdkEventKey* event, UNUSED gpointer data)
 {
 	switch (event->keyval) {
 
@@ -781,7 +782,7 @@ static gint key_press_cb(GtkWidget* widget, GdkEventKey* event, gpointer data)
 	return TRUE;
 }
 
-static int drawing_area_expose(GtkWidget *widget, GdkEvent *event, gpointer p)
+static int drawing_area_expose(GtkWidget *widget, UNUSED GdkEvent *event, UNUSED gpointer p)
 {
 	/* Draw the screen */
 	static int timer = 0;
@@ -813,7 +814,7 @@ static int drawing_area_expose(GtkWidget *widget, GdkEvent *event, gpointer p)
 	return 0;
 }
 
-static gint drawing_area_configure(GtkWidget *w, GdkEventConfigure *event)
+static gint drawing_area_configure(GtkWidget *w, UNUSED GdkEventConfigure *event)
 {
         GdkRectangle cliprect;
 
@@ -975,7 +976,7 @@ void setNote(__attribute__((unused)) int note, __attribute__((unused)) int durat
 
 char username[10] = "TESTUSER\0\0";
 
-int flashWriteKeyValue(unsigned int valuekey, char *value, unsigned int valuelen)
+int flashWriteKeyValue(UNUSED unsigned int valuekey, UNUSED char *value, UNUSED unsigned int valuelen)
 {
 	return 0;
 }

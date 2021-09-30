@@ -40,6 +40,8 @@ extern char *strcat(char *dest, const char *src);
 
 #endif
 
+#define UNUSED __attribute__((unused))
+
 #include "build_bug_on.h"
 #include "xorshift.h"
 #include "achievements.h"
@@ -428,7 +430,7 @@ static const char yoff[] = { -1, -1, 0, 1, 1, 1, 0, -1 };
 static void maze_stack_push(unsigned char x, unsigned char y, unsigned char direction)
 {
     maze_stack_ptr++;
-    if (maze_stack_ptr > 0 && maze_stack_ptr >= (ARRAYSIZE(maze_stack))) {
+    if (maze_stack_ptr > 0 && (size_t) maze_stack_ptr >= (ARRAYSIZE(maze_stack))) {
         /* Oops, we blew our stack.  Start over */
 #ifdef __linux__
         printf("Oops, stack blew... size = %d\n", maze_stack_ptr);
@@ -582,7 +584,7 @@ static int diggable(unsigned char digx, unsigned char digy, unsigned char direct
  */
 static int random_choice(int chance)
 {
-    return (xorshift(&xorshift_state) % 10000) < 100 * chance;
+    return (xorshift(&xorshift_state) % 10000) < (unsigned int) (100 * chance);
 }
 
 static int object_is_portable(int i)
@@ -922,7 +924,7 @@ static void draw_right_wall(int start, int scale)
     FbLine(SCREEN_XDIM - 1 - start, SCREEN_YDIM - 1 - start, SCREEN_XDIM - 1 - (start + scale), SCREEN_YDIM - 1 - (start + scale));
 }
 
-static void draw_forward_wall(int start, int scale)
+static void draw_forward_wall(int start, UNUSED int scale)
 {
     FbVerticalLine(start, start, start, SCREEN_YDIM - 1 - start);
     FbVerticalLine(SCREEN_XDIM - 1 - start, start, SCREEN_XDIM - 1 - start, SCREEN_YDIM - 1 - start);
@@ -1231,11 +1233,12 @@ static void move_player_one_step(int direction)
 
 static void maze_menu_change_current_selection(int direction)
 {
-    maze_menu.current_item += direction;
-    if (maze_menu.current_item < 0)
-        maze_menu.current_item = maze_menu.nitems - 1;
-    else if (maze_menu.current_item >= maze_menu.nitems)
-        maze_menu.current_item = 0;
+    int new = maze_menu.current_item + direction;
+    if (new < 0)
+        new = maze_menu.nitems - 1;
+    else if (new >= maze_menu.nitems)
+        new = 0;
+    maze_menu.current_item = new;
 }
 
 static void process_commands(void)
@@ -1725,7 +1728,7 @@ static void potions_init(void)
 {
    int i;
 
-   for (i = 0; i < ARRAYSIZE(potion_type); i++)
+   for (i = 0; (size_t) i < ARRAYSIZE(potion_type); i++)
        potion_type[i].health_impact = (xorshift(&xorshift_state) % 50) - 15;
 }
 
@@ -1968,7 +1971,7 @@ static void maze_throw_grenade(void)
     int i;
 
     i = maze_menu.chosen_cookie;
-    if (i < 0 || i >= ARRAYSIZE(maze_object)) {
+    if (i < 0 || (size_t) i >= ARRAYSIZE(maze_object)) {
 	maze_program_state = MAZE_RENDER;
 	return;
     }
@@ -1985,7 +1988,7 @@ static void maze_read_scroll(void)
     int i;
 
     i = maze_menu.chosen_cookie;
-    if (i < 0 || i >= ARRAYSIZE(maze_object)) {
+    if (i < 0 || (size_t) i >= ARRAYSIZE(maze_object)) {
 	maze_program_state = MAZE_RENDER;
 	return;
     }
