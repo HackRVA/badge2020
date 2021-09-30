@@ -359,6 +359,20 @@ void FbMoveRelative(char x, char y)
 	write_y += y;
 }
 
+void FbMoveX(unsigned char x)
+{
+	if (x >= SCREEN_XDIM)
+		x = SCREEN_XDIM - 1;
+	write_x = x;
+}
+
+void FbMoveY(unsigned char y)
+{
+	if (y >= SCREEN_YDIM)
+		y = SCREEN_YDIM - 1;
+	write_y = y;
+}
+
 void FbWriteLine(char *s)
 {
 	int i;
