@@ -55,14 +55,14 @@ void FbMoveX(unsigned char x)
 {
     G_Fb.pos.x = x;
 
-    if (G_Fb.pos.x > LCD_XSIZE) G_Fb.pos.x = LCD_XSIZE-1;
+    if (G_Fb.pos.x >= LCD_XSIZE) G_Fb.pos.x = LCD_XSIZE-1;
 }
 
 void FbMoveY(unsigned char y)
 {
     G_Fb.pos.y = y;
 
-    if (G_Fb.pos.y > LCD_YSIZE) G_Fb.pos.y = LCD_YSIZE-1;
+    if (G_Fb.pos.y >= LCD_YSIZE) G_Fb.pos.y = LCD_YSIZE-1;
 }
 
 void FbMoveRelative(char x, char y)
