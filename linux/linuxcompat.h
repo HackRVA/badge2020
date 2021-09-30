@@ -25,6 +25,7 @@ void FbClear(void);
 
 /* Move the graphics "cursor" to x, y (e.g. for subsequent FbWriteLine()) */
 void FbMove(unsigned char x, unsigned char y);
+void FbMoveRelative(char x, char y);
 
 /* Write a string to the frame buffer */
 void FbWriteLine(char *s);

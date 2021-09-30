@@ -353,6 +353,12 @@ void FbMove(unsigned char x, unsigned char y)
 	write_y = y;
 }
 
+void FbMoveRelative(char x, char y)
+{
+	write_x += x;
+	write_y += y;
+}
+
 void FbWriteLine(char *s)
 {
 	int i;
