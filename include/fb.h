@@ -46,7 +46,6 @@ struct framebuffer_t {
 extern struct framebuffer_t G_Fb;
 
 void FbInit() ;
-int FbFrameDone();
 void FbMove(unsigned char x, unsigned char y);
 void FbMoveRelative(char x, char y);
 void FbMoveX(unsigned char x);
