@@ -78,7 +78,10 @@ bin/${LUNARLANDER}:	${BIN} ${APPDIR}/${LUNARLANDER}.c linuxcompat.o ${LINUX_OBJS
 bin/hacking_simulator:	${BIN} ${APPDIR}/${HACKING_SIMULATOR}.c linuxcompat.o bline.o ${LINUX_OBJS} 
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${HACKING_SIMULATOR} -I . -I ${BADGE_INC} ${APPDIR}/${HACKING_SIMULATOR}.c ${GTKLDFLAGS}
 
-bin/${MAZE}:	${BIN} ${APPDIR}/${MAZE}.c linuxcompat.o bline.o xorshift.o achievements.o\
+dynmenu.o:
+	$(CC) -c ${CFLAGS} -I../include ../src/dynmenu.c
+
+bin/${MAZE}:	${BIN} ${APPDIR}/${MAZE}.c linuxcompat.o bline.o xorshift.o achievements.o dynmenu.o \
 			${MAZEPICS}/bones_points.h \
 			${BADGE_INC}/build_bug_on.h \
 			${MAZEPICS}/chalice_points.h \
@@ -95,7 +98,7 @@ bin/${MAZE}:	${BIN} ${APPDIR}/${MAZE}.c linuxcompat.o bline.o xorshift.o achieve
 			${MAZEPICS}/shield_points.h \
 			${MAZEPICS}/sword_points.h \
 			${MAZEPICS}/up_ladder_points.h
-	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${MAZE} -I . -I ${BADGE_INC} ${APPDIR}/${MAZE}.c ${GTKLDFLAGS}
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${MAZE} -I . -I ${BADGE_INC} ${APPDIR}/${MAZE}.c ${GTKLDFLAGS} dynmenu.o 
 
 bin/${USERNAME}:	${BIN} ${APPDIR}/${USERNAME}.c
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${USERNAME} -I . -I ${BADGE_INC} ${APPDIR}/${USERNAME}.c ${GTKLDFLAGS}

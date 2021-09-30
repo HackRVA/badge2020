@@ -45,10 +45,11 @@ extern char *strcat(char *dest, const char *src);
 #include "build_bug_on.h"
 #include "xorshift.h"
 #include "achievements.h"
+#include "dynmenu.h"
 
 /* Program states.  Initial state is MAZE_GAME_INIT */
 enum maze_program_state_t {
-    MAZE_GAME_INIT,
+    MAZE_GAME_INIT = 0,
     MAZE_GAME_START_MENU,
     MAZE_LEVEL_INIT,
     MAZE_BUILD,
@@ -369,50 +370,10 @@ static struct maze_object_template maze_object_template[] = {
     { "CHALICE", YELLOW, MAZE_OBJECT_CHALICE, chalice_points, ARRAYSIZE(chalice_points), 0, 0, 0 },
 };
 
-struct maze_menu_item {
-    char text[15];
-    enum maze_program_state_t next_state;
-    unsigned char cookie;
-};
-
-static struct maze_menu {
-    char title[15];
-    char title2[15];
-    char title3[15];
-    struct maze_menu_item item[20];
-    unsigned char nitems;
-    unsigned char current_item;
-    unsigned char menu_active;
-    unsigned char chosen_cookie;
-} maze_menu;
+struct dynmenu maze_menu;
 
 static struct maze_object maze_object[MAX_MAZE_OBJECTS];
 static int nmaze_objects = 0;
-
-static void maze_menu_clear(void)
-{
-    maze_menu.title[0] = '\0';
-    maze_menu.title2[0] = '\0';
-    maze_menu.title3[0] = '\0';
-    maze_menu.nitems = 0;
-    maze_menu.current_item = 0;
-    maze_menu.menu_active = 0;
-    maze_menu.chosen_cookie = 0;
-}
-
-static void maze_menu_add_item(char *text, enum maze_program_state_t next_state, unsigned char cookie)
-{
-    int i;
-
-    if (maze_menu.nitems >= ARRAYSIZE(maze_menu.item))
-        return;
-
-    i = maze_menu.nitems;
-    strncpy(maze_menu.item[i].text, text, sizeof(maze_menu.item[i].text) - 1);
-    maze_menu.item[i].next_state = next_state;
-    maze_menu.item[i].cookie = cookie;
-    maze_menu.nitems++;
-}
 
 static int min_maze_size(void)
 {
@@ -1073,6 +1034,12 @@ static int check_for_encounter(unsigned char newx, unsigned char newy)
     return monster;
 }
 
+static void maze_menu_clear(void)
+{
+	dynmenu_clear(&maze_menu);
+	dynmenu_set_colors(&maze_menu, GREEN, WHITE);
+}
+
 static void maze_button_pressed(void)
 {
     int i;
@@ -1106,10 +1073,10 @@ static void maze_button_pressed(void)
         if (player.x == maze_object[i].x && player.y == maze_object[i].y) {
             switch(maze_object_template[maze_object[i].type].category) {
             case MAZE_OBJECT_DOWN_LADDER:
-                 maze_menu_add_item("CLIMB DOWN", MAZE_STATE_GO_DOWN, 1);
+                 dynmenu_add_item(&maze_menu, "CLIMB DOWN", MAZE_STATE_GO_DOWN, 1);
                  break;
             case MAZE_OBJECT_UP_LADDER:
-                 maze_menu_add_item("CLIMB UP", MAZE_STATE_GO_UP, 1);
+                 dynmenu_add_item(&maze_menu, "CLIMB UP", MAZE_STATE_GO_UP, 1);
                  break;
             case MAZE_OBJECT_MONSTER:
                  monster_present = 1;
@@ -1144,23 +1111,23 @@ static void maze_button_pressed(void)
             maze_object_template[maze_object[i].type].category == MAZE_OBJECT_MONSTER)
             monster_present = 1;
     }
-    maze_menu_add_item("NEVER MIND", MAZE_RENDER, 1);
+    dynmenu_add_item(&maze_menu, "NEVER MIND", MAZE_RENDER, 1);
     if (monster_present) {
-        maze_menu_add_item("FIGHT MONSTER!", MAZE_STATE_FIGHT, 1);
-        maze_menu_add_item("FLEE!", MAZE_STATE_FLEE, 1);
+        dynmenu_add_item(&maze_menu, "FIGHT MONSTER!", MAZE_STATE_FIGHT, 1);
+        dynmenu_add_item(&maze_menu, "FLEE!", MAZE_STATE_FLEE, 1);
     }
     if (takeable_object_count > 0)
-        maze_menu_add_item("TAKE ITEM", MAZE_CHOOSE_TAKE_OBJECT, takeable_object_count);
+        dynmenu_add_item(&maze_menu, "TAKE ITEM", MAZE_CHOOSE_TAKE_OBJECT, takeable_object_count);
     if (droppable_object_count > 0)
-        maze_menu_add_item("DROP OBJECT",  MAZE_CHOOSE_DROP_OBJECT, 1);
+        dynmenu_add_item(&maze_menu, "DROP OBJECT",  MAZE_CHOOSE_DROP_OBJECT, 1);
     if (grenade_count > 0)
-        maze_menu_add_item("THROW GRENADE",  MAZE_THROW_GRENADE, grenade_number);
-    maze_menu_add_item("VIEW MAP", MAZE_DRAW_MAP, 1);
-    maze_menu_add_item("WIELD WEAPON", MAZE_CHOOSE_WEAPON, 1);
-    maze_menu_add_item("DON ARMOR", MAZE_CHOOSE_ARMOR, 1);
-    maze_menu_add_item("READ SCROLL", MAZE_READ_SCROLL, scroll_number);
-    maze_menu_add_item("QUAFF POTION", MAZE_CHOOSE_POTION, 1);
-    maze_menu_add_item("EXIT GAME", MAZE_EXIT, 255);
+        dynmenu_add_item(&maze_menu, "THROW GRENADE",  MAZE_THROW_GRENADE, grenade_number);
+    dynmenu_add_item(&maze_menu, "VIEW MAP", MAZE_DRAW_MAP, 1);
+    dynmenu_add_item(&maze_menu, "WIELD WEAPON", MAZE_CHOOSE_WEAPON, 1);
+    dynmenu_add_item(&maze_menu, "DON ARMOR", MAZE_CHOOSE_ARMOR, 1);
+    dynmenu_add_item(&maze_menu, "READ SCROLL", MAZE_READ_SCROLL, scroll_number);
+    dynmenu_add_item(&maze_menu, "QUAFF POTION", MAZE_CHOOSE_POTION, 1);
+    dynmenu_add_item(&maze_menu, "EXIT GAME", MAZE_EXIT, 255);
     maze_menu.menu_active = 1;
     maze_program_state = MAZE_DRAW_MENU;
 }
@@ -1227,16 +1194,6 @@ static void move_player_one_step(int direction)
    }
 }
 
-static void maze_menu_change_current_selection(int direction)
-{
-    int new = maze_menu.current_item + direction;
-    if (new < 0)
-        new = maze_menu.nitems - 1;
-    else if (new >= maze_menu.nitems)
-        new = 0;
-    maze_menu.current_item = new;
-}
-
 static void process_commands(void)
 {
     int base_direction;
@@ -1247,12 +1204,12 @@ static void process_commands(void)
         maze_button_pressed();
     } else if (UP_BTN_AND_CONSUME) {
         if (maze_menu.menu_active)
-            maze_menu_change_current_selection(-1);
+            dynmenu_change_current_selection(&maze_menu, -1);
         else
             move_player_one_step(base_direction);
     } else if (DOWN_BTN_AND_CONSUME) {
         if (maze_menu.menu_active)
-            maze_menu_change_current_selection(1);
+            dynmenu_change_current_selection(&maze_menu, 1);
         else
             move_player_one_step(normalize_direction(base_direction + 4));
     } else if (LEFT_BTN_AND_CONSUME) {
@@ -1556,10 +1513,10 @@ static void maze_choose_potion(void)
             (maze_object[i].x == player.x && maze_object[i].y == player.y)) {
             strcpy(name, potion_type[maze_object[i].tsd.potion.type].adjective);
             strcat(name, " POTION");
-            maze_menu_add_item(name, MAZE_QUAFF_POTION, i);
+            dynmenu_add_item(&maze_menu, name, MAZE_QUAFF_POTION, i);
         }
     }
-    maze_menu_add_item("NEVER MIND", MAZE_RENDER, 255);
+    dynmenu_add_item(&maze_menu, "NEVER MIND", MAZE_RENDER, 255);
     maze_program_state = MAZE_DRAW_MENU;
 }
 
@@ -1617,10 +1574,10 @@ static void maze_choose_weapon(void)
             strcat(name, weapon_type[maze_object[i].tsd.weapon.type].adjective);
             strcat(name, " ");
             strcat(name, weapon_type[maze_object[i].tsd.weapon.type].name);
-            maze_menu_add_item(name, MAZE_WIELD_WEAPON, i);
+            dynmenu_add_item(&maze_menu, name, MAZE_WIELD_WEAPON, i);
         }
     }
-    maze_menu_add_item("NEVER MIND", MAZE_RENDER, 255);
+    dynmenu_add_item(&maze_menu, "NEVER MIND", MAZE_RENDER, 255);
     maze_program_state = MAZE_DRAW_MENU;
 }
 
@@ -1662,10 +1619,10 @@ static void maze_choose_armor(void)
             strcat(name, armor_type[maze_object[i].tsd.armor.type].adjective);
             strcat(name, " ");
             strcat(name, armor_type[maze_object[i].tsd.armor.type].name);
-            maze_menu_add_item(name, MAZE_DON_ARMOR, i);
+            dynmenu_add_item(&maze_menu, name, MAZE_DON_ARMOR, i);
         }
     }
-    maze_menu_add_item("NEVER MIND", MAZE_RENDER, 255);
+    dynmenu_add_item(&maze_menu, "NEVER MIND", MAZE_RENDER, 255);
     maze_program_state = MAZE_DRAW_MENU;
 }
 
@@ -1751,44 +1708,7 @@ static void maze_game_init(void)
 
 static void maze_draw_menu(void)
 {
-    int i, y, first_item, last_item;
-
-    first_item = maze_menu.current_item - 3;
-    if (first_item < 0)
-        first_item = 0;
-    last_item = maze_menu.current_item + 3;
-    if (last_item > maze_menu.nitems - 1)
-        last_item = maze_menu.nitems - 1;
-
-    FbClear();
-    FbColor(WHITE);
-    FbMove(8, 5);
-    FbWriteLine(maze_menu.title);
-    if (maze_menu.title2[0] != '\0') {
-        FbMove(8, 12);
-        FbWriteLine(maze_menu.title2);
-    }
-    if (maze_menu.title3[0] != '\0') {
-        FbMove(8, 19);
-        FbWriteLine(maze_menu.title3);
-    }
-
-    y = LCD_YSIZE / 2 - 10 * (maze_menu.current_item - first_item);
-    for (i = first_item; i <= last_item; i++) {
-        if (i == maze_menu.current_item)
-            FbColor(GREEN);
-        else
-            FbColor(WHITE);
-        FbMove(10, y);
-        FbWriteLine(maze_menu.item[i].text);
-        y += 10;
-    }
-
-    FbColor(GREEN);
-    FbHorizontalLine(5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 - 2);
-    FbHorizontalLine(5, LCD_YSIZE / 2 + 10, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
-    FbVerticalLine(5, LCD_YSIZE / 2 - 2, 5, LCD_YSIZE / 2 + 10);
-    FbVerticalLine(LCD_XSIZE - 5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
+    dynmenu_draw(&maze_menu);
     maze_program_state = MAZE_SCREEN_RENDER;
 }
 
@@ -1801,8 +1721,8 @@ static void maze_game_start_menu(void)
     strcpy(maze_menu.title, "SEEK YE THE");
     strcpy(maze_menu.title2, "CHALICE OF");
     strcpy(maze_menu.title3, "OBFUSCATION!");
-    maze_menu_add_item("NEW GAME", MAZE_LEVEL_INIT, 0);
-    maze_menu_add_item("EXIT GAME", MAZE_EXIT, 0);
+    dynmenu_add_item(&maze_menu, "NEW GAME", MAZE_LEVEL_INIT, 0);
+    dynmenu_add_item(&maze_menu, "EXIT GAME", MAZE_EXIT, 0);
 
     maze_program_state = MAZE_DRAW_MENU;
 }
@@ -1874,13 +1794,13 @@ static void maze_choose_take_or_drop_object(char *title, enum maze_program_state
             default:
                 continue;
             }
-            maze_menu_add_item(name, next_state, i);
+            dynmenu_add_item(&maze_menu, name, next_state, i);
             limit--;
             if (limit == 0) /* Don't make the menu too big. */
                 break;
         }
     }
-    maze_menu_add_item("NEVER MIND", MAZE_RENDER, 255);
+    dynmenu_add_item(&maze_menu, "NEVER MIND", MAZE_RENDER, 255);
     maze_program_state = MAZE_DRAW_MENU;
 }
 

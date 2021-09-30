@@ -99,10 +99,11 @@ void dynmenu_draw(struct dynmenu *dm)
 
 void dynmenu_change_current_selection(struct dynmenu *dm, int direction)
 {
-    dm->current_item += direction;
-    if (dm->current_item < 0)
-        dm->current_item = dm->nitems - 1;
-    else if (dm->current_item >= dm->nitems)
-        dm->current_item = 0;
+	int new = dm->current_item + direction;
+	if (new < 0)
+		new = dm->nitems - 1;
+	else if (new >= dm->nitems)
+		new = 0;
+	dm->current_item = new;
 }
 
