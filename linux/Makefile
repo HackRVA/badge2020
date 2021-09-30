@@ -1,5 +1,5 @@
 
-CFLAGS=-g -pthread -fsanitize=address -Wall --pedantic -g
+CFLAGS=-g -pthread -fsanitize=address -Wall -Wextra --pedantic -g
 GTKCFLAGS:=$(subst -I,-isystem ,$(shell pkg-config --cflags gtk+-2.0))
 GTKLDFLAGS:=$(shell pkg-config --libs gtk+-2.0) $(shell pkg-config --libs gthread-2.0)
 
