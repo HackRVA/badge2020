@@ -493,14 +493,13 @@ static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 					lander->alive = -100;
 				} else {
 					if (lander->vy > 0)
-						/* Allow lander to land */
-						lander->vy = 0;
-						for (j = 0; j < NUM_LANDING_ZONES; j++) {
-							if (abs((lander->x >> 8) - fueltank[j].x * TERRAIN_SEGMENT_WIDTH) < 2 * TERRAIN_SEGMENT_WIDTH) {
-								draw_fuel_gauge(lander, BLACK);
-								lander->fuel = FULL_FUEL; /* refuel lander */
-							}
+						lander->vy = 0; /* Allow lander to land */
+					for (j = 0; j < NUM_LANDING_ZONES; j++) {
+						if (abs((lander->x >> 8) - fueltank[j].x * TERRAIN_SEGMENT_WIDTH) < 2 * TERRAIN_SEGMENT_WIDTH) {
+							draw_fuel_gauge(lander, BLACK);
+							lander->fuel = FULL_FUEL; /* refuel lander */
 						}
+					}
 				}
 			}
 		} else {
