@@ -166,8 +166,8 @@ volatile int timestamp = 0;
 
 static GtkWidget *vbox, *window, *drawing_area;
 #define SCALE_FACTOR 6
-#define GTK_SCREEN_WIDTH (SCREEN_XDIM * SCALE_FACTOR)
-#define GTK_SCREEN_HEIGHT (SCREEN_YDIM * SCALE_FACTOR)
+#define GTK_SCREEN_WIDTH (LCD_XSIZE * SCALE_FACTOR)
+#define GTK_SCREEN_HEIGHT (LCD_YSIZE * SCALE_FACTOR)
 static int real_screen_width = GTK_SCREEN_WIDTH;
 static int real_screen_height = GTK_SCREEN_HEIGHT;
 static GdkGC *gc = NULL;               /* our graphics context. */
@@ -205,21 +205,21 @@ void FbInit(void)
 {
 }
 
-static unsigned char screen_color[SCREEN_XDIM][SCREEN_YDIM];
-static unsigned char live_screen_color[SCREEN_XDIM][SCREEN_YDIM];
+static unsigned char screen_color[LCD_XSIZE][LCD_YSIZE];
+static unsigned char live_screen_color[LCD_XSIZE][LCD_YSIZE];
 
 void plot_point(int x, int y, void *context)
 {
     unsigned char *screen_color = context;
 
-    screen_color[x * SCREEN_YDIM + y] = current_color;
+    screen_color[x * LCD_YSIZE + y] = current_color;
 }
 
 void clear_point(int x, int y, void *context)
 {
     unsigned char *screen_color = context;
 
-    screen_color[x * SCREEN_YDIM + y] = BLACK;
+    screen_color[x * LCD_YSIZE + y] = BLACK;
 }
 
 void FbSwapBuffers(void)
@@ -265,7 +265,7 @@ void FbVerticalLine(unsigned char x1, unsigned char y1, UNUSED unsigned char x2,
 
 void FbClear(void)
 {
-    memset(screen_color, current_background_color, SCREEN_XDIM * SCREEN_YDIM);
+    memset(screen_color, current_background_color, LCD_XSIZE * LCD_YSIZE);
 }
 
 unsigned char char_to_index(unsigned char charin){
@@ -361,15 +361,15 @@ void FbMoveRelative(char x, char y)
 
 void FbMoveX(unsigned char x)
 {
-	if (x >= SCREEN_XDIM)
-		x = SCREEN_XDIM - 1;
+	if (x >= LCD_XSIZE)
+		x = LCD_XSIZE - 1;
 	write_x = x;
 }
 
 void FbMoveY(unsigned char y)
 {
-	if (y >= SCREEN_YDIM)
-		y = SCREEN_YDIM - 1;
+	if (y >= LCD_YSIZE)
+		y = LCD_YSIZE - 1;
 	write_y = y;
 }
 
@@ -380,10 +380,10 @@ void FbWriteLine(char *s)
 	for (i = 0; s[i]; i++) {
 		draw_character(write_x, write_y, s[i]);
 		write_x += 8;
-		if (write_x > SCREEN_XDIM - 8) {
+		if (write_x > LCD_XSIZE - 8) {
 			write_x = 0;
 			write_y += 8;
-			if (write_y > SCREEN_YDIM - 8)
+			if (write_y > LCD_YSIZE - 8)
 				write_y = 0;
 		}
 	}
@@ -809,15 +809,15 @@ static int drawing_area_expose(GtkWidget *widget, UNUSED GdkEvent *event, UNUSED
 	int x, y, w, h;
 
 	timer++;
-	w = real_screen_width / SCREEN_XDIM;
+	w = real_screen_width / LCD_XSIZE;
 	if (w < 1)
 		w = 1;
-	h = real_screen_height / SCREEN_YDIM;
+	h = real_screen_height / LCD_YSIZE;
 	if (h < 1)
 		h = 1;
 
-	for (y = 0; y < SCREEN_YDIM; y++) {
-		for (x = 0; x < SCREEN_XDIM; x++) {
+	for (y = 0; y < LCD_YSIZE; y++) {
+		for (x = 0; x < LCD_XSIZE; x++) {
 			unsigned char c = live_screen_color[x][y] % NCOLORS;
 			gdk_gc_set_foreground(gc, &huex[c]);
 			gdk_draw_rectangle(widget->window, gc, 1 /* filled */, x * w, y * h, w, h);
@@ -827,7 +827,7 @@ static int drawing_area_expose(GtkWidget *widget, UNUSED GdkEvent *event, UNUSED
 	/* Draw simulated flare LED */
 	if (timer & 0x008) {
 		gdk_gc_set_foreground(gc, &huex[NCOLORS - 1]);
-		x = SCREEN_XDIM - w;
+		x = LCD_XSIZE - w;
 		y = 0;
 		gdk_draw_rectangle(widget->window, gc, 1 /* filled */, x * w, y * h, w * 5, h * 5);
 	}

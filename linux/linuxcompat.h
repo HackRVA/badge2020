@@ -1,8 +1,8 @@
 #include "../include/build_bug_on.h"
 
 /* Dimensions of the screen in pixels */
-#define SCREEN_XDIM 132
-#define SCREEN_YDIM 132
+#define LCD_XSIZE 132
+#define LCD_YSIZE 132
 
 void FbInit(void); /* initialize the frame buffer */
 void plot_point(int x, int y, void *context); /* Plot a point on the offscreen buffer */

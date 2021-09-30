@@ -17,6 +17,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "fb.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -32,13 +33,11 @@ extern char *strcat(char *dest, const char *src);
 #include "achievements.h"
 
 /* TODO figure out where these should really come from */
-#define SCREEN_XDIM 132
-#define SCREEN_YDIM 132
 #define PADDLE_HEIGHT 25
 #define PADDLE_WIDTH 20
 #define PADDLE_SPEED 7
-#define BALL_STARTX (8 * SCREEN_XDIM / 2)
-#define BALL_STARTY (8 * SCREEN_YDIM / 2)
+#define BALL_STARTX (8 * LCD_XSIZE / 2)
+#define BALL_STARTY (8 * LCD_YSIZE / 2)
 #define BALL_START_VX (1 * 8)
 #define BALL_START_VY (2 * 8)
 #define BRICK_WIDTH 8
@@ -92,8 +91,8 @@ static void smashout_game_init(void)
 	FbInit();
 	FbClear();
 	init_bricks();
-	paddle.x = SCREEN_XDIM / 2;
-	paddle.y = SCREEN_YDIM - PADDLE_HEIGHT;
+	paddle.x = LCD_XSIZE / 2;
+	paddle.y = LCD_YSIZE - PADDLE_HEIGHT;
 	paddle.w = PADDLE_WIDTH;
 	paddle.vx = 0;
 	old_paddle = paddle;
@@ -188,8 +187,8 @@ static void smashout_move_paddle()
 		paddle.x = PADDLE_WIDTH / 2;
 		paddle.vx = 0;
 	}
-	if (paddle.x > SCREEN_XDIM - PADDLE_WIDTH / 2) {
-		paddle.x = SCREEN_XDIM - PADDLE_WIDTH / 2;
+	if (paddle.x > LCD_XSIZE - PADDLE_WIDTH / 2) {
+		paddle.x = LCD_XSIZE - PADDLE_WIDTH / 2;
 		paddle.vx = 0;
 	}
 }
@@ -199,12 +198,12 @@ static void smashout_move_ball()
 	oldball = ball;
 	ball.x = ball.x + ball.vx;
 	ball.y = ball.y + ball.vy;
-	if (ball.x > 8 * SCREEN_XDIM - 2 * 8) {
-		ball.x = 8 * SCREEN_XDIM - 2 * 8;
+	if (ball.x > 8 * LCD_XSIZE - 2 * 8) {
+		ball.x = 8 * LCD_XSIZE - 2 * 8;
 		if (ball.vx > 0)
 			ball.vx = -ball.vx;
 	}
-	if (ball.y > 8 * SCREEN_YDIM - 2 * 8) {
+	if (ball.y > 8 * LCD_YSIZE - 2 * 8) {
 		ball.x = BALL_STARTX;
 		ball.y = BALL_STARTY;
 		ball.vx = BALL_START_VX;
@@ -255,9 +254,9 @@ static void draw_score_and_balls(int color)
 	FbColor(color);
 	itoa(s, score, 10);
 	itoa(b, balls, 10);
-	FbMove(10, SCREEN_YDIM - 10);
+	FbMove(10, LCD_YSIZE - 10);
 	FbWriteLine(s);
-	FbMove(70, SCREEN_YDIM - 10);
+	FbMove(70, LCD_YSIZE - 10);
 	FbWriteLine(b);
 }
 

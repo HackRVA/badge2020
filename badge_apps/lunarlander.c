@@ -30,9 +30,6 @@ extern char *strcat(char *dest, const char *src);
 #include "xorshift.h"
 #include "build_bug_on.h"
 
-#define SCREEN_XDIM 132
-#define SCREEN_YDIM 132
-
 #define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 #define TERRAIN_SEGMENT_WIDTH 10
@@ -295,8 +292,8 @@ static void draw_fuel_gauge(struct lander_data *lander, int color)
 static void draw_sparks(struct lander_data *lander, int color)
 {
 	int i, x1, y1, x2, y2;
-	const int sx = SCREEN_XDIM / 2;
-	const int sy = SCREEN_YDIM / 3;
+	const int sx = LCD_XSIZE / 2;
+	const int sy = LCD_YSIZE / 3;
 
 	FbColor(color);
 	for (i = 0; i < MAXSPARKS; i++) {
@@ -436,8 +433,8 @@ static void check_buttons()
 
 static void draw_lander(void)
 {
-	const int x = SCREEN_XDIM / 2;
-	const int y = SCREEN_YDIM / 3;
+	const int x = LCD_XSIZE / 2;
+	const int y = LCD_YSIZE / 3;
 	FbDrawObject(lander_points, ARRAYSIZE(lander_points), BLACK, x, y, 1024);
 	if (lander.alive > 0)
 		FbDrawObject(lander_points, ARRAYSIZE(lander_points), WHITE, x, y, 1024);
@@ -446,10 +443,10 @@ static void draw_lander(void)
 static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 {
 	int x1, y1, x2, y2, sx1, sy1, sx2, sy2, j;
-	int left = (lander->x >> 8) - DIMFACT * SCREEN_XDIM / 2;
-	int right = (lander->x >> 8) + DIMFACT * SCREEN_XDIM / 2;
-	int top = (lander->y >> 8) - DIMFACT * SCREEN_YDIM / 3;
-	int bottom = (lander->y >> 8) + DIMFACT * 2 * SCREEN_YDIM / 3;
+	int left = (lander->x >> 8) - DIMFACT * LCD_XSIZE / 2;
+	int right = (lander->x >> 8) + DIMFACT * LCD_XSIZE / 2;
+	int top = (lander->y >> 8) - DIMFACT * LCD_YSIZE / 3;
+	int bottom = (lander->y >> 8) + DIMFACT * 2 * LCD_YSIZE / 3;
 
 	if (i < 0)
 		return;
@@ -458,26 +455,26 @@ static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 	x1 = i * TERRAIN_SEGMENT_WIDTH;
 	if (x1 <= left || x1 >= right)
 		return;
-	sx1 = x1 - (lander->x >> 8) + SCREEN_XDIM / 2;
-	if (sx1 < 0 || sx1 >= SCREEN_XDIM)
+	sx1 = x1 - (lander->x >> 8) + LCD_XSIZE / 2;
+	if (sx1 < 0 || sx1 >= LCD_XSIZE)
 		return;
 	x2 = (i + 1) * TERRAIN_SEGMENT_WIDTH;
 	if (x2 <= left || x2 >= right)
 		return;
-	sx2 = x2 - (lander->x >> 8) + SCREEN_XDIM / 2;
-	if (sx2 < 0 || sx2 >= SCREEN_XDIM)
+	sx2 = x2 - (lander->x >> 8) + LCD_XSIZE / 2;
+	if (sx2 < 0 || sx2 >= LCD_XSIZE)
 		return;
 	y1 = terrain_y[i];
 	if (y1 < top || y1 >= bottom)
 		return;
-	sy1 = y1 - (lander->y >> 8) + SCREEN_YDIM / 3;
-	if (sy1 < 0 || sy1 >= SCREEN_YDIM)
+	sy1 = y1 - (lander->y >> 8) + LCD_YSIZE / 3;
+	if (sy1 < 0 || sy1 >= LCD_YSIZE)
 		return;
 	y2 = terrain_y[i + 1];
 	if (y2 < top || y2 >= bottom)
 		return;
-	sy2 = y2 - (lander->y >> 8) + SCREEN_YDIM / 3;
-	if (sy2 < 0 || sy2 >= SCREEN_YDIM)
+	sy2 = y2 - (lander->y >> 8) + LCD_YSIZE / 3;
+	if (sy2 < 0 || sy2 >= LCD_YSIZE)
 		return;
 	if (x1 <= (lander->x >> 8) && x2 >= (lander->x >> 8) && color != BLACK) {
 		if ((lander->y >> 8) >= y2 - 8) {
@@ -537,12 +534,12 @@ static void draw_terrain(struct lander_data *lander, int color)
 {
 	int start, stop, i;
 
-	start = ((lander->x >> 8) - TERRAIN_SEGMENT_WIDTH * SCREEN_XDIM / 2) / TERRAIN_SEGMENT_WIDTH;
+	start = ((lander->x >> 8) - TERRAIN_SEGMENT_WIDTH * LCD_XSIZE / 2) / TERRAIN_SEGMENT_WIDTH;
 	if (start < 0)
 		start = 0;
 	if (start > 1023)
 		return;
-	stop = ((lander->x >> 8) + TERRAIN_SEGMENT_WIDTH * SCREEN_XDIM / 2) / TERRAIN_SEGMENT_WIDTH;
+	stop = ((lander->x >> 8) + TERRAIN_SEGMENT_WIDTH * LCD_XSIZE / 2) / TERRAIN_SEGMENT_WIDTH;
 	if (stop > 1023)
 		stop = 1023;
 	FbColor(color);
@@ -554,11 +551,11 @@ static void draw_astronaut(struct lander_data *lander, int i, int color)
 {
 	int x, y;
 
-	x = astronaut[i].x - (lander->x >> 8) + SCREEN_XDIM / 2;
-	y = astronaut[i].y - (lander->y >> 8) + SCREEN_YDIM / 3;
-	if (x < 10 || x > SCREEN_XDIM - 10)
+	x = astronaut[i].x - (lander->x >> 8) + LCD_XSIZE / 2;
+	y = astronaut[i].y - (lander->y >> 8) + LCD_YSIZE / 3;
+	if (x < 10 || x > LCD_XSIZE - 10)
 		return;
-	if (y < 10 || y > SCREEN_YDIM - 10)
+	if (y < 10 || y > LCD_YSIZE - 10)
 		return;
 	FbDrawObject(astronaut_points, ARRAYSIZE(astronaut_points), color, x, y, 512);
 	set_message("RESCUE BUDDIES!", 30);
@@ -572,11 +569,11 @@ static void draw_lunar_base(struct lander_data *lander, int color)
 {
 	int i, x, y;
 
-	x = lunar_base.x - (lander->x >> 8) + SCREEN_XDIM / 2;
-	y = lunar_base.y - (lander->y >> 8) + SCREEN_YDIM / 3;
-	if (x < 20 || x > SCREEN_XDIM - 20)
+	x = lunar_base.x - (lander->x >> 8) + LCD_XSIZE / 2;
+	y = lunar_base.y - (lander->y >> 8) + LCD_YSIZE / 3;
+	if (x < 20 || x > LCD_XSIZE - 20)
 		return;
-	if (y < 20 || y > SCREEN_YDIM - 20)
+	if (y < 20 || y > LCD_YSIZE - 20)
 		return;
 	FbDrawObject(lunar_base_points, ARRAYSIZE(lunar_base_points), color, x, y, 512);
 	set_message("LAND ON BASE!", 30);

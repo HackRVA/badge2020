@@ -93,9 +93,6 @@ static int cursor = 0;
 static int app_state = INIT_APP_STATE;
 static int something_changed = 0;
 
-#define SCREEN_XDIM 132
-#define SCREEN_YDIM 132
-
 #define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 static void draw_box(int row, int col)

@@ -1026,7 +1026,7 @@ static void hackingsimulator_run()
 {
 	check_buttons();
 	advance_tick();
-	fill_line = ((game_tick * FLOW_RATE) * GAME_TIME_LIMIT) / SCREEN_XDIM;
+	fill_line = ((game_tick * FLOW_RATE) * GAME_TIME_LIMIT) / LCD_XSIZE;
 	setup_flow_path();
 	do_flow();
 	draw_screen();

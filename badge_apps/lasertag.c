@@ -26,6 +26,7 @@ code must run in.
 #include "ir.h"
 #include "flash.h" /* for G_sysData */
 #include "timer1_int.h"
+#include "fb.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -37,10 +38,6 @@ extern char *strcat(char *dest, const char *src);
 #ifndef NULL
 #define NULL 0
 #endif
-
-/* TODO: Is there a canonical header I should include to get the screen dimensions? */
-#define SCREEN_XDIM 132
-#define SCREEN_YDIM 132
 
 #define DISABLE_INTERRUPTS
 #define ENABLE_INTERRUPTS
@@ -283,7 +280,7 @@ static void draw_menu(void)
 	FbMove(8, 5);
 	FbWriteLine(menu.title);
 
-	y = SCREEN_YDIM / 2 - 12 * (menu.current_item - first_item);
+	y = LCD_YSIZE / 2 - 12 * (menu.current_item - first_item);
 	for (i = first_item; i <= last_item; i++) {
 		if (i == menu.current_item)
 			FbColor(GREEN);
@@ -297,10 +294,10 @@ static void draw_menu(void)
 	}
 
 	FbColor(GREEN);
-	FbHorizontalLine(5, SCREEN_YDIM / 2 - 2, SCREEN_XDIM - 5, SCREEN_YDIM / 2 - 2);
-	FbHorizontalLine(5, SCREEN_YDIM / 2 + 10, SCREEN_XDIM - 5, SCREEN_YDIM / 2 + 10);
-	FbVerticalLine(5, SCREEN_YDIM / 2 - 2, 5, SCREEN_YDIM / 2 + 10);
-	FbVerticalLine(SCREEN_XDIM - 5, SCREEN_YDIM / 2 - 2, SCREEN_XDIM - 5, SCREEN_YDIM / 2 + 10);
+	FbHorizontalLine(5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 - 2);
+	FbHorizontalLine(5, LCD_YSIZE / 2 + 10, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
+	FbVerticalLine(5, LCD_YSIZE / 2 - 2, 5, LCD_YSIZE / 2 + 10);
+	FbVerticalLine(LCD_XSIZE - 5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
 
 
 	if (all_game_data_received()) {

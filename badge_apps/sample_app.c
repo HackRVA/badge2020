@@ -8,6 +8,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "fb.h"
 
 extern int timestamp;
 
@@ -47,9 +48,6 @@ static int app_state = INIT_APP_STATE;
 
 static int smiley_x, smiley_y;
 
-#define SCREEN_XDIM 132
-#define SCREEN_YDIM 132
-
 #define ARRAYSIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 static void render_screen(void)
@@ -67,10 +65,10 @@ static void render_screen(void)
 
 static void check_the_buttons(void)
 {
-	const int left_limit = SCREEN_XDIM / 3;
-	const int right_limit = 2 * SCREEN_XDIM / 3;
-	const int top_limit = SCREEN_YDIM / 3;
-	const int bottom_limit = 2 * SCREEN_YDIM / 3;
+	const int left_limit = LCD_XSIZE / 3;
+	const int right_limit = 2 * LCD_XSIZE / 3;
+	const int top_limit = LCD_YSIZE / 3;
+	const int bottom_limit = 2 * LCD_YSIZE / 3;
 
 	int something_changed = 0;
 
@@ -112,8 +110,8 @@ static void app_init(void)
 {
 	FbInit();
 	app_state = INIT_APP_STATE;
-	smiley_x = SCREEN_XDIM / 2;
-	smiley_y = SCREEN_XDIM / 2;
+	smiley_x = LCD_XSIZE / 2;
+	smiley_y = LCD_XSIZE / 2;
 	app_state = RENDER_SCREEN;
 }
 

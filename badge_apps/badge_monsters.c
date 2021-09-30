@@ -77,8 +77,6 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 #define TOTAL_BADGES 300
 #define BADGE_ID G_sysData.badgeId
 #define ARRAYSIZE(x) (sizeof((x)) / sizeof((x)[0]))
-#define SCREEN_XDIM 132
-#define SCREEN_YDIM 132
 
 
 /* These need to be protected from interrupts. */
@@ -346,7 +344,7 @@ static void draw_menu(void)
         FbWriteLine(available_monsters);
     }
 
-    y = SCREEN_YDIM / 2 - 12 * (menu.current_item - first_item);
+    y = LCD_YSIZE / 2 - 12 * (menu.current_item - first_item);
     for (i = first_item; i <= last_item; i++)
     {
         if (i == menu.current_item)
@@ -359,10 +357,10 @@ static void draw_menu(void)
     }
 
     FbColor(GREEN);
-    FbHorizontalLine(5, SCREEN_YDIM / 2 - 2, SCREEN_XDIM - 5, SCREEN_YDIM / 2 - 2);
-    FbHorizontalLine(5, SCREEN_YDIM / 2 + 10, SCREEN_XDIM - 5, SCREEN_YDIM / 2 + 10);
-    FbVerticalLine(5, SCREEN_YDIM / 2 - 2, 5, SCREEN_YDIM / 2 + 10);
-    FbVerticalLine(SCREEN_XDIM - 5, SCREEN_YDIM / 2 - 2, SCREEN_XDIM - 5, SCREEN_YDIM / 2 + 10);
+    FbHorizontalLine(5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 - 2);
+    FbHorizontalLine(5, LCD_YSIZE / 2 + 10, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
+    FbVerticalLine(5, LCD_YSIZE / 2 - 2, 5, LCD_YSIZE / 2 + 10);
+    FbVerticalLine(LCD_XSIZE - 5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
 
 
     app_state = RENDER_SCREEN;
@@ -761,8 +759,8 @@ static void app_init(void)
     change_menu_level(MAIN_MENU);
     app_state = GAME_MENU;
     screen_changed = 1;
-    smiley_x = SCREEN_XDIM / 2;
-    smiley_y = SCREEN_XDIM / 2;
+    smiley_x = LCD_XSIZE / 2;
+    smiley_y = LCD_XSIZE / 2;
     nmonsters = ARRAYSIZE(monsters);
     nvendor_monsters = ARRAYSIZE(vendor_monsters);
     initial_mon = BADGE_ID % nmonsters;

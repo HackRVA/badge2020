@@ -46,10 +46,6 @@ extern char *strcat(char *dest, const char *src);
 #include "xorshift.h"
 #include "achievements.h"
 
-/* TODO figure out where these should really come from */
-#define SCREEN_XDIM 132
-#define SCREEN_YDIM 132
-
 /* Program states.  Initial state is MAZE_GAME_INIT */
 enum maze_program_state_t {
     MAZE_GAME_INIT,
@@ -898,38 +894,38 @@ void draw_object(const struct point drawing[], int npoints, int scale_index, int
 
 static void draw_left_passage(int start, int scale)
 {
-    FbVerticalLine(start, start, start, SCREEN_YDIM - 1 - start);
-    FbVerticalLine(start + scale, start + scale, start + scale, SCREEN_YDIM - 1 - (start + scale));
+    FbVerticalLine(start, start, start, LCD_YSIZE - 1 - start);
+    FbVerticalLine(start + scale, start + scale, start + scale, LCD_YSIZE - 1 - (start + scale));
     FbHorizontalLine(start, start + scale, start + scale, start + scale);
-    FbHorizontalLine(start, SCREEN_YDIM - 1 - (start + scale), start + scale, SCREEN_YDIM - 1 - (start + scale));
+    FbHorizontalLine(start, LCD_YSIZE - 1 - (start + scale), start + scale, LCD_YSIZE - 1 - (start + scale));
 }
 
 static void draw_right_passage(int start, int scale)
 {
-    FbVerticalLine(SCREEN_XDIM - 1 - start, start, SCREEN_XDIM - 1 - start, SCREEN_YDIM - 1 - start);
-    FbVerticalLine(SCREEN_XDIM - 1 - start - scale, start + scale, SCREEN_XDIM - 1 - start - scale, SCREEN_YDIM - 1 - start - scale);
-    FbHorizontalLine(SCREEN_XDIM - 1 - (start + scale), start + scale, SCREEN_XDIM - 1 - start, start + scale);
-    FbHorizontalLine(SCREEN_XDIM - 1 - (start + scale), SCREEN_YDIM - 1 - (start + scale), SCREEN_XDIM - 1 - start, SCREEN_YDIM - 1 - (start + scale));
+    FbVerticalLine(LCD_XSIZE - 1 - start, start, LCD_XSIZE - 1 - start, LCD_YSIZE - 1 - start);
+    FbVerticalLine(LCD_XSIZE - 1 - start - scale, start + scale, LCD_XSIZE - 1 - start - scale, LCD_YSIZE - 1 - start - scale);
+    FbHorizontalLine(LCD_XSIZE - 1 - (start + scale), start + scale, LCD_XSIZE - 1 - start, start + scale);
+    FbHorizontalLine(LCD_XSIZE - 1 - (start + scale), LCD_YSIZE - 1 - (start + scale), LCD_XSIZE - 1 - start, LCD_YSIZE - 1 - (start + scale));
 }
 
 static void draw_left_wall(int start, int scale)
 {
     FbLine(start, start, start + scale, start + scale);
-    FbLine(start, SCREEN_YDIM - 1 - start, start + scale, SCREEN_YDIM - 1 - (start + scale));
+    FbLine(start, LCD_YSIZE - 1 - start, start + scale, LCD_YSIZE - 1 - (start + scale));
 }
 
 static void draw_right_wall(int start, int scale)
 {
-    FbLine(SCREEN_XDIM - 1 - start, start, SCREEN_XDIM - 1 - (start + scale), start + scale);
-    FbLine(SCREEN_XDIM - 1 - start, SCREEN_YDIM - 1 - start, SCREEN_XDIM - 1 - (start + scale), SCREEN_YDIM - 1 - (start + scale));
+    FbLine(LCD_XSIZE - 1 - start, start, LCD_XSIZE - 1 - (start + scale), start + scale);
+    FbLine(LCD_XSIZE - 1 - start, LCD_YSIZE - 1 - start, LCD_XSIZE - 1 - (start + scale), LCD_YSIZE - 1 - (start + scale));
 }
 
 static void draw_forward_wall(int start, UNUSED int scale)
 {
-    FbVerticalLine(start, start, start, SCREEN_YDIM - 1 - start);
-    FbVerticalLine(SCREEN_XDIM - 1 - start, start, SCREEN_XDIM - 1 - start, SCREEN_YDIM - 1 - start);
-    FbHorizontalLine(start, start, SCREEN_XDIM - 1 - start, start);
-    FbHorizontalLine(start, SCREEN_YDIM - 1 - start, SCREEN_XDIM - 1 - start, SCREEN_YDIM - 1 - start);
+    FbVerticalLine(start, start, start, LCD_YSIZE - 1 - start);
+    FbVerticalLine(LCD_XSIZE - 1 - start, start, LCD_XSIZE - 1 - start, LCD_YSIZE - 1 - start);
+    FbHorizontalLine(start, start, LCD_XSIZE - 1 - start, start);
+    FbHorizontalLine(start, LCD_YSIZE - 1 - start, LCD_XSIZE - 1 - start, LCD_YSIZE - 1 - start);
 }
 
 static char *encounter_text = "x";
@@ -1188,12 +1184,12 @@ static void move_player_one_step(int direction)
        newy = player.combaty + yoff[direction] * 4;
        if (newx < 10)
            newx = 10;
-       if (newx > SCREEN_XDIM - 10)
-           newx = SCREEN_XDIM - 10;
+       if (newx > LCD_XSIZE - 10)
+           newx = LCD_XSIZE - 10;
        if (newy < 10)
            newy = 10;
-       if (newy > SCREEN_YDIM - 10)
-           newy = SCREEN_YDIM - 10;
+       if (newy > LCD_YSIZE - 10)
+           newy = LCD_YSIZE - 10;
        player.combatx = newx;
        player.combaty = newy;
        dx = player.combatx - combatant.combatx;
@@ -1210,11 +1206,11 @@ static void move_player_one_step(int direction)
            combatant.combaty -= dy * (80 + str) / 100;
            if (combatant.combatx < 40)
               combatant.combatx += 40;
-           if (combatant.combatx > SCREEN_XDIM - 40)
+           if (combatant.combatx > LCD_XSIZE - 40)
               combatant.combatx -= 40;
            if (combatant.combaty < 40)
               combatant.combaty += 40;
-           if (combatant.combaty > SCREEN_XDIM - 40)
+           if (combatant.combaty > LCD_XSIZE - 40)
               combatant.combaty -= 40;
            hp = combatant.hitpoints - damage;
            if (hp < 0)
@@ -1321,14 +1317,14 @@ static void draw_objects(void)
             s = abs(maze_object[i].y - player.y);
             if (s >= maze_object_distance_limit)
                 goto next_object;
-            draw_object(drawing, npoints, s, color, SCREEN_XDIM / 2, SCREEN_YDIM / 2);
+            draw_object(drawing, npoints, s, color, LCD_XSIZE / 2, LCD_YSIZE / 2);
         }
     } else if (y[0] == y[1]) {
         if (maze_object[i].y == y[0] && maze_object[i].x >= x[a] && maze_object[i].x <= x[b]) {
             s = abs(maze_object[i].x - player.x);
             if (s >= maze_object_distance_limit)
                 goto next_object;
-            draw_object(drawing, npoints, s, color, SCREEN_XDIM / 2, SCREEN_YDIM / 2);
+            draw_object(drawing, npoints, s, color, LCD_XSIZE / 2, LCD_YSIZE / 2);
         }
     }
 
@@ -1463,11 +1459,11 @@ static void maze_combat_monster_move(void)
         player.combaty += dy * (80 + str) / 100;
         if (player.combatx < 40)
            player.combatx += 40;
-        if (player.combatx > SCREEN_XDIM - 40)
+        if (player.combatx > LCD_XSIZE - 40)
            player.combatx -= 40;
         if (player.combaty < 40)
            player.combaty += 40;
-        if (player.combaty > SCREEN_XDIM - 40)
+        if (player.combaty > LCD_XSIZE - 40)
            player.combaty -= 40;
         hp = player.hitpoints - damage;
         if (hp < 0)
@@ -1506,18 +1502,18 @@ static void maze_player_defeats_monster(void)
 {
     FbClear();
     FbColor(RED);
-    FbMove(10, SCREEN_YDIM / 2 - 10);
+    FbMove(10, LCD_YSIZE / 2 - 10);
     FbWriteLine("YOU KILL THE");
-    FbMove(10, SCREEN_YDIM / 2);
+    FbMove(10, LCD_YSIZE / 2);
     FbWriteLine(encounter_name);
-    FbMove(10, SCREEN_YDIM / 2 + 10);
+    FbMove(10, LCD_YSIZE / 2 + 10);
     if (player.weapon == 255) {
         FbWriteLine("WITH YOUR FISTS");
     } else {
         FbWriteLine("WITH THE");
-        FbMove(10, SCREEN_YDIM / 2 + 20);
+        FbMove(10, LCD_YSIZE / 2 + 20);
         FbWriteLine(weapon_type[maze_object[player.weapon].tsd.weapon.type].adjective);
-        FbMove(10, SCREEN_YDIM / 2 + 30);
+        FbMove(10, LCD_YSIZE / 2 + 30);
         FbWriteLine(weapon_type[maze_object[player.weapon].tsd.weapon.type].name);
     }
     encounter_text = "x";
@@ -1531,9 +1527,9 @@ static void maze_player_died(void)
 {
     FbClear();
     FbColor(RED);
-    FbMove(10, SCREEN_YDIM - 20);
+    FbMove(10, LCD_YSIZE - 20);
     FbWriteLine("YOU HAVE DIED");
-    draw_object(bones_points, ARRAYSIZE(bones_points), 0, WHITE, SCREEN_XDIM / 2, SCREEN_YDIM / 2);
+    draw_object(bones_points, ARRAYSIZE(bones_points), 0, WHITE, LCD_XSIZE / 2, LCD_YSIZE / 2);
     encounter_text = "x";
     encounter_adjective = "";
     encounter_name = "x";
@@ -1593,9 +1589,9 @@ static void maze_quaff_potion(void)
        feel = "NOTHING";
     player.hitpoints = hp;
     FbClear();
-    FbMove(10, SCREEN_YDIM / 2);
+    FbMove(10, LCD_YSIZE / 2);
     FbWriteLine("YOU FEEL");
-    FbMove(10, SCREEN_YDIM / 2 + 10);
+    FbMove(10, LCD_YSIZE / 2 + 10);
     FbWriteLine(feel);
     maze_program_state = MAZE_SCREEN_RENDER;
 }
@@ -1636,11 +1632,11 @@ static void maze_wield_weapon(void)
     player.weapon = maze_menu.chosen_cookie;
     maze_object[player.weapon].x = 255; /* In case we wield directly from dungeon floor */
     FbClear();
-    FbMove(10, SCREEN_YDIM / 2);
+    FbMove(10, LCD_YSIZE / 2);
     FbWriteLine("YOU WIELD THE");
-    FbMove(10, SCREEN_YDIM / 2 + 10);
+    FbMove(10, LCD_YSIZE / 2 + 10);
     FbWriteLine(weapon_type[maze_object[player.weapon].tsd.weapon.type].adjective);
-    FbMove(10, SCREEN_YDIM / 2 + 20);
+    FbMove(10, LCD_YSIZE / 2 + 20);
     FbWriteLine(weapon_type[maze_object[player.weapon].tsd.weapon.type].name);
     maze_program_state = MAZE_SCREEN_RENDER;
 }
@@ -1681,11 +1677,11 @@ static void maze_don_armor(void)
     player.armor = maze_menu.chosen_cookie;
     maze_object[player.armor].x = 255; /* In case we don directly from dungeon floor */
     FbClear();
-    FbMove(10, SCREEN_YDIM / 2);
+    FbMove(10, LCD_YSIZE / 2);
     FbWriteLine("YOU DON THE");
-    FbMove(10, SCREEN_YDIM / 2 + 10);
+    FbMove(10, LCD_YSIZE / 2 + 10);
     FbWriteLine(armor_type[maze_object[player.armor].tsd.armor.type].adjective);
-    FbMove(10, SCREEN_YDIM / 2 + 20);
+    FbMove(10, LCD_YSIZE / 2 + 20);
     FbWriteLine(armor_type[maze_object[player.armor].tsd.armor.type].name);
     maze_program_state = MAZE_SCREEN_RENDER;
 }
@@ -1777,7 +1773,7 @@ static void maze_draw_menu(void)
         FbWriteLine(maze_menu.title3);
     }
 
-    y = SCREEN_YDIM / 2 - 10 * (maze_menu.current_item - first_item);
+    y = LCD_YSIZE / 2 - 10 * (maze_menu.current_item - first_item);
     for (i = first_item; i <= last_item; i++) {
         if (i == maze_menu.current_item)
             FbColor(GREEN);
@@ -1789,10 +1785,10 @@ static void maze_draw_menu(void)
     }
 
     FbColor(GREEN);
-    FbHorizontalLine(5, SCREEN_YDIM / 2 - 2, SCREEN_XDIM - 5, SCREEN_YDIM / 2 - 2);
-    FbHorizontalLine(5, SCREEN_YDIM / 2 + 10, SCREEN_XDIM - 5, SCREEN_YDIM / 2 + 10);
-    FbVerticalLine(5, SCREEN_YDIM / 2 - 2, 5, SCREEN_YDIM / 2 + 10);
-    FbVerticalLine(SCREEN_XDIM - 5, SCREEN_YDIM / 2 - 2, SCREEN_XDIM - 5, SCREEN_YDIM / 2 + 10);
+    FbHorizontalLine(5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 - 2);
+    FbHorizontalLine(5, LCD_YSIZE / 2 + 10, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
+    FbVerticalLine(5, LCD_YSIZE / 2 - 2, 5, LCD_YSIZE / 2 + 10);
+    FbVerticalLine(LCD_XSIZE - 5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
     maze_program_state = MAZE_SCREEN_RENDER;
 }
 
@@ -1814,9 +1810,9 @@ static void maze_game_start_menu(void)
 static void maze_begin_fight()
 {
     combat_mode = 1;
-    player.combatx = SCREEN_XDIM / 2;
-    player.combaty = SCREEN_YDIM - 40;
-    combatant.combatx = SCREEN_XDIM / 2;
+    player.combatx = LCD_XSIZE / 2;
+    player.combaty = LCD_YSIZE - 40;
+    combatant.combatx = LCD_XSIZE / 2;
     combatant.combaty = 50;
     combatant.hitpoints = maze_object[encounter_object].tsd.monster.hitpoints;
     maze_program_state = MAZE_RENDER_COMBAT;
