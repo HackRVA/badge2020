@@ -49,7 +49,7 @@ SRC_BADGE_C = \
 SRC_APPS_C = \
 	badge_apps/adc.c badge_apps/xorshift.c \
 	badge_apps/blinkenlights.c badge_apps/conductor.c \
-	badge_apps/lasertag.c badge_apps/QC.c ${IRXMIT} \
+	badge_apps/QC.c ${IRXMIT} \
 	badge_apps/username.c badge_apps/badge_monsters.c \
 	badge_apps/smashout.c badge_apps/ghost-detector.c \
 	badge_apps/lunarlander.c

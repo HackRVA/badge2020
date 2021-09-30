@@ -19,7 +19,6 @@
 #include "ghost-detector.h"
 #include "lunarlander.h"
 #include "QC.h"
-#include "lasertag.h"
 #include "username.h"
 #include "badge_monsters.h"
 #ifdef INCLUDE_IRXMIT
@@ -503,7 +502,6 @@ const struct menu_t games_m[] = {
    {"Smash Out",     VERT_ITEM, FUNCTION, {(struct menu_t *)smashout_cb} },
    {"Ghost Detector",VERT_ITEM, FUNCTION, {(struct menu_t *)ghostdetector_cb} },
    {"Lunar Rescue",  VERT_ITEM, FUNCTION, {(struct menu_t *)lunarlander_cb} },
-   {"Laser Tag",     VERT_ITEM, FUNCTION, {(struct menu_t *)lasertag_cb} },
    {"Badge Monsters",VERT_ITEM, FUNCTION, {(struct menu_t *)badge_monsters_cb} },
 #ifdef INCLUDE_IRXMIT
    {"IR XMIT",       VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb} },
