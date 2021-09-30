@@ -18,9 +18,10 @@ MAZE=maze
 USERNAME=username
 LUNARLANDER=lunarlander
 HACKING_SIMULATOR=hacking_simulator
+SPACETRIPPER=spacetripper
 
 all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/badge_monsters bin/fixup_monster bin/username \
-	bin/sample_app bin/smashout bin/ghost-detector bin/lunarlander bin/${HACKING_SIMULATOR}
+	bin/sample_app bin/smashout bin/ghost-detector bin/lunarlander bin/${HACKING_SIMULATOR} bin/${SPACETRIPPER}
 
 # we need to depend on ${BIN}/.t not on ${BIN} because BIN is a directory and the
 # timestamp changes whenever the directory contents change, and we need to depend
@@ -80,6 +81,9 @@ bin/hacking_simulator:	${BIN} ${APPDIR}/${HACKING_SIMULATOR}.c linuxcompat.o bli
 
 dynmenu.o:
 	$(CC) -c ${CFLAGS} -I../include ../src/dynmenu.c
+
+bin/spacetripper:	${BIN} ${APPDIR}/${SPACETRIPPER}.c linuxcompat.o bline.o ${LINUX_OBJS} dynmenu.o
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${SPACETRIPPER} -I . -I ${BADGE_INC} ${APPDIR}/${SPACETRIPPER}.c ${GTKLDFLAGS} dynmenu.o
 
 bin/${MAZE}:	${BIN} ${APPDIR}/${MAZE}.c linuxcompat.o bline.o xorshift.o achievements.o dynmenu.o \
 			${MAZEPICS}/bones_points.h \

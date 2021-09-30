@@ -21,6 +21,7 @@
 #include "QC.h"
 #include "username.h"
 #include "badge_monsters.h"
+#include "spacetripper.h"
 #ifdef INCLUDE_IRXMIT
 #include "irxmit.h"
 #endif
@@ -503,6 +504,7 @@ const struct menu_t games_m[] = {
    {"Ghost Detector",VERT_ITEM, FUNCTION, {(struct menu_t *)ghostdetector_cb} },
    {"Lunar Rescue",  VERT_ITEM, FUNCTION, {(struct menu_t *)lunarlander_cb} },
    {"Badge Monsters",VERT_ITEM, FUNCTION, {(struct menu_t *)badge_monsters_cb} },
+   {"Space Tripper", VERT_ITEM, FUNCTION, {(struct menu_t *)spacetripper_cb} },
 #ifdef INCLUDE_IRXMIT
    {"IR XMIT",       VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb} },
 #endif

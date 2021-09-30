@@ -44,7 +44,8 @@ SRC_BADGE_C = \
 	src/buttons.c src/settings.c src/menu.c src/adc_int.c \
         src/LCDcolor.c src/S6B33.c src/badge.c src/fb.c src/tinyalloc.c \
 	src/achievements.c src/flash.c src/flash_addr.c src/bindings.c \
-	src/prngs.c src/screensavers.c src/schedule.c src/trig.c
+	src/prngs.c src/screensavers.c src/schedule.c src/trig.c \
+	src/dynmenu.c
 
 SRC_APPS_C = \
 	badge_apps/adc.c badge_apps/xorshift.c \
@@ -52,7 +53,7 @@ SRC_APPS_C = \
 	badge_apps/QC.c ${IRXMIT} \
 	badge_apps/username.c badge_apps/badge_monsters.c \
 	badge_apps/smashout.c badge_apps/ghost-detector.c \
-	badge_apps/lunarlander.c
+	badge_apps/lunarlander.c badge_apps/spacetripper.c
 
 SRC_USB_C = USB/usb_device.c  USB/usb_function_cdc.c USB/usb_descriptors.c
 
