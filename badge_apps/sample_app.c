@@ -10,8 +10,6 @@
 #include "buttons.h"
 #include "fb.h"
 
-extern int timestamp;
-
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
 extern char *strcpy(char *dest, const char *src);
