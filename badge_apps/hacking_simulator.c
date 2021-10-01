@@ -35,6 +35,8 @@ extern int timestamp;
 #include "build_bug_on.h"
 #include "xorshift.h"
 
+#include "hacking_simulator_drawings/pipes.h"
+
 /* HACKSIM_DEBUG 
  * 1 debug mode on
  * 0 debug mode off
@@ -57,11 +59,30 @@ extern int timestamp;
 #define WITHIN_GRID(x, y) ((x) >= 0 && (x) <= GRID_SIZE && (y) >= 0 && (y) <= GRID_SIZE - 1)
 #define IS_NEIGHBOR(sX, sY, tX, tY) (((sX - 1) == (tX) && (sY) == (tY)) || ((sX - 1) == (tX) && (sY + 1) == (tY)) || ((sX + 1) == (tX) && (sY) == (tY)) || ((sX + 1) == (tX) && (sY - 1) == (tY)) || ((sX) == (tX) && (sY - 1) == (tY)) || ((sX - 1) == (tX) && (sY - 1) == (tY)) || ((sX) == (tX) && (sY + 1) == (tY)) || ((sX + 1) == (tX) && (sY + 1) == (tY)))
 #define IS_SOURCE(x,y) ((x) == 0 && (y) == source)
-#define GAME_TIME_LIMIT 75
 #define HANDX 0
 #define HANDY GRID_SIZE
 #define TIMERX GRID_SIZE
 #define TIMERY GRID_SIZE
+
+/* Difficulty Configuration */
+#define CONFIG_DIFFICULTY_INITIAL EASY
+#define CONFIG_DIFFICULTY_MIN EASY
+#define CONFIG_DIFFICULTY_MAX VERY_HARD
+#define CONFIG_DIFFICULTY_DECREASE_AFTER_FAIL TRUE
+#define CONFIG_DIFFICULTY_INCREASE_AFTER_WIN TRUE
+#define CONFIG_DIFFICULTY_CONSECUTIVE_WINS_TO_ADVANCE 1
+
+#define CONFIG_DIFFICULTY_MODIFIES_TIME 1
+
+/* Time Limit Configuration - all in seconds */
+#define CONFIG_GAME_TIME_LIMIT_BASE_S 99
+#define CONFIG_GAME_TIME_LIMIT_DIFFICULTY_PENALTY_S 15
+
+#if !CONFIG_DIFFICULTY_MODIFIES_TIME
+#undef CONFIG_GAME_TIME_LIMIT_DIFFICULTY_PENALTY_S
+#define CONFIG_GAME_TIME_LIMIT_DIFFICULTY_PENALTY_S 0
+#endif
+
 /* Program states.  Initial state is HACKINGSIMULATOR_INIT */
 enum hacking_simulator_state_t
 {
@@ -69,7 +90,7 @@ enum hacking_simulator_state_t
 	HACKINGSIMULATOR_SPLASH_SCREEN,
 	HACKINGSIMULATOR_RUN,
 	HACKINGSIMULATOR_WIN_SCREEN,
-	HACKINGSIMULATOR_FAIL,
+	HACKINGSIMULATOR_FAIL_SCREEN,
 	HACKINGSIMULATOR_EXIT,
 };
 
@@ -77,26 +98,30 @@ static enum hacking_simulator_state_t hacking_simulator_state = HACKINGSIMULATOR
 
 enum difficulty_level
 {
-	EASY,
-	MEDIUM,
-	HARD,
-	VERY_HARD
+	EASY = 0,
+	MEDIUM = 1,
+	HARD = 2,
+	VERY_HARD = 3,
 };
 
-static enum difficulty_level difficulty_level_state = VERY_HARD;
+static char difficulty_descriptor[4][10] = { "EASY", "MEDIUM", "HARD", "VERY HARD" };
+static char splash_screen_messages[4][60] = 
+{ 
+	"Welcome to HackingSim",
+	"Nice Work, It gets harder now",
+	"Whoa, you really know your stuff. Let's make it harder",
+	"There's no way you'll beat this one",
+};
 
-static const struct point pipebr_points[] =
-#include "hacking_simulator_drawings/pipe_b_r.h"
-static const struct point pipebl_points[] =
-#include "hacking_simulator_drawings/pipe_b_l.h"
-static const struct point pipetr_points[] =
-#include "hacking_simulator_drawings/pipe_t_r.h"
-static const struct point pipetl_points[] =
-#include "hacking_simulator_drawings/pipe_t_l.h"
-static const struct point pipetb_points[] =
-#include "hacking_simulator_drawings/pipe_t_b.h"
-static const struct point pipelr_points[] =
-#include "hacking_simulator_drawings/pipe_l_r.h"
+static enum difficulty_level difficulty_level_state = CONFIG_DIFFICULTY_INITIAL;
+
+/* Point Drawings */
+static const struct point pipebr_points[] = PIPE_B_R_POINTS;
+static const struct point pipebl_points[] = PIPE_B_L_POINTS;
+static const struct point pipetr_points[] = PIPE_T_R_POINTS;
+static const struct point pipetl_points[] = PIPE_T_L_POINTS;
+static const struct point pipetb_points[] = PIPE_T_B_POINTS;
+static const struct point pipelr_points[] = PIPE_L_R_POINTS;
 static const struct point blocking_square_points[] =
 {
 	{-18, 18},
@@ -105,7 +130,6 @@ static const struct point blocking_square_points[] =
 	{-18, -18},
 	{18, 18},
 };
-
 static const struct point arrow_points[] =
 {
 	{0, -9},
@@ -118,9 +142,13 @@ static const struct point arrow_points[] =
 	{0, -7},
 };
 
+/* Pipe types */
 struct pipe_io
 {
-	signed int left, right, up, down;
+	int left;
+	int right;
+	int up;
+	int down;
 };
 
 struct pipe
@@ -150,6 +178,11 @@ static struct pipe pipes[] = {
 
 static int cursor_x_index, cursor_y_index;
 
+struct coordinate {
+	int x;
+	int y;
+};
+
 /* cell_io is used to help determine direction in flow_path */
 enum cell_io
 {
@@ -162,11 +195,14 @@ enum cell_io
 
 struct cell
 {
-	int x, y, hidden, pipe_index, in_path;
+	int x;
+	int y;
+	int hidden;
+	int pipe_index;
 	int locked; /* if the water has reached this pipe, it is locked */
+	int connected;
 	enum cell_io input;
 	enum cell_io output;
-	struct cell *next_cell;
 };
 
 static struct cell grid[GRID_SIZE + 1][GRID_SIZE];
@@ -177,32 +213,106 @@ static int hsim_seed;
 static int fill_line;
 static int source;
 static int target;
-static int game_tick;
+static int game_tick_s;
 static volatile int last_time;
-static struct cell *cell_in_path;
-static struct cell *tail = NULL;
-static struct cell *flow_path_cell = NULL;
+// static struct cell *current_cell;
+static struct cell *tail;
 static struct cell *head;
 
-static void do_flow()
+
+static int is_fully_connected()
 {
-/* TODO: add logic to break flow */
-
-	if (tail == NULL)
-	{
-		tail = &grid[0][source];
-	}
-
-	tail->in_path = TRUE;
-
 	if ((tail->x == GRID_SIZE && tail->y == target) &&
 		pipes[tail->pipe_index].io.right)
+		return 1;
+	return 0;
+}
+
+static int is_hand_position(int posX, int posY)
+{
+	if (posX == HANDX && posY == HANDY)
+		return 1;
+
+	return 0;
+}
+
+static int is_left_neighbor(struct cell *current_cell, struct cell *next_cell)
+{
+	return current_cell->x-1 == next_cell->x;
+}
+static int is_right_neighbor(struct cell *current_cell, struct cell *next_cell)
+{
+	return current_cell->x+1 == next_cell->x;
+}
+static int is_up_neighbor(struct cell *current_cell, struct cell *next_cell)
+{
+	return current_cell->y-1 == next_cell->y;
+}
+static int is_down_neighbor(struct cell *current_cell, struct cell *next_cell)
+{
+	return current_cell->y+1 == next_cell->y;
+}
+
+
+static int io_matches_with_ignores(struct cell *current_cell, struct cell *next_cell, struct pipe_io ignores)
+{
+	if (next_cell == NULL)
+		return 0;
+
+	if (next_cell->pipe_index == BLOCKING_INDEX)
+		return 0;
+
+	if (!ignores.right && is_right_neighbor(current_cell, next_cell) && pipes[current_cell->pipe_index].io.right && pipes[next_cell->pipe_index].io.left)
 	{
-		hacking_simulator_state = HACKINGSIMULATOR_WIN_SCREEN;
-		return;
+		if (next_cell->connected){
+			struct pipe_io ignore_right = {0,1,0,0};
+			return io_matches_with_ignores(current_cell, next_cell, ignore_right);
+		}
+		return 1;
+	}
+	if (!ignores.left && is_left_neighbor(current_cell, next_cell) && pipes[current_cell->pipe_index].io.left && pipes[next_cell->pipe_index].io.right)
+	{
+		if (next_cell->connected){
+			struct pipe_io ignore_left = {1,0,0,0};
+			return io_matches_with_ignores(current_cell, next_cell, ignore_left);
+		}
+		return 1;
+	}
+	if (!ignores.up && is_up_neighbor(current_cell, next_cell) && pipes[current_cell->pipe_index].io.up && pipes[next_cell->pipe_index].io.down)
+	{
+		if (next_cell->connected){
+			struct pipe_io ignore_up = {0,0,1,0};
+			return io_matches_with_ignores(current_cell, next_cell, ignore_up);
+		}
+		return 1;
+	}
+	if (!ignores.down && is_down_neighbor(current_cell, next_cell) && pipes[current_cell->pipe_index].io.down && pipes[next_cell->pipe_index].io.up)
+	{
+		if (next_cell->connected){
+			struct pipe_io ignore_down = {0,0,0,1};
+			return io_matches_with_ignores(current_cell, next_cell, ignore_down);
+		}
+		return 1;
 	}
 
-	tail = tail->next_cell;
+	return 0;
+}
+
+static int io_matches(struct cell *current_cell, struct cell *next_cell)
+{
+	struct pipe_io ignores = {0,0,0,0};
+	return io_matches_with_ignores(current_cell, next_cell, ignores);
+}
+
+static struct cell* get_next_cell(struct cell *current_cell);
+static int is_cell_blocked(struct cell *current_cell)
+{
+	struct cell *next_cell = get_next_cell(current_cell);
+
+	if (next_cell == NULL)
+		return 1;
+
+	return 0;
 }
 
 /* place_blocker places a blocking piece on the grid
@@ -216,9 +326,6 @@ static void place_blocker()
 	int x,y;
 
 	int placed_blocker = FALSE;
-#ifdef __linux__
-	printf("\nplacing blocker");
-#endif
 
 	do
 	{
@@ -251,8 +358,8 @@ static void place_blocker()
 	} while (!placed_blocker);
 }
 
-/* find_win determines a winning path and places those pieces on the board */
-static void find_win()
+/* ensure_winnable_path determines a winning path and places those pieces on the board */
+static void ensure_winnable_path()
 {
 	int vertical_direction;
 	int currentX;
@@ -264,57 +371,53 @@ static void find_win()
 
 	/* handle the case where the target is on the same row as the source */
 	if (currentY == target)
-	{
 		grid[currentX][currentY].pipe_index = HORIZONTAL;
-	}
 
 	/* move vertically */
 	while (currentY != target)
 	{
-		if (currentX == GRID_SIZE)
+		if (currentX != GRID_SIZE)
+			continue;
+
+		if (target > currentY)
 		{
-			if (target > currentY)
-			{
-				vertical_direction = -1;
-				if (currentY == source)
-				{ /* handle first elbow on last column */
-					grid[currentX][currentY].pipe_index = BOTTOM_LEFT;
-				}
-				else
-				{
-					grid[currentX][currentY].pipe_index = VERTICAL;
-				}
-				currentY++;
-				continue;
+			vertical_direction = -1;
+			if (currentY == source)
+			{ /* handle first elbow on last column */
+				grid[currentX][currentY].pipe_index = BOTTOM_LEFT;
 			}
 			else
 			{
-				vertical_direction = 1;
-				if (currentY == source)
-				{ /* handle first elbow on last column */
-					grid[currentX][currentY].pipe_index = TOP_LEFT;
-				}
-				else
-				{
-					grid[currentX][currentY].pipe_index = VERTICAL;
-				}
-				currentY--;
-				continue;
+				grid[currentX][currentY].pipe_index = VERTICAL;
 			}
+			currentY++;
+			continue;
+		}
+		else
+		{
+			vertical_direction = 1;
+			if (currentY == source)
+			{ /* handle first elbow on last column */
+				grid[currentX][currentY].pipe_index = TOP_LEFT;
+			}
+			else
+			{
+				grid[currentX][currentY].pipe_index = VERTICAL;
+			}
+			currentY--;
+			continue;
 		}
 	}
 
 	/* handle the last elbow */
 	if (vertical_direction == -1)
-	{
 		grid[currentX][currentY].pipe_index = TOP_RIGHT;
-	}
-	else if (vertical_direction == 1)
-	{
+
+	if (vertical_direction == 1)
 		grid[currentX][currentY].pipe_index = BOTTOM_RIGHT;
-	}
 }
 
+// TODO: could unroll this for better processing on the microcontroller
 static void shuffle()
 {
 	int i, j, tmpX, tmpY, tmp_pindex;
@@ -362,9 +465,8 @@ static void shuffle()
 static void place_random_pipe(struct cell *cell)
 {
 	if (cell->pipe_index != INVALID_PIPE_INDEX)
-	{
 		return;
-	}
+
 	cell->pipe_index = xorshift((unsigned int *)&hsim_seed) % ARRAYSIZE(pipes);
 }
 
@@ -374,34 +476,99 @@ static void place_random_pipe(struct cell *cell)
 */
 static void handle_difficulty()
 {
-	switch (difficulty_level_state)
+	for(enum difficulty_level i = EASY; i < difficulty_level_state; i++)
+		place_blocker();
+
+	game_tick_s = CONFIG_GAME_TIME_LIMIT_BASE_S - CONFIG_GAME_TIME_LIMIT_DIFFICULTY_PENALTY_S * difficulty_level_state;
+}
+
+static void modulate_difficulty(unsigned wasWon)
+{
+	/* 	TODO:	This state should be merged into a clear global game state structure. -PMW */
+	static unsigned consecutiveWins = 0;
+	if (wasWon)
 	{
-	case EASY:
-		break;
-	case MEDIUM:
-		place_blocker();
-		place_blocker();
-		break;
-	case HARD:
-		place_blocker();
-		place_blocker();
-		place_blocker();
-		break;
-	case VERY_HARD:
-		/* TODO: enable screen flicker */
-		place_blocker();
-		place_blocker();
-		place_blocker();
-		place_blocker();
-		break;
-	default:
-		break;
+		consecutiveWins++;
+		if ((CONFIG_DIFFICULTY_CONSECUTIVE_WINS_TO_ADVANCE < consecutiveWins)
+		&& (CONFIG_DIFFICULTY_MAX > difficulty_level_state))
+		{
+			consecutiveWins = 0;
+			difficulty_level_state += CONFIG_DIFFICULTY_INCREASE_AFTER_WIN;
+		}
 	}
+	else
+	{
+		consecutiveWins = 0;
+		if (CONFIG_DIFFICULTY_MIN < difficulty_level_state)
+		{
+			difficulty_level_state -= CONFIG_DIFFICULTY_DECREASE_AFTER_FAIL;
+		}
+	}
+}
+
+static void handle_endgame(unsigned wasWon)
+{
+	modulate_difficulty(wasWon);
+	hacking_simulator_state = wasWon ? HACKINGSIMULATOR_WIN_SCREEN : HACKINGSIMULATOR_FAIL_SCREEN;
+}
+
+static void initialize_cell(struct cell grid[GRID_SIZE + 1][GRID_SIZE], int x, int y)
+{
+	if (grid[x][y].pipe_index == BLOCKING_INDEX)
+		return;
+	grid[x][y].x = x;
+	grid[x][y].y = y;
+	grid[x][y].hidden = TRUE;
+	grid[x][y].connected = FALSE;
+	grid[x][y].connected = FALSE;
+	/* initialize pipe_index to INVALID_PIPE_INDEX so that we can determine if we have placed a pipe */
+	grid[x][y].pipe_index = INVALID_PIPE_INDEX;
+}
+
+// TODO: could unroll this for better processing on the microcontroller
+static void initialize_cells(struct cell grid[GRID_SIZE + 1][GRID_SIZE])
+{
+	int x, y;
+	for (x = 0; x <= GRID_SIZE; x++)
+		for (y = 0; y < GRID_SIZE; y++)
+			initialize_cell(grid, x, y);
+}
+
+static void place_pipe(struct cell grid[GRID_SIZE + 1][GRID_SIZE], int x, int y)
+{
+	if (grid[x][y].pipe_index == BLOCKING_INDEX && grid[x][y].pipe_index != INVALID_PIPE_INDEX)
+		return;
+	place_random_pipe(&grid[x][y]);
+}
+
+// TODO: could unroll this for better processing on the microcontroller
+static void place_random_pipes(struct cell grid[GRID_SIZE + 1][GRID_SIZE])
+{
+	int x, y;
+	for (x = 0; x <= GRID_SIZE; x++)
+		for (y = 0; y < GRID_SIZE; y++)
+			place_pipe(grid, x, y);
+}
+
+static void set_source_cell(struct cell *current_cell);
+
+static void initialize_connection()
+{
+	tail = &grid[0][source];
+	set_source_cell(tail);
+}
+
+// TODO: what?
+static void set_cell_as_visible(struct cell grid[GRID_SIZE + 1][GRID_SIZE], int source)
+{
+	grid[0][source].hidden = FALSE;
+	grid[0][source].connected = TRUE;
 }
 
 static void initialize_grid()
 {
-	int x, y;
+	hsim_seed = timestamp;
+
 	/* pick starting point and finishing point -- 
 	*  for now we will assume the start is on the left and 
 	*  the finish is on the right
@@ -411,109 +578,121 @@ static void initialize_grid()
 	source = xorshift((unsigned int *)&hsim_seed) % GRID_SIZE;
 	target = (xorshift((unsigned int *)&hsim_seed) + source) % GRID_SIZE;
 
-	for (x = 0; x <= GRID_SIZE; x++)
-	{
-		for (y = 0; y < GRID_SIZE; y++)
-		{
-			grid[x][y].x = x;
-			grid[x][y].y = y;
-			grid[x][y].hidden = TRUE;
-			grid[x][y].locked = FALSE;
-			grid[x][y].in_path = FALSE;
-			grid[x][y].next_cell = NULL;
-			if (grid[x][y].pipe_index == BLOCKING_INDEX)
-			{
-				continue;
-			}
-			/* initialize pipe_index to INVALID_PIPE_INDEX so that we can determine if we have placed a pipe */
-			grid[x][y].pipe_index = INVALID_PIPE_INDEX;
-		}
-	}
+	initialize_cells(grid);
 
 	/* TODO: it might make it more difficult if we place blockers and then find the win-path */
-	find_win();
+	ensure_winnable_path();
 	handle_difficulty();
-
-	/* random grid */
-	for (x = 0; x <= GRID_SIZE; x++)
-	{
-		for (y = 0; y < GRID_SIZE; y++)
-		{
-			if (grid[x][y].pipe_index == BLOCKING_INDEX && grid[x][y].pipe_index != INVALID_PIPE_INDEX)
-			{
-				continue;
-			}
-			place_random_pipe(&grid[x][y]);
-		}
-	}
-
-	/* set source square as not hidden */
-	grid[0][source].hidden = FALSE;
-	grid[0][source].locked = TRUE;
-	cell_in_path = &grid[0][source];
-	tail = &grid[0][source];
-
+	place_random_pipes(grid);
+	set_cell_as_visible(grid, source);
+	initialize_connection();
 	shuffle();
 	hand = 0;
 }
 
-static void hackingsimulator_init(void)
+static void set_source_cell(struct cell *current_cell)
 {
-	FbInit();
-	FbClear();
-	cursor_x_index = 0;
-	cursor_y_index = 0;
-	game_tick = 0; /* game_tick maybe this is seconds*/
-	fill_line = 0;
-	hacking_simulator_state = HACKINGSIMULATOR_SPLASH_SCREEN;
+	current_cell->connected = TRUE;
+	current_cell->output = RIGHT;
+	head = current_cell;
 }
 
-static void draw_splash_screen()
+static struct cell* get_cell(int x, int y)
 {
-	FbColor(WHITE);
-	FbMove(0, 20);
-	FbWriteLine("Welcome to HackingSim");
-	FbPaintNewRows();
+	if (!WITHIN_GRID(x, y))
+		return NULL;
+
+	return &grid[x][y];
 }
 
-static void hackingsimulator_splash_screen()
+static struct cell* get_next_cell(struct cell *current_cell)
 {
-	draw_splash_screen();
+	/* try all four neighbors 
+	 * we would have to rule out connected */
+	int x = current_cell->x;
+	int y = current_cell->y;
+	struct coordinate up_neighbor_coordinate = {
+		x,
+		y-1,
+	};
+	struct coordinate down_neighbor_coordinate = {
+		x,
+		y+1,
+	};
+	struct coordinate left_neighbor_coordinate = {
+		x-1,
+		y,
+	};
+	struct coordinate right_neighbor_coordinate = {
+		x+1,
+		y,
+	};
 
-	if (BUTTON_PRESSED_AND_CONSUME)
-	{
-		hsim_seed = timestamp;
-		initialize_grid();
-		hacking_simulator_state = HACKINGSIMULATOR_RUN;
+	if (io_matches(current_cell, get_cell(right_neighbor_coordinate.x, right_neighbor_coordinate.y)))
+		return &grid[right_neighbor_coordinate.x][right_neighbor_coordinate.y];
+	if (io_matches(current_cell, get_cell(up_neighbor_coordinate.x, up_neighbor_coordinate.y)))
+		return &grid[up_neighbor_coordinate.x][up_neighbor_coordinate.y];
+	if (io_matches(current_cell, get_cell(down_neighbor_coordinate.x, down_neighbor_coordinate.y)))
+		return &grid[down_neighbor_coordinate.x][down_neighbor_coordinate.y];
+	if (io_matches(current_cell, get_cell(left_neighbor_coordinate.x, left_neighbor_coordinate.y)))
+		return &grid[left_neighbor_coordinate.x][left_neighbor_coordinate.y];
+
+	return NULL;
+}
+
+static void check_for_win()
+{
+	if (!is_fully_connected())
+		return;
+
+	if (difficulty_level_state < VERY_HARD) {
+		difficulty_level_state++;
+		hacking_simulator_state = HACKINGSIMULATOR_INIT;
+		return;
 	}
+	handle_endgame(TRUE);
 }
 
-static void hackingsimulator_fail()
+static void check_for_loss()
 {
-	FbClear();
-	FbColor(WHITE);
-	FbMove(0, 20);
-	FbWriteLine("You FAILED!");
-	FbPaintNewRows();
-
-	if (BUTTON_PRESSED_AND_CONSUME)
+	/*
+	 *	Ultimately if the player is out of time we don't need to check anything
+	 *  else, so we can safely return here. -PMW
+	 */
+	if (game_tick_s <= 0)
 	{
-		hacking_simulator_state = HACKINGSIMULATOR_EXIT;
+		handle_endgame(FALSE);
+		return;
 	}
+
+	struct cell *next_cell = get_next_cell(tail);
+	if (next_cell == NULL)
+		return;
+
+	if (!WITHIN_GRID(next_cell->x, next_cell->y))
+		handle_endgame(FALSE);
 }
 
-static void hackingsimulator_win_screen()
+static void advance_tail()
 {
-	FbClear();
-	FbColor(WHITE);
-	FbMove(0, 20);
-	FbWriteLine("You WON!");
-	FbPaintNewRows();
+	if (is_cell_blocked(tail))
+		return;
 
-	if (BUTTON_PRESSED_AND_CONSUME)
-	{
-		hacking_simulator_state = HACKINGSIMULATOR_EXIT;
-	}
+	tail->connected = TRUE;
+
+	struct cell* next_cell = get_next_cell(tail);
+
+	if (next_cell == NULL)
+		return;
+
+	tail = next_cell;
+}
+
+static void evaluate_connection()
+{
+	check_for_win();
+	check_for_loss();
+	advance_tail();
 }
 
 static void advance_tick()
@@ -529,10 +708,10 @@ static void advance_tick()
 #endif
 	if ((current_time % 60) != (last_time % 60))
 	{
-		if (game_tick < 100)
+		if (game_tick_s > 0)
 		{
 			last_time = current_time;
-			game_tick++;
+			game_tick_s--;
 			return;
 		}
 
@@ -547,29 +726,38 @@ static void swap_with_hand(struct cell *cell, int tmp_pipe)
 	cell->input = NOT_SET;
 	hand = cell->pipe_index;
 	cell->pipe_index = tmp_pipe;
+	tail = head;
+	evaluate_connection();
 }
 
+static void reset_flow_connections()
+{
+	int i, j;
+	for (i = 0; i <= GRID_SIZE; i++)
+		for (j = 0; j < GRID_SIZE; j++)
+			grid[i][j].connected = FALSE;
+
+	grid[0][source].connected = TRUE;
+}
+
+static void render_screen();
 static void check_buttons()
 {
 	if (BUTTON_PRESSED_AND_CONSUME)
 	{
-		if (grid[cursor_x_index][cursor_y_index].hidden == TRUE)
+		if (grid[cursor_x_index][cursor_y_index].hidden)
 		{
-			/* handle reveal */
 			grid[cursor_x_index][cursor_y_index].hidden = FALSE;
 		}
 		else
 		{
-			/* Check to see if the cell is blocking */
 			if (grid[cursor_x_index][cursor_y_index].pipe_index == BLOCKING_INDEX)
-			{
 				return;
-			}
-			if (grid[cursor_x_index][cursor_y_index].locked == TRUE)
-			{
+			if (grid[cursor_x_index][cursor_y_index].connected)
 				return;
-			}
+
 			swap_with_hand(&grid[cursor_x_index][cursor_y_index], hand);
+			reset_flow_connections();
 		}
 	}
 	else if (LEFT_BTN_AND_CONSUME)
@@ -597,324 +785,150 @@ static void check_buttons()
 		cursor_y_index = 0;
 	if (cursor_y_index > GRID_SIZE - 1)
 		cursor_y_index = GRID_SIZE - 1;
+
+	render_screen();
 }
 
-/* determine_cell_output looks at the cell input and the cell's io. 
-It will set the cell's output to other io (i.e. the one that's not set as the input) */
-static void determine_cell_output(struct cell *cell)
+static void handle_splash_screen_btn()
 {
-	switch (cell->input)
-	{
-	case UP:
-		if (pipes[cell->pipe_index].io.left)
-		{
-			cell->output = LEFT;
-		}
-		else if (pipes[cell->pipe_index].io.down)
-		{
-			cell->output = DOWN;
-		}
-		else if (pipes[cell->pipe_index].io.right)
-		{
-			cell->output = RIGHT;
-		}
-		break;
-	case DOWN:
-		if (pipes[cell->pipe_index].io.left)
-		{
-			cell->output = LEFT;
-		}
-		else if (pipes[cell->pipe_index].io.up)
-		{
-			cell->output = UP;
-		}
-		else if (pipes[cell->pipe_index].io.right)
-		{
-			cell->output = RIGHT;
-		}
-		break;
-	case LEFT:
-		if (pipes[cell->pipe_index].io.up)
-		{
-			cell->output = UP;
-		}
-		else if (pipes[cell->pipe_index].io.down)
-		{
-			cell->output = DOWN;
-		}
-		else if (pipes[cell->pipe_index].io.right)
-		{
-			cell->output = RIGHT;
-		}
-		break;
-	case RIGHT:
-		if (pipes[cell->pipe_index].io.left)
-		{
-			cell->output = LEFT;
-		}
-		else if (pipes[cell->pipe_index].io.down)
-		{
-			cell->output = DOWN;
-		}
-		else if (pipes[cell->pipe_index].io.up)
-		{
-			cell->output = UP;
-		}
-		break;
-
-	default:
-		break;
-	}
+	initialize_grid();
+	hacking_simulator_state = HACKINGSIMULATOR_RUN;
 }
 
-/* deterimine_cell_input verifies that the next_cell has an accomadating input to match the last output*/
-static void determine_cell_input(struct cell *cell, enum cell_io last_output)
-{
-	switch (last_output)
-	{
-	case LEFT:
-		if (!pipes[cell->pipe_index].io.right)
-		{
-			return;
-		}
-		cell->input = RIGHT;
-		break;
-	case RIGHT:
-		if (!pipes[cell->pipe_index].io.left)
-		{
-			return;
-		}
-		cell->input = LEFT;
-		break;
-	case UP:
-		if (!pipes[cell->pipe_index].io.down)
-		{
-			return;
-		}
-		cell->input = DOWN;
-		break;
-	case DOWN:
-		if (!pipes[cell->pipe_index].io.up)
-		{
-			return;
-		}
-		cell->input = UP;
-		break;
-	default:
-		cell->input = NOT_SET;
-		break;
-	}
-}
-
-static void setup_flow_path()
-{
-	/* iterate through flow_path by determing if the next cell has an accomadating input */
-	int x_offset = 0;
-	int y_offset = 0;
-	int last_output;
-
-	/* handle source cell */
-	if (cell_in_path->x == 0 && cell_in_path->y == source)
-	{
-		cell_in_path->in_path = TRUE;
-		cell_in_path->output = RIGHT;
-		head = cell_in_path;
-	}
-
-	if (cell_in_path->pipe_index == INVALID_PIPE_INDEX || cell_in_path->pipe_index == BLOCKING_INDEX || cell_in_path->pipe_index < 0)
-	{
-		return;
-	}
-
-	/* match the current cells output with the next cells input */
-	switch (cell_in_path->output)
-	{
-	case RIGHT:
-		x_offset = 1;
-		last_output = RIGHT;
-		break;
-	case LEFT:
-		x_offset = -1;
-		last_output = LEFT;
-		break;
-	case UP:
-		y_offset = -1;
-		last_output = UP;
-		break;
-	case DOWN:
-		y_offset = 1;
-		last_output = DOWN;
-		break;
-	default:
-		break;
-	}
-	int newX = cell_in_path->x + x_offset;
-	int newY = cell_in_path->y + y_offset;
-
-	/* make sure cell is on the grid */
-	if (WITHIN_GRID(newX, newY))
-	{
-		struct cell *next_cell = &grid[newX][newY];
-
-		/* check to make sure the next cell isn't blocking */
-		if (next_cell->pipe_index < 0)
-		{
-			next_cell->in_path = FALSE;
-			return;
-		}
-
-		determine_cell_input(next_cell, last_output);
-
-		if (next_cell->input == NOT_SET)
-		{
-			return;
-		}
-
-		else
-		{
-			cell_in_path->next_cell = next_cell;
-			cell_in_path = &grid[cell_in_path->x + x_offset][cell_in_path->y + y_offset];
-			determine_cell_output(cell_in_path);
-		}
-	}
-}
-
-static void fill_cell(struct cell current_cell, int i)
-{
-	switch (current_cell.input)
-	{
-	case LEFT:
-		if (current_cell.output == UP)
-		{
-			FbHorizontalLine(STARTX(current_cell.x), ENDY(current_cell.y) - i, ENDX(current_cell.x), 0);
-		}
-		else if (current_cell.output == DOWN)
-		{
-			FbHorizontalLine(STARTX(current_cell.x), STARTY(current_cell.y) + i, ENDX(current_cell.x), 0);
-		}
-
-		FbVerticalLine(STARTX(current_cell.x) + i, STARTY(current_cell.y), 0, ENDY(current_cell.y));
-		break;
-	case RIGHT:
-		if (current_cell.output == UP)
-		{
-			FbHorizontalLine(STARTX(current_cell.x), ENDY(current_cell.y) - i, ENDX(current_cell.x), 0);
-		}
-		else if (current_cell.output == DOWN)
-		{
-			FbHorizontalLine(STARTX(current_cell.x), STARTY(current_cell.y) + i, ENDX(current_cell.x), 0);
-		}
-
-		FbVerticalLine(ENDX(current_cell.x) - i, STARTY(current_cell.y), 0, ENDY(current_cell.y));
-		break;
-	case UP:
-		if (current_cell.output == LEFT)
-		{
-			FbVerticalLine(ENDX(current_cell.x) - i, STARTY(current_cell.y), 0, ENDY(current_cell.y));
-		}
-		else if (current_cell.output == RIGHT)
-		{
-			FbVerticalLine(STARTX(current_cell.x) + i, STARTY(current_cell.y), 0, ENDY(current_cell.y));
-		}
-
-		FbHorizontalLine(STARTX(current_cell.x), STARTY(current_cell.y) + i, ENDX(current_cell.x), 0);
-		break;
-	case DOWN:
-		if (current_cell.output == LEFT)
-		{
-			FbVerticalLine(ENDX(current_cell.x) - i, STARTY(current_cell.y), 0, ENDY(current_cell.y));
-		}
-		else if (current_cell.output == RIGHT)
-		{
-			FbVerticalLine(STARTX(current_cell.x) + i, STARTY(current_cell.y), 0, ENDY(current_cell.y));
-		}
-		FbHorizontalLine(STARTX(current_cell.x), ENDY(current_cell.y) - i, ENDX(current_cell.x), 0);
-		break;
-	default:
-		break;
-	}
-}
-
-/* TODO: implement flow animation */
-static void advance_flow()
+static void render_flow_cell(struct cell current_cell)
 {
 	int i;
+	for (i = 0; i < CELL_SIZE; i++)
+		FbHorizontalLine(STARTX(current_cell.x), ENDY(current_cell.y) - i, ENDX(current_cell.x), 0);
+
+}
+
+static void render_pipe_fill(struct cell cell)
+{
 	FbColor(BLUE);
+	render_flow_cell(cell);
+}
 
-	if (flow_path_cell == NULL)
-	{
-		head->input = LEFT;
-		flow_path_cell = head;
-	}
+static void render_splash_screen()
+{
+	FbColor(WHITE);
+	FbMove(0, 20);
+	FbWriteLine(splash_screen_messages[difficulty_level_state]);
+	FbPaintNewRows();
+}
 
-	if (flow_path_cell->next_cell == NULL)
+static void render_hackingsimulator_splash_screen()
+{
+	render_splash_screen();
+
+	if (BUTTON_PRESSED_AND_CONSUME)
+		handle_splash_screen_btn();
+}
+
+static void render_hackingsimulator_fail_screen()
+{
+	FbClear();
+	FbColor(WHITE);
+	FbMove(0, 20);
+	FbWriteLine("You FAILED!");
+	FbPaintNewRows();
+
+	if (BUTTON_PRESSED_AND_CONSUME)
+		hacking_simulator_state = HACKINGSIMULATOR_EXIT;
+}
+
+static void render_hackingsimulator_win_screen()
+{
+	FbClear();
+	FbColor(WHITE);
+	FbMove(0, 20);
+	FbWriteLine("You WON!");
+	FbPaintNewRows();
+
+	if (BUTTON_PRESSED_AND_CONSUME)
+		hacking_simulator_state = HACKINGSIMULATOR_EXIT;
+}
+
+#define VERY_HARD_FRAMES_TO_RENDER 45
+#define VERY_HARD_FRAMES_TO_HIDE 25
+static int frame_count = 0;
+static int is_drawing_grid = 0;
+
+static void toggle_grid_render()
+{
+	frame_count = 0;
+
+	if (is_drawing_grid)
 	{
+		is_drawing_grid = 0;
 		return;
 	}
 
-	int count = 0;
-	struct cell *current = head;
-
-	while (current != NULL)
-	{
-		current->locked = TRUE;
-		for (i = 0; i < CELL_SIZE; i++)
-		{
-			fill_cell(*current, i);
-		}
-		current = current->next_cell;
-		count++;
-	}
-
-	flow_path_cell = flow_path_cell->next_cell;
+	is_drawing_grid = 1;
 }
 
-static void draw_pipe(struct cell cell)
+static void render_grid();
+static void render_cursor();
+static void handle_flicker()
+{
+	frame_count++;
+
+	if (is_drawing_grid && frame_count == VERY_HARD_FRAMES_TO_RENDER)
+		toggle_grid_render();
+
+	if (!is_drawing_grid && frame_count == VERY_HARD_FRAMES_TO_HIDE)
+		toggle_grid_render();
+
+	if (is_drawing_grid)
+		render_grid();
+
+	render_cursor();
+	FbSwapBuffers();
+}
+
+static void render_blocking_cell(struct cell cell)
+{
+	FbDrawObject(blocking_square_points, ARRAYSIZE(blocking_square_points), RED, STARTX(cell.x) + PIPE_OFFSET, STARTY(cell.y) + PIPE_OFFSET, PIPE_SCALE);
+}
+
+static void render_pipe(struct cell cell)
 {
 	/* Check to see if the cell is blocking */
 	if (cell.pipe_index == BLOCKING_INDEX)
 	{
-		FbDrawObject(blocking_square_points, ARRAYSIZE(blocking_square_points), RED, STARTX(cell.x) + PIPE_OFFSET, STARTY(cell.y) + PIPE_OFFSET, PIPE_SCALE);
+		render_blocking_cell(cell);
+		return;
 	}
-	else
-	{
-		if (cell.locked)
-		{
-			FbColor(BLUE);
-			int i = 0;
-			for (i = 0; i < CELL_SIZE; i++)
-			{
-				fill_cell(cell, i);
-			}
-		}
-		FbDrawObject(pipes[cell.pipe_index].drawing, pipes[cell.pipe_index].npoints, YELLOW, STARTX(cell.x) + PIPE_OFFSET, STARTY(cell.y) + PIPE_OFFSET, PIPE_SCALE);
-#ifdef HACKSIM_DEBUG
-		if (cell.in_path)
-		{
-			FbMove(STARTX(cell.x), STARTY(cell.y));
-		}
+
+#if 1
+	if (cell.connected)
+		render_pipe_fill(cell);
 #endif
-	}
+
+	FbDrawObject(pipes[cell.pipe_index].drawing, pipes[cell.pipe_index].npoints, YELLOW, STARTX(cell.x) + PIPE_OFFSET, STARTY(cell.y) + PIPE_OFFSET, PIPE_SCALE);
+#ifdef HACKSIM_DEBUG
+	if (cell.connected)
+		FbMove(STARTX(cell.x), STARTY(cell.y));
+#endif
 	FbColor(WHITE);
 }
 
-static void draw_hand()
+static void render_hand()
 {
 	/* Check to see if the cell is blocking */
 	FbDrawObject(pipes[hand].drawing, pipes[hand].npoints, YELLOW, STARTX(HANDX) + PIPE_OFFSET, STARTY(HANDY) + PIPE_OFFSET, PIPE_SCALE);
 	FbColor(WHITE);
 }
 
-static void draw_timer()
+static void render_timer()
 {
 	char p[4];
 	FbMove(STARTX(TIMERX) + (CELL_SIZE / 5), STARTY(TIMERY) + (CELL_SIZE / 2));
-	// itoa(p, hand, 10);
-	itoa(p, game_tick, 10);
+	itoa(p, game_tick_s, 10);
 	FbWriteLine(p);
 }
 
-static void draw_box(int grid_x, int grid_y, int color)
+static void render_box(int grid_x, int grid_y, int color)
 {
 	FbColor(color);
 	FbHorizontalLine(STARTX(grid_x), STARTY(grid_y), ENDX(grid_x), STARTY(grid_y));
@@ -923,34 +937,34 @@ static void draw_box(int grid_x, int grid_y, int color)
 	FbVerticalLine(ENDX(grid_x), STARTY(grid_y), ENDX(grid_x), ENDY(grid_y));
 }
 
-static void draw_arrow(int x, int y)
+static void render_arrow(int x, int y)
 {
 	FbDrawObject(arrow_points, ARRAYSIZE(arrow_points), GREEN, x + PIPE_OFFSET, y + PIPE_OFFSET, PIPE_SCALE);
 }
 
-static void draw_cell(int posX, int posY)
+static void render_cell(int posX, int posY)
 {
 #if HACKSIM_DEBUG
 	char p[4];
 #endif
 
 	/* paint the hand */
-	if (posX == HANDX && posY == HANDY)
+	if (is_hand_position(posX, posY))
 	{
-		draw_box(posX, posY, BLUE);
-		draw_hand();
-		draw_timer();
+		render_box(posX, posY, BLUE);
+		render_hand();
+		render_timer();
 #if HACKSIM_DEBUG
 		FbMove(STARTX(posX) + (CELL_SIZE / 5), STARTY(posY) + (CELL_SIZE / 2));
-		// itoa(p, hand, 10);
-		itoa(p, cell_in_path->input, 10);
+		itoa(p, current_cell->input, 10);
 		FbWriteLine(p);
 #endif
 		return;
 	}
 
 	/* draw cell borders */
-	draw_box(posX, posY, WHITE);
+	render_box(posX, posY, WHITE);
+
 
 	if (grid[posX][posY].hidden == 1)
 	{
@@ -961,7 +975,7 @@ static void draw_cell(int posX, int posY)
 	}
 	else
 	{
-		draw_pipe(grid[posX][posY]);
+		render_pipe(grid[posX][posY]);
 
 #if HACKSIM_DEBUG
 		FbMove(STARTX(posX) + (CELL_SIZE / 5), STARTY(posY) + (CELL_SIZE / 2));
@@ -971,65 +985,74 @@ static void draw_cell(int posX, int posY)
 	}
 
 	if (posX == 0 && posY == source)
-	{
-		draw_arrow(STARTX(0) - 10, STARTY(posY));
-	}
+		render_arrow(STARTX(0) - 10, STARTY(posY));
 
 	if (posX == GRID_SIZE && posY == target)
-	{
-		draw_arrow(STARTX(GRID_SIZE), STARTY(posY));
-	}
+		render_arrow(STARTX(GRID_SIZE), STARTY(posY));
 }
 
-static void draw_grid()
+static void render_hand_cell()
+{
+	FbColor(BLUE);
+	render_cell(HANDX, HANDY);
+}
+
+static void render_grid()
 {
 	int x, y;
 
 	for (x = 0; x <= GRID_SIZE; x++)
-	{
 		for (y = 0; y < GRID_SIZE; y++)
-		{
-			draw_cell(x, y);
-		};
-	};
+			render_cell(x, y);
 
-	/* draw hand */
-	FbColor(BLUE);
-	draw_cell(HANDX, HANDY);
+	render_hand_cell();
 }
 
-static void draw_cursor()
+static void render_cursor()
 {
-	draw_box(cursor_x_index, cursor_y_index, GREEN);
+	render_box(cursor_x_index, cursor_y_index, GREEN);
 }
 
-static void draw_screen()
+static void render_difficulty_label()
+{
+	FbColor(RED);
+	FbMove(30, 110);
+	FbWriteLine(difficulty_descriptor[difficulty_level_state]);
+	FbPaintNewRows();
+}
+
+static void render_screen()
 {
 	FbColor(WHITE);
 	FbClear();
+	render_difficulty_label();
 
-	if (game_tick < GAME_TIME_LIMIT)
+	if (difficulty_level_state == VERY_HARD)
 	{
-		advance_flow();
-	}
-	else
-	{
-		hacking_simulator_state = HACKINGSIMULATOR_FAIL;
+		handle_flicker();
+		return;
 	}
 
-	draw_grid();
-	draw_cursor();
+	render_grid();
+	render_cursor();
 	FbSwapBuffers();
+}
+
+static void hackingsimulator_init()
+{
+	FbInit();
+	FbClear();
+	cursor_x_index = 0;
+	cursor_y_index = 0;
+	fill_line = 0;
+	hacking_simulator_state = HACKINGSIMULATOR_SPLASH_SCREEN;
 }
 
 static void hackingsimulator_run()
 {
 	check_buttons();
 	advance_tick();
-	fill_line = ((game_tick * FLOW_RATE) * GAME_TIME_LIMIT) / LCD_XSIZE;
-	setup_flow_path();
-	do_flow();
-	draw_screen();
+	evaluate_connection();
 }
 
 static void hackingsimulator_exit()
@@ -1046,16 +1069,16 @@ int hacking_simulator_cb(void)
 		hackingsimulator_init();
 		break;
 	case HACKINGSIMULATOR_SPLASH_SCREEN:
-		hackingsimulator_splash_screen();
+		render_hackingsimulator_splash_screen();
 		break;
 	case HACKINGSIMULATOR_WIN_SCREEN:
-		hackingsimulator_win_screen();
+		render_hackingsimulator_win_screen();
 		break;
 	case HACKINGSIMULATOR_RUN:
 		hackingsimulator_run();
 		break;
-	case HACKINGSIMULATOR_FAIL:
-		hackingsimulator_fail();
+	case HACKINGSIMULATOR_FAIL_SCREEN:
+		render_hackingsimulator_fail_screen();
 		break;
 	case HACKINGSIMULATOR_EXIT:
 		hackingsimulator_exit();
