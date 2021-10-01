@@ -211,7 +211,6 @@ static int source;
 static int target;
 static int game_tick_s;
 static volatile int last_time;
-// static struct cell *current_cell;
 static struct cell *tail;
 static struct cell *head;
 
@@ -522,7 +521,6 @@ static void initialize_cell(struct cell grid[GRID_SIZE + 1][GRID_SIZE], int x, i
 	grid[x][y].pipe_index = INVALID_PIPE_INDEX;
 }
 
-// TODO: could unroll this for better processing on the microcontroller
 static void initialize_cells(struct cell grid[GRID_SIZE + 1][GRID_SIZE])
 {
 	int x, y;
@@ -538,7 +536,6 @@ static void place_pipe(struct cell grid[GRID_SIZE + 1][GRID_SIZE], int x, int y)
 	place_random_pipe(&grid[x][y]);
 }
 
-// TODO: could unroll this for better processing on the microcontroller
 static void place_random_pipes(struct cell grid[GRID_SIZE + 1][GRID_SIZE])
 {
 	int x, y;
@@ -555,7 +552,6 @@ static void initialize_connection()
 	set_source_cell(tail);
 }
 
-// TODO: what?
 static void set_cell_as_visible(struct cell grid[GRID_SIZE + 1][GRID_SIZE], int source)
 {
 	grid[0][source].hidden = FALSE;
@@ -797,7 +793,6 @@ static void render_flow_cell(struct cell current_cell)
 	int i;
 	for (i = 0; i < CELL_SIZE; i++)
 		FbHorizontalLine(STARTX(current_cell.x), ENDY(current_cell.y) - i, ENDX(current_cell.x), 0);
-
 }
 
 static void render_pipe_fill(struct cell cell)
@@ -897,10 +892,8 @@ static void render_pipe(struct cell cell)
 		return;
 	}
 
-#if 1
 	if (cell.connected)
 		render_pipe_fill(cell);
-#endif
 
 	FbDrawObject(pipes[cell.pipe_index].drawing, pipes[cell.pipe_index].npoints, YELLOW, STARTX(cell.x) + PIPE_OFFSET, STARTY(cell.y) + PIPE_OFFSET, PIPE_SCALE);
 #ifdef HACKSIM_DEBUG
@@ -945,7 +938,6 @@ static void render_cell(int posX, int posY)
 	char p[4];
 #endif
 
-	/* paint the hand */
 	if (is_hand_position(posX, posY))
 	{
 		render_box(posX, posY, BLUE);
@@ -959,9 +951,7 @@ static void render_cell(int posX, int posY)
 		return;
 	}
 
-	/* draw cell borders */
 	render_box(posX, posY, WHITE);
-
 
 	if (grid[posX][posY].hidden == 1)
 	{
