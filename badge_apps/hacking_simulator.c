@@ -256,18 +256,18 @@ static int io_matches(struct cell *current_cell, struct cell *next_cell)
 	if (next_cell->pipe_index == BLOCKING_INDEX)
 		return 0;
 
-	struct pipe_io direction_right = {0,1,0,0};
-	struct pipe_io direction_left = {1,0,0,0};
-	struct pipe_io direction_up = {0,0,1,0};
-	struct pipe_io direction_down = {0,0,0,1};
+	struct pipe_io right = {0,1,0,0};
+	struct pipe_io left = {1,0,0,0};
+	struct pipe_io up = {0,0,1,0};
+	struct pipe_io down = {0,0,0,1};
 
-	if (!next_cell->connected && is_neighbor(current_cell, next_cell, direction_right) && pipes[current_cell->pipe_index].io.right && pipes[next_cell->pipe_index].io.left)
+	if (!next_cell->connected && is_neighbor(current_cell, next_cell, right) && pipes[current_cell->pipe_index].io.right && pipes[next_cell->pipe_index].io.left)
 		return 1;
-	if (!next_cell->connected && is_neighbor(current_cell, next_cell, direction_left) && pipes[current_cell->pipe_index].io.left && pipes[next_cell->pipe_index].io.right)
+	if (!next_cell->connected && is_neighbor(current_cell, next_cell, left) && pipes[current_cell->pipe_index].io.left && pipes[next_cell->pipe_index].io.right)
 		return 1;
-	if (!next_cell->connected && is_neighbor(current_cell, next_cell, direction_up) && pipes[current_cell->pipe_index].io.up && pipes[next_cell->pipe_index].io.down)
+	if (!next_cell->connected && is_neighbor(current_cell, next_cell, up) && pipes[current_cell->pipe_index].io.up && pipes[next_cell->pipe_index].io.down)
 		return 1;
-	if (!next_cell->connected && is_neighbor(current_cell, next_cell, direction_down) && pipes[current_cell->pipe_index].io.down && pipes[next_cell->pipe_index].io.up)
+	if (!next_cell->connected && is_neighbor(current_cell, next_cell, down) && pipes[current_cell->pipe_index].io.down && pipes[next_cell->pipe_index].io.up)
 		return 1;
 
 	return 0;
