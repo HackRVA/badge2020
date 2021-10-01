@@ -17,6 +17,7 @@
 #include "menu.h"
 #include "buttons.h"
 #include "fb.h"
+#include "timer1_int.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -661,6 +662,22 @@ static void evaluate_connection()
 	check_for_loss();
 	advance_tail();
 }
+
+
+#ifndef __linux__
+static int get_time(void)
+{
+#if LASERTAG_DISPLAY_CURRENT_TIME
+	static int previous_sec = 0;
+	/* I guess this will wrap-around at midnight. Do we actually care about that? */
+	if (previous_sec != wclock.sec) {
+		previous_sec = wclock.sec;
+		screen_changed = 1;
+	}
+#endif
+	return 3600 * (int) wclock.hour + 60 * (int) wclock.min + (int) wclock.sec;
+}
+#endif
 
 static void advance_tick()
 {
