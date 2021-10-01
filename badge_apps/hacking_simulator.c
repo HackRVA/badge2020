@@ -248,8 +248,7 @@ static int is_neighbor(struct cell *current_cell, struct cell *next_cell, struct
 	return 0;
 }
 
-
-static int io_matches_with_ignores(struct cell *current_cell, struct cell *next_cell, struct pipe_io ignores)
+static int io_matches(struct cell *current_cell, struct cell *next_cell)
 {
 	if (next_cell == NULL)
 		return 0;
@@ -262,42 +261,16 @@ static int io_matches_with_ignores(struct cell *current_cell, struct cell *next_
 	struct pipe_io direction_up = {0,0,1,0};
 	struct pipe_io direction_down = {0,0,0,1};
 
-	if (!ignores.right && is_neighbor(current_cell, next_cell, direction_right) && pipes[current_cell->pipe_index].io.right && pipes[next_cell->pipe_index].io.left)
-	{
-		if (next_cell->connected)
-			return io_matches_with_ignores(current_cell, next_cell, direction_right);
-
+	if (!next_cell->connected && is_neighbor(current_cell, next_cell, direction_right) && pipes[current_cell->pipe_index].io.right && pipes[next_cell->pipe_index].io.left)
 		return 1;
-	}
-	if (!ignores.left && is_neighbor(current_cell, next_cell, direction_left) && pipes[current_cell->pipe_index].io.left && pipes[next_cell->pipe_index].io.right)
-	{
-		if (next_cell->connected)
-			return io_matches_with_ignores(current_cell, next_cell, direction_left);
-
+	if (!next_cell->connected && is_neighbor(current_cell, next_cell, direction_left) && pipes[current_cell->pipe_index].io.left && pipes[next_cell->pipe_index].io.right)
 		return 1;
-	}
-	if (!ignores.up && is_neighbor(current_cell, next_cell, direction_up) && pipes[current_cell->pipe_index].io.up && pipes[next_cell->pipe_index].io.down)
-	{
-		if (next_cell->connected)
-			return io_matches_with_ignores(current_cell, next_cell, direction_up);
-
+	if (!next_cell->connected && is_neighbor(current_cell, next_cell, direction_up) && pipes[current_cell->pipe_index].io.up && pipes[next_cell->pipe_index].io.down)
 		return 1;
-	}
-	if (!ignores.down && is_neighbor(current_cell, next_cell, direction_down) && pipes[current_cell->pipe_index].io.down && pipes[next_cell->pipe_index].io.up)
-	{
-		if (next_cell->connected)
-			return io_matches_with_ignores(current_cell, next_cell, direction_down);
-
+	if (!next_cell->connected && is_neighbor(current_cell, next_cell, direction_down) && pipes[current_cell->pipe_index].io.down && pipes[next_cell->pipe_index].io.up)
 		return 1;
-	}
 
 	return 0;
-}
-
-static int io_matches(struct cell *current_cell, struct cell *next_cell)
-{
-	struct pipe_io ignores = {0,0,0,0};
-	return io_matches_with_ignores(current_cell, next_cell, ignores);
 }
 
 static struct cell* get_next_cell(struct cell *current_cell);
