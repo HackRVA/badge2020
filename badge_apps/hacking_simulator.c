@@ -37,6 +37,8 @@ extern char *strcat(char *dest, const char *src);
 
 #include "hacking_simulator_drawings/pipes.h"
 
+static int screen_changed = 0;
+
 /* HACKSIM_DEBUG 
  * 1 debug mode on
  * 0 debug mode off
@@ -696,6 +698,7 @@ static void advance_tick()
 		{
 			last_time = current_time;
 			game_tick_s--;
+			screen_changed = 1;
 			return;
 		}
 
@@ -743,22 +746,27 @@ static void check_buttons()
 			swap_with_hand(&grid[cursor_x_index][cursor_y_index], hand);
 			reset_flow_connections();
 		}
+		screen_changed = 1;
 	}
 	else if (LEFT_BTN_AND_CONSUME)
 	{
 		cursor_x_index--;
+		screen_changed = 1;
 	}
 	else if (RIGHT_BTN_AND_CONSUME)
 	{
 		cursor_x_index++;
+		screen_changed = 1;
 	}
 	else if (UP_BTN_AND_CONSUME)
 	{
 		cursor_y_index--;
+		screen_changed = 1;
 	}
 	else if (DOWN_BTN_AND_CONSUME)
 	{
 		cursor_y_index++;
+		screen_changed = 1;
 	}
 
 	if (cursor_x_index < 0)
@@ -1001,6 +1009,9 @@ static void render_difficulty_label()
 
 static void render_screen()
 {
+	if (!screen_changed)
+		return;
+
 	FbColor(WHITE);
 	FbClear();
 	render_difficulty_label();
@@ -1014,6 +1025,7 @@ static void render_screen()
 	render_grid();
 	render_cursor();
 	FbSwapBuffers();
+	screen_changed = 0;
 }
 
 static void hackingsimulator_init()
