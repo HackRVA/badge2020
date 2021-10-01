@@ -16,6 +16,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "fb.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
