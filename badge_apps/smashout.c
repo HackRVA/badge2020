@@ -34,7 +34,7 @@ extern char *strcat(char *dest, const char *src);
 
 /* TODO figure out where these should really come from */
 #define PADDLE_HEIGHT 25
-#define PADDLE_WIDTH 20
+#define PADDLE_WIDTH 30
 #define PADDLE_SPEED 7
 #define BALL_STARTX (8 * LCD_XSIZE / 2)
 #define BALL_STARTY (8 * LCD_YSIZE / 2)
@@ -43,9 +43,11 @@ extern char *strcat(char *dest, const char *src);
 #define BRICK_WIDTH 8
 #define BRICK_HEIGHT 4
 #define SPACE_ABOVE_BRICKS 20
+#define BALL_RADIUS 2
 
 static struct smashout_paddle {
-	int x, y, w, vx;
+	int x, y, vx;
+	char w;
 } paddle, old_paddle;
 
 static struct smashout_ball {
@@ -153,26 +155,50 @@ static void smashout_draw_bricks()
 		smashout_program_state = SMASHOUT_GAME_INIT;
 }
 
+static int xlim(int x)
+{
+	if (x < 0)
+		return 0;
+	if (x >= LCD_XSIZE)
+		return LCD_XSIZE - 1;
+	return x;
+}
+
+static int ylim(int y)
+{
+	if (y < 0)
+		return 0;
+	if (y >= LCD_YSIZE)
+		return LCD_YSIZE - 1;
+	return y;
+}
+
+
 static void smashout_draw_ball()
 {
-	int x, y;
+	int x, y, x1, y1, x2, y2;
+	static const int r = BALL_RADIUS;
 
 	x = oldball.x / 8;
 	y = oldball.y / 8;
 
+	x1 = xlim(x - r); x2 = xlim(x + r);
+	y1 = ylim(y - r); y2 = ylim(y + r);
 	FbColor(BLACK);
-	FbHorizontalLine(x - 1, y - 1, x + 1, y - 1);
-	FbHorizontalLine(x - 1, y + 1, x + 1, y + 1);
-	FbVerticalLine(x - 1, y - 1, x - 1, y + 1);
-	FbVerticalLine(x + 1, y - 1, x + 1, y + 1);
+	FbHorizontalLine(x1, y1, x2, y1);
+	FbHorizontalLine(x1, y2, x2, y2);
+	FbVerticalLine(x1, y1, x1, y2);
+	FbVerticalLine(x2, y1, x2, y2);
 
 	x = ball.x / 8;
 	y = ball.y / 8;
+	x1 = xlim(x - r); x2 = xlim(x + r);
+	y1 = ylim(y - r); y2 = ylim(y + r);
 	FbColor(WHITE);
-	FbHorizontalLine(x - 1, y - 1, x + 1, y - 1);
-	FbHorizontalLine(x - 1, y + 1, x + 1, y + 1);
-	FbVerticalLine(x - 1, y - 1, x - 1, y + 1);
-	FbVerticalLine(x + 1, y - 1, x + 1, y + 1);
+	FbHorizontalLine(x1, y1, x2, y1);
+	FbHorizontalLine(x1, y2, x2, y2);
+	FbVerticalLine(x1, y1, x1, y2);
+	FbVerticalLine(x2, y1, x2, y2);
 }
 
 static void smashout_move_paddle()
