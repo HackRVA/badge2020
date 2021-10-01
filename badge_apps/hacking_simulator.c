@@ -444,7 +444,9 @@ static void place_random_pipe(struct cell *cell)
 */
 static void handle_difficulty()
 {
-	for(enum difficulty_level i = EASY; i < difficulty_level_state; i++)
+	enum difficulty_level i;
+
+	for(i = EASY; i < difficulty_level_state; i++)
 		place_blocker();
 
 	game_tick_s = CONFIG_GAME_TIME_LIMIT_BASE_S - CONFIG_GAME_TIME_LIMIT_DIFFICULTY_PENALTY_S * difficulty_level_state;
