@@ -178,10 +178,6 @@ static struct pipe pipes[] = {
 
 static int cursor_x_index, cursor_y_index;
 
-struct coordinate {
-	int x;
-	int y;
-};
 
 /* cell_io is used to help determine direction in flow_path */
 enum cell_io
@@ -612,19 +608,19 @@ static struct cell* get_next_cell(struct cell *current_cell)
 	 * we would have to rule out connected */
 	int x = current_cell->x;
 	int y = current_cell->y;
-	struct coordinate up_neighbor_coordinate = {
+	struct point up_neighbor_coordinate = {
 		x,
 		y-1,
 	};
-	struct coordinate down_neighbor_coordinate = {
+	struct point down_neighbor_coordinate = {
 		x,
 		y+1,
 	};
-	struct coordinate left_neighbor_coordinate = {
+	struct point left_neighbor_coordinate = {
 		x-1,
 		y,
 	};
-	struct coordinate right_neighbor_coordinate = {
+	struct point right_neighbor_coordinate = {
 		x+1,
 		y,
 	};
