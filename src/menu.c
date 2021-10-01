@@ -15,13 +15,12 @@
 #include "conductor.h"
 #include "blinkenlights.h"
 #include "adc.h"
-#include "smashout.h"
-#include "ghost-detector.h"
 #include "lunarlander.h"
 #include "QC.h"
 #include "username.h"
 #include "badge_monsters.h"
 #include "spacetripper.h"
+#include "hacking_simulator.h"
 #ifdef INCLUDE_IRXMIT
 #include "irxmit.h"
 #endif
@@ -500,11 +499,10 @@ const struct menu_t games_m[] = {
    {"Blinkenlights", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)blinkenlights_cb}}, // Set other badges LED
    {"Conductor",     VERT_ITEM, FUNCTION, {(struct menu_t *)conductor_cb}}, // Tell other badges to play notes
    {"Sensors",       VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },
-   {"Smash Out",     VERT_ITEM, FUNCTION, {(struct menu_t *)smashout_cb} },
-   {"Ghost Detector",VERT_ITEM, FUNCTION, {(struct menu_t *)ghostdetector_cb} },
    {"Lunar Rescue",  VERT_ITEM, FUNCTION, {(struct menu_t *)lunarlander_cb} },
    {"Badge Monsters",VERT_ITEM, FUNCTION, {(struct menu_t *)badge_monsters_cb} },
    {"Space Tripper", VERT_ITEM, FUNCTION, {(struct menu_t *)spacetripper_cb} },
+   {"Hacking Simulator", VERT_ITEM, FUNCTION, {(struct menu_t *)hacking_simulator_cb} },
 #ifdef INCLUDE_IRXMIT
    {"IR XMIT",       VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb} },
 #endif
