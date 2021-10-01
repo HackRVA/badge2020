@@ -669,14 +669,6 @@ static void evaluate_connection()
 #ifndef __linux__
 static int get_time(void)
 {
-#if LASERTAG_DISPLAY_CURRENT_TIME
-	static int previous_sec = 0;
-	/* I guess this will wrap-around at midnight. Do we actually care about that? */
-	if (previous_sec != wclock.sec) {
-		previous_sec = wclock.sec;
-		screen_changed = 1;
-	}
-#endif
 	return 3600 * (int) wclock.hour + 60 * (int) wclock.min + (int) wclock.sec;
 }
 #endif
