@@ -391,6 +391,7 @@ static void st_lrs(void) /* long range scanner */
 	int i, x, y, place;
 	int sectorx, sectory, sx, sy;
 	char scan[3][3][3];
+	int color[] = { WHITE, CYAN, YELLOW };
 
 	sectorx = gs.player.x >> 3;
 	sectory = gs.player.y >> 3;
@@ -435,16 +436,28 @@ static void st_lrs(void) /* long range scanner */
 			for (i = 0; i < 3; i++) {
 				char digit[5];
 
-				if (y == 1 && x == 1)
-					FbColor(YELLOW);
-				else
-					FbColor(GREEN);
+				FbColor(color[i]);
 				itoa(digit, scan[x][y][i], 10);
-				FbMove(25 + x * 30 + i * 8, y * 8 + 50);
+				FbMove(25 + x * 30 + i * 8, y * 10 + 50);
 				FbWriteLine(digit);
 			}
 		}
+		FbColor(GREEN);
+		FbHorizontalLine(22, y * 10 + 49, 132 - 21, y * 10 + 49);
 	}
+	FbHorizontalLine(22, y * 10 + 49, 132 - 21, y * 10 + 49);
+	for (i = 0; i < 4; i++)
+		FbVerticalLine(22 + i * 30, 49, 22 + i * 30,  y * 10 + 49);
+
+	FbMove(2, 89);
+	FbColor(color[0]);
+	FbWriteLine("# STARS");
+	FbMove(2, 98);
+	FbColor(color[1]);
+	FbWriteLine("# STARBASES");
+	FbMove(2, 107);
+	FbColor(color[2]);
+	FbWriteLine("# ENEMY SHIPS");
 	
 	FbSwapBuffers();
 	st_program_state = ST_PROCESS_INPUT;
