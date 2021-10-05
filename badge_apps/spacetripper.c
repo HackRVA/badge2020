@@ -75,6 +75,7 @@ enum st_program_state_t {
 	ST_EXIT,
 	ST_PLANETS,
 	ST_SENSORS,
+	ST_DAMAGE_REPORT,
 	ST_NOT_IMPL,
 };
 
@@ -134,6 +135,9 @@ struct game_object {
 	char type;
 };
 
+static const char *ship_system[] = { "WARP", "IMPULSE", "SHIELDS", "LIFE SUPP", "PHASERS"};
+#define NSHIP_SYSTEMS ARRAYSIZE(ship_system)
+
 struct player_ship {
 	int x, y;
 	int heading, new_heading; /* in degrees */
@@ -141,6 +145,7 @@ struct player_ship {
 	unsigned char shields;
 	unsigned char shields_up;
 	unsigned char dilithium_crystals;
+	unsigned char damage[NSHIP_SYSTEMS];
 };
 
 struct game_state {
@@ -225,7 +230,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "PHASERS", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "PHOTON TORPEDO", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "SHIELDS", ST_NOT_IMPL, 0);
-	dynmenu_add_item(&menu, "DAMAGE REPORT", ST_NOT_IMPL, 0);
+	dynmenu_add_item(&menu, "DAMAGE REPORT", ST_DAMAGE_REPORT, 0);
 	dynmenu_add_item(&menu, "SENSORS", ST_SENSORS, 0);
 	dynmenu_add_item(&menu, "DOCK", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "STANDARD ORBIT", ST_NOT_IMPL, 0);
@@ -292,6 +297,8 @@ static void add_enemy_ships(int count, unsigned char shiptype, unsigned char hit
 
 static void init_player()
 {
+	int i;
+
 	gs.player.x = random_coordinate();
 	gs.player.y = random_coordinate();
 	gs.player.heading = 0;
@@ -300,6 +307,9 @@ static void init_player()
 	gs.player.shields = 255;
 	gs.player.shields_up = 0;
 	gs.player.dilithium_crystals = 255;
+
+	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++)
+		gs.player.damage[i] = 0;
 }
 
 static void st_new_game(void)
@@ -823,6 +833,35 @@ static void st_sensors(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+static void st_damage_report(void)
+{
+	int i, d;
+	char ds[10];
+
+	FbClear();
+	FbMove(2, 0);
+	FbColor(WHITE);
+	FbWriteLine("DAMAGE REPORT");
+
+	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) {
+		FbColor(CYAN);
+		FbMove(2, 18 + i * 9);
+		FbWriteLine((char *) ship_system[i]);
+		d = ((((256 - gs.player.damage[i]) * 1024) / 256) * 100) / 1024;
+		if (d < 70)
+			FbColor(YELLOW);
+		else if (d < 40)
+			FbColor(RED);
+		else
+			FbColor(GREEN);
+		itoa(ds, d, 10);
+		FbMove(LCD_XSIZE - 9 * 4, 18 + i * 9);
+		FbWriteLine(ds);
+	}
+	FbSwapBuffers();
+	st_program_state = ST_PROCESS_INPUT;
+}
+
 int spacetripper_cb(void)
 {
 	switch (st_program_state) {
@@ -871,6 +910,9 @@ int spacetripper_cb(void)
 		break;
 	case ST_SENSORS:
 		st_sensors();
+		break;
+	case ST_DAMAGE_REPORT:
+		st_damage_report();
 		break;
 	default:
 		st_program_state = ST_CAPTAIN_MENU;
