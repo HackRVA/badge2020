@@ -473,7 +473,7 @@ static void st_lrs(void) /* long range scanner */
 	st_program_state = ST_PROCESS_INPUT;
 }
 
-static void st_srs(void) /* long range scanner */
+static void st_srs(void) /* short range scanner */
 {
 	int i, x, y;
 	int sectorx, sectory, sx, sy, qx, qy;
@@ -481,6 +481,8 @@ static void st_srs(void) /* long range scanner */
 	char c[2] = { '.', '\0' };
 	int color;
 	const int quadrant_width = 10;
+	char num[4];
+	const int left = 16;
 
 	sectorx = gs.player.x >> 3;
 	sectory = gs.player.y >> 3;
@@ -495,9 +497,24 @@ static void st_srs(void) /* long range scanner */
 	/* Draw a grid */
 	FbColor(BLUE);
 	for (y = 0; y < 9; y++)
-		FbHorizontalLine(5, 45 + y * quadrant_width, 5 + 8 * quadrant_width, 45 + y * quadrant_width);
+		FbHorizontalLine(left - 2, 45 + y * quadrant_width, left - 2 + 8 * quadrant_width, 45 + y * quadrant_width);
 	for (x = 0; x < 9; x++)
-		FbVerticalLine(5 + x * quadrant_width, 45, 5 + x * quadrant_width, 45 + 8 * quadrant_width);
+		FbVerticalLine(left - 2 + x * quadrant_width, 45, left - 2 + x * quadrant_width, 45 + 8 * quadrant_width);
+
+	/* Draw X coordinates */
+	FbColor(CYAN);
+	num[1] = '\0';
+	for (x = 0; x < 8; x++) {
+		num[0] = '0' + x;
+		FbMove(left + x * quadrant_width, 37);
+		FbWriteLine(num);
+	}
+	/* Draw Y coordinates */
+	for (y = 0; y < 8; y++) {
+		num[0] = '0' + y;
+		FbMove(4, 45 + y * quadrant_width);
+		FbWriteLine(num);
+	}
 
 	/* Find objects in this sector */
 	for (i = 0; i < NTOTAL; i++) {
@@ -540,7 +557,7 @@ static void st_srs(void) /* long range scanner */
 		}
 		qx = gs.object[i].x & 0x7;
 		qy = gs.object[i].y & 0x7;
-		FbMove(7 + qx * quadrant_width, 47 + qy * quadrant_width);
+		FbMove(left + qx * quadrant_width, 47 + qy * quadrant_width);
 		FbColor(color);
 		FbWriteLine(c);
 	}
@@ -548,7 +565,7 @@ static void st_srs(void) /* long range scanner */
 	/* Draw player */
 	qx = gs.player.x & 0x7;
 	qy = gs.player.y & 0x7;
-	FbMove(7 + qx * quadrant_width, 47 + qy * quadrant_width);
+	FbMove(left + qx * quadrant_width, 47 + qy * quadrant_width);
 	FbColor(WHITE);
 	FbWriteLine("E");
 
