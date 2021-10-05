@@ -1071,6 +1071,87 @@ static void st_status_report(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+/* returns true if collision */
+static int player_collision_detection(int *nx, int *ny)
+{
+	int i, sx, sy, qx, qy, osx, osy, oqx, oqy;
+	unsigned char neutral_zone;
+	char *object, msg[40];
+
+	/* Keep the player in bounds */
+	neutral_zone = 0;
+	if (*nx < 0) {
+		neutral_zone = 1;
+		*nx = 0;
+	}
+	if (*nx > 0x0007ffff) {
+		neutral_zone = 1;
+		*nx = 0x0007ffff;
+	}
+	if (*ny < 0) {
+		neutral_zone = 1;
+		*ny = 0;
+	}
+	if (*ny > 0x0007ffff) {
+		neutral_zone = 1;
+		*ny = 0x0007ffff;
+	}
+	if (neutral_zone) {
+		gs.player.warp_factor = 0;
+		gs.srs_needs_update = 1;
+		alert_player("STARFLEET MSG",
+			"PERMISSION TO\nENTER NEUTRAL\nZONE DENIED\n\n"
+			"SHUT DOWN\nWARP DRIVE\n\n-- STARFLEET");
+		return 0;
+	}
+
+	sx = coord_to_sector(*nx);
+	sy = coord_to_sector(*ny);
+	qx = coord_to_quadrant(*nx);
+	qy = coord_to_quadrant(*ny);
+
+	for (i = 0; i < NTOTAL; i++) {
+		if (gs.object[i].type == 0)
+			continue;
+		osx = coord_to_sector(gs.object[i].x);
+		if (osx != sx)
+			continue;
+		osy = coord_to_sector(gs.object[i].y);
+		if (osy != sy)
+			continue;
+		oqx = coord_to_quadrant(gs.object[i].x);
+		if (oqx != qx)
+			continue;
+		oqy = coord_to_quadrant(gs.object[i].y);
+		if (oqy != qy)
+			continue;
+		switch (gs.object[i].type) {
+		case ENEMY_SHIP:
+			object = "AN ENEMY\nSHIP";
+			break;
+		case PLANET:
+			object = "A PLANET";
+			break;
+		case BLACKHOLE:
+			object = "A BLACK HOLE";
+			break;
+		case STAR:
+			object = "A STAR";
+			break;
+		default:
+			object = "AN UNKNOWN\nOBJECT";
+			break;
+		}
+		strcpy(msg, "WE HAVE\nENCOUNTED");
+		strcat(msg, " ");
+		strcat(msg, object);
+		alert_player("WARP SHUTDOWN", msg);
+		gs.player.warp_factor = 0;
+		return 1;
+	}
+	return 0;
+}
+
 static void move_player(void)
 {
 	int dx, dy, b, nx, ny;
@@ -1087,37 +1168,16 @@ static void move_player(void)
 		nx = gs.player.x + dx;
 		ny = gs.player.y + dy;
 
-		/* Keep the player in bounds */
-		if (nx < 0) {
-			gs.player.warp_factor = 0;
-			gs.srs_needs_update = 1;
-			nx = 0;
-		}
-		if (nx > 0x0007ffff) {
-			gs.player.warp_factor = 0;
-			gs.srs_needs_update = 1;
-			nx = 0x0007ffff;
-		}
-		if (ny < 0) {
-			gs.player.warp_factor = 0;
-			gs.srs_needs_update = 1;
-			ny = 0;
-		}
-		if (ny > 0x0007ffff) {
-			gs.player.warp_factor = 0;
-			gs.srs_needs_update = 1;
-			ny = 0x0007ffff;
-		}
 		if (coord_to_sector(gs.player.x) != coord_to_sector(nx) ||
 			coord_to_sector(gs.player.y) != coord_to_sector(ny) ||
 			coord_to_quadrant(gs.player.x) != coord_to_quadrant(nx) ||
 			coord_to_quadrant(gs.player.y) != coord_to_quadrant(ny)) {
 			gs.srs_needs_update = 1;
 		}
-		gs.player.x = nx;
-		gs.player.y = ny;
-		if (gs.player.warp_factor == 0)
-			alert_player("STARFLEET MSG", "PERMISSION TO\nENTER NEUTRAL\nZONE DENIED\n\nSHUT DOWN\nWARP DRIVE\n\n-- STARFLEET");
+		if (!player_collision_detection(&nx, &ny)) {
+			gs.player.x = nx;
+			gs.player.y = ny;
+		}
 	}
 }
 
