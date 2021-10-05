@@ -389,6 +389,28 @@ void FbWriteLine(char *s)
 	}
 }
 
+void FbWriteString(char *s)
+{
+	int i, ix;
+
+	ix = write_x;
+	for (i = 0; s[i]; i++) {
+		if (s[i] == '\n') {
+			write_x = ix;
+			write_y += 8;
+			continue;
+		}
+		draw_character(write_x, write_y, s[i]);
+		write_x += 8;
+		if (write_x > LCD_XSIZE - 8) {
+			write_x = 0;
+			write_y += 8;
+			if (write_y > LCD_YSIZE - 8)
+				write_y = 0;
+		}
+	}
+}
+
 void itoa(char *string, int value, UNUSED int base)
 {
 	sprintf(string, "%d", value);
