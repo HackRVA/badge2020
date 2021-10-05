@@ -416,6 +416,15 @@ static void single_digit_to_dec(int digit, char *num)
 	}
 }
 
+static void screen_header(char *title)
+{
+
+	FbClear();
+	FbMove(2, 2);
+	FbColor(WHITE);
+	FbWriteLine(title);
+}
+
 static void st_lrs(void) /* long range scanner */
 {
 	int i, x, y, place;
@@ -455,10 +464,7 @@ static void st_lrs(void) /* long range scanner */
 		scan[x][y][place]++;
 	}
 
-	FbClear();
-	FbMove(2, 2);
-	FbColor(WHITE);
-	FbWriteLine("LONG RANGE SCAN");
+	screen_header("LONG RANGE SCAN");
 	print_sector_quadrant_heading();
 
 	FbColor(CYAN);
@@ -522,10 +528,7 @@ static void st_srs(void) /* short range scanner */
 	sectory = gs.player.y >> 3;
 	memset(scan, 0, sizeof(scan));
 
-	FbClear();
-	FbMove(2, 1);
-	FbColor(WHITE);
-	FbWriteLine("SHORT RANGE SCAN");
+	screen_header("SHORT RANGE SCAN");
 	print_sector_quadrant_heading();
 
 	/* Draw a grid */
@@ -782,10 +785,7 @@ static void st_planets(void)
 	char cs[5];
 	char msg[40];
 
-	FbClear();
-	FbMove(2, 2);
-	FbColor(WHITE);
-	FbWriteLine("PLANETS:");
+	screen_header("PLANETS:");
 	FbColor(GREEN);
 	count = 0;
 
@@ -889,10 +889,7 @@ static void st_damage_report(void)
 	int i, d;
 	char ds[10];
 
-	FbClear();
-	FbMove(2, 0);
-	FbColor(WHITE);
-	FbWriteLine("DAMAGE REPORT");
+	screen_header("DAMAGE REPORT");
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) {
 		FbColor(CYAN);
@@ -919,11 +916,7 @@ static void st_status_report(void)
 	char num[10];
 	char msg[20];
 
-	FbClear();
-	FbMove(2, 0);
-	FbColor(WHITE);
-	FbWriteLine("STATUS REPORT");
-
+	screen_header("STATUS REPORT");
 	FbColor(CYAN);
 
 	/* Compute and print current star date */
