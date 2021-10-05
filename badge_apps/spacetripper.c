@@ -76,6 +76,7 @@ enum st_program_state_t {
 	ST_PLANETS,
 	ST_SENSORS,
 	ST_DAMAGE_REPORT,
+	ST_STATUS_REPORT,
 	ST_NOT_IMPL,
 };
 
@@ -151,6 +152,10 @@ struct player_ship {
 struct game_state {
 	struct game_object object[NTOTAL];
 	struct player_ship player;
+#define TICKS_PER_DAY 256  /* Each tick is about 5.6 minutes of game time */
+#define START_DATE (2623)
+	short stardate;
+	short enddate;
 } gs = { 0 };
 
 static int find_free_obj(void)
@@ -231,6 +236,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "PHOTON TORPEDO", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "SHIELDS", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "DAMAGE REPORT", ST_DAMAGE_REPORT, 0);
+	dynmenu_add_item(&menu, "STATUS REPORT", ST_STATUS_REPORT, 0);
 	dynmenu_add_item(&menu, "SENSORS", ST_SENSORS, 0);
 	dynmenu_add_item(&menu, "DOCK", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "STANDARD ORBIT", ST_NOT_IMPL, 0);
@@ -323,6 +329,8 @@ static void st_new_game(void)
 	add_simple_objects(NSTARS, STAR, star_customizer);
 	add_simple_objects(NPLANETS, PLANET, planet_customizer);
 	init_player();
+	gs.stardate = 0;
+	gs.enddate = gs.stardate + 35 * TICKS_PER_DAY;
 	st_program_state = ST_CAPTAIN_MENU;
 }
 
@@ -905,6 +913,77 @@ static void st_damage_report(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+static void st_status_report(void)
+{
+	int es, sb, i, sd, frac; 
+	char num[10];
+	char msg[20];
+
+	FbClear();
+	FbMove(2, 0);
+	FbColor(WHITE);
+	FbWriteLine("STATUS REPORT");
+
+	FbColor(CYAN);
+
+	/* Compute and print current star date */
+	FbMove(2, 2 * 9);
+	FbWriteLine("STARDATE");
+	sd = (gs.stardate / 256) + START_DATE;
+	frac = ((gs.stardate % 256) * 100) / 256;
+	itoa(num, sd, 10);
+	msg[0] = '\0';
+	strcat(msg, num);
+	itoa(num, frac, 10);
+	strcat(msg, ".");
+	strcat(msg, num);
+	FbMove(80, 2 * 9);
+	FbWriteLine(msg);
+
+	/* Compute and print time remaining */
+	FbMove(2, 3 * 9);
+	FbWriteLine("DAYS LEFT");
+	sd = (gs.enddate - gs.stardate) / 256;
+	msg[0] = '\0';
+	itoa(num, sd, 10);
+	strcat(msg, num); 
+	frac = (((gs.enddate - gs.stardate) % 256) * 100) / 256;
+	itoa(num, frac, 10);
+	strcat(msg, ".");
+	strcat(msg, num);
+	FbMove(80, 3 * 9);
+	FbWriteLine(msg);
+
+	/* Count remaining starbases and enemy ships */
+	es = 0;
+	sb = 0;
+	for (i = 0; i < NTOTAL; i++) {
+		switch (gs.object[i].type) {
+		case ENEMY_SHIP:
+			es++;
+			break;
+		case STARBASE:
+			sb++;
+			break;
+		default:
+			break;
+		}
+	}
+	FbMove(2, 4 * 9);
+	FbWriteLine("STARBASES");
+	itoa(num, sb, 10);
+	FbMove(80, 4 * 9);
+	FbWriteLine(num);
+	FbMove(2, 5 * 9);
+	FbWriteLine("ENEMY SHP");
+	itoa(num, es, 10);
+	FbMove(80, 5 * 9);
+	FbWriteLine(num);
+
+	FbSwapBuffers();
+	st_program_state = ST_PROCESS_INPUT;
+}
+
 int spacetripper_cb(void)
 {
 	switch (st_program_state) {
@@ -956,6 +1035,10 @@ int spacetripper_cb(void)
 		break;
 	case ST_DAMAGE_REPORT:
 		st_damage_report();
+		break;
+	case ST_STATUS_REPORT:
+		st_status_report();
+		gs.stardate++;
 		break;
 	default:
 		st_program_state = ST_CAPTAIN_MENU;
