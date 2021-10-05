@@ -39,13 +39,13 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 
 #define ARRAYSIZE(x) (sizeof((x)) / sizeof((x)[0]))
 
-#define NKLINGONS 25
+#define NKLINGONS 15
 #define NCOMMANDERS 5
 #define NROMULANS 10
-#define NPLANETS 50
+#define NPLANETS 20
 #define NBLACKHOLES 10
-#define NSTARBASES 25
-#define NSTARS 40
+#define NSTARBASES 10
+#define NSTARS 20
 #define NTOTAL (NKLINGONS + NCOMMANDERS + NROMULANS + NPLANETS + NBLACKHOLES + NSTARBASES + NSTARS)
 
 #define ENEMY_SHIP 'E'
@@ -63,8 +63,8 @@ enum st_program_state_t {
 	ST_LRS,
 	ST_SRS,
 	ST_SET_COURSE,
-	ST_ENGAGE_WARP,
-	ST_ENGAGE_IMPULSE,
+	ST_WARP,
+	ST_WARP_INPUT,
 	ST_SET_WEAPONS_BEARING,
 	ST_FIRE_PHASERS,
 	ST_FIRE_PHOTON_TORPEDO,
@@ -131,7 +131,7 @@ union type_specific_data {
 };
 
 struct game_object {
-	int x, y;
+	int x, y; /* 32 bits, 16 for sector, 16 for quadrant, high 3 bits of sector and hi 3 bits of quadrant */
 	union type_specific_data tsd;
 	char type;
 };
@@ -140,14 +140,32 @@ static const char *ship_system[] = { "WARP", "IMPULSE", "SHIELDS", "LIFE SUPP", 
 #define NSHIP_SYSTEMS ARRAYSIZE(ship_system)
 
 struct player_ship {
-	int x, y;
+	int x, y; /* 32 bits, 16 for sector, 16 for quadrant */
 	int heading, new_heading; /* in degrees */
 	int energy;
+	int warp_factor, new_warp_factor; /* 0 to (1 << 16) */
+#define WARP10 (1 << 16)
+#define WARP1 (WARP10 / 10)
 	unsigned char shields;
 	unsigned char shields_up;
 	unsigned char dilithium_crystals;
 	unsigned char damage[NSHIP_SYSTEMS];
 };
+
+static inline int warp_factor(int wf)
+{
+	return (wf / WARP1);
+}
+
+static inline int warp_factor_frac(int wf)
+{
+	return 10 * (wf % WARP1) / WARP1;
+}
+
+static inline int impulse_factor(int wf)
+{
+	return 10 * wf / WARP1;
+}
 
 struct game_state {
 	struct game_object object[NTOTAL];
@@ -157,6 +175,16 @@ struct game_state {
 	short stardate;
 	short enddate;
 } gs = { 0 };
+
+static inline int coord_to_sector(int c)
+{
+	return (c >> 16);
+}
+
+static inline int coord_to_quadrant(int c)
+{
+	return (c >> 13) & 0x07;
+}
 
 static int find_free_obj(void)
 {
@@ -230,8 +258,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "SRS", ST_SRS, 0);
 	dynmenu_add_item(&menu, "STAR CHART", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "SET COURSE", ST_SET_COURSE, 0);
-	dynmenu_add_item(&menu, "IMPULSE", ST_NOT_IMPL, 0);
-	dynmenu_add_item(&menu, "WARP", ST_NOT_IMPL, 0);
+	dynmenu_add_item(&menu, "WARP", ST_WARP, 0);
 	dynmenu_add_item(&menu, "PHASERS", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "PHOTON TORPEDO", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "SHIELDS", ST_NOT_IMPL, 0);
@@ -263,7 +290,7 @@ static void st_game_won(void)
 
 static int random_coordinate(void)
 {
-	return xorshift(&xorshift_state) & 0x3f;
+	return xorshift(&xorshift_state) & 0x0007ffff;
 }
 
 static void planet_customizer(int i)
@@ -313,6 +340,7 @@ static void init_player()
 	gs.player.shields = 255;
 	gs.player.shields_up = 0;
 	gs.player.dilithium_crystals = 255;
+	gs.player.warp_factor = 0;
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++)
 		gs.player.damage[i] = 0;
@@ -359,8 +387,9 @@ static void print_current_sector(void)
 {
 	char sx[5], sy[5];
 	char msg[40];
-	itoa(sx, gs.player.x >> 3, 10);
-	itoa(sy, gs.player.y >> 3, 10);
+
+	itoa(sx, coord_to_sector(gs.player.x), 10);
+	itoa(sy, coord_to_sector(gs.player.y), 10);
 	strcpy(msg, "SECTOR: (");
 	strcat(msg, sx);
 	strcat(msg, ",");
@@ -373,8 +402,8 @@ static void print_current_quadrant(void)
 {
 	char sx[5], sy[5];
 	char msg[40];
-	itoa(sx, gs.player.x & 0x7, 10);
-	itoa(sy, gs.player.y & 0x7, 10);
+	itoa(sx, coord_to_quadrant(gs.player.x), 10);
+	itoa(sy, coord_to_quadrant(gs.player.y), 10);
 	strcpy(msg, "QUADRANT: (");
 	strcat(msg, sx);
 	strcat(msg, ",");
@@ -402,6 +431,29 @@ static void print_sector_quadrant_heading(void)
 	print_current_quadrant();
 	FbMove(2, 28);
 	print_current_heading();
+}
+
+static void print_speed(char *impulse, char *warp, int x, int y, int warp_f)
+{
+	char num[5];
+	char msg[10];
+
+	FbMove(x, y);
+	if (warp_f < WARP1) {
+		FbWriteLine(impulse);
+		strcpy(msg, "0.");
+		itoa(num, impulse_factor(warp_f), 10);
+		strcat(msg, num);
+	} else {
+		FbWriteLine(warp);
+		itoa(num, warp_factor(warp_f), 10);
+		strcpy(msg, num);
+		strcat(msg, ".");
+		itoa(num, warp_factor_frac(warp_f), 10);
+		strcat(msg, num);
+	}
+	FbMove(x, y + 9);
+	FbWriteLine(msg);
 }
 
 static void single_digit_to_dec(int digit, char *num)
@@ -433,8 +485,8 @@ static void st_lrs(void) /* long range scanner */
 	const int color[] = { WHITE, CYAN, YELLOW };
 	char num[4];
 
-	sectorx = gs.player.x >> 3;
-	sectory = gs.player.y >> 3;
+	sectorx = coord_to_sector(gs.player.x);
+	sectory = coord_to_sector(gs.player.y);
 	memset(scan, 0, sizeof(scan));
 
 	/* Count up nearby enemy ships, starbases and stars, and store counts in scan[][][] */
@@ -452,8 +504,8 @@ static void st_lrs(void) /* long range scanner */
 		default:
 			continue;
 		}
-		sx = gs.object[i].x >> 3;
-		sy = gs.object[i].y >> 3;
+		sx = coord_to_sector(gs.object[i].x);
+		sy = coord_to_sector(gs.object[i].y);
 		if (sx > sectorx + 1 || sx < sectorx - 1)
 			continue;
 		if (sy > sectory + 1 || sy < sectory - 1)
@@ -466,17 +518,18 @@ static void st_lrs(void) /* long range scanner */
 
 	screen_header("LONG RANGE SCAN");
 	print_sector_quadrant_heading();
+	print_speed("IMP", "WRP", 95, 28, gs.player.warp_factor);
 
 	FbColor(CYAN);
 	for (x = -1; x < 2; x++) { /* Print out X coordinates */
-		single_digit_to_dec(x + (gs.player.x >> 3), num);
-		FbMove(35 + (x + 1) * 30, 40);
+		single_digit_to_dec(x + coord_to_sector(gs.player.x), num);
+		FbMove(35 + (x + 1) * 30, 50);
 		FbWriteLine(num);
 	}
 
 	for (y = -1; y < 2; y++) { /* Print out Y coordinates */
-		single_digit_to_dec(y + (gs.player.y >> 3), num);
-		FbMove(5, (y + 1) * 10 + 50);
+		single_digit_to_dec(y + coord_to_sector(gs.player.y), num);
+		FbMove(5, (y + 1) * 10 + 60);
 		FbWriteLine(num);
 	}
 
@@ -488,24 +541,24 @@ static void st_lrs(void) /* long range scanner */
 
 				FbColor(color[i]);
 				itoa(digit, scan[x][y][i], 10);
-				FbMove(25 + x * 30 + i * 8, y * 10 + 50);
+				FbMove(25 + x * 30 + i * 8, y * 10 + 60);
 				FbWriteLine(digit);
 			}
 		}
 		FbColor(GREEN);
-		FbHorizontalLine(22, y * 10 + 49, 132 - 21, y * 10 + 49);
+		FbHorizontalLine(22, y * 10 + 59, 132 - 21, y * 10 + 59);
 	}
-	FbHorizontalLine(22, y * 10 + 49, 132 - 21, y * 10 + 49);
+	FbHorizontalLine(22, y * 10 + 59, 132 - 21, y * 10 + 59);
 	for (i = 0; i < 4; i++)
-		FbVerticalLine(22 + i * 30, 49, 22 + i * 30,  y * 10 + 49);
+		FbVerticalLine(22 + i * 30, 59, 22 + i * 30,  y * 10 + 59);
 
-	FbMove(2, 89);
+	FbMove(2, 98);
 	FbColor(color[0]);
 	FbWriteLine("# STARS");
-	FbMove(2, 98);
+	FbMove(2, 107);
 	FbColor(color[1]);
 	FbWriteLine("# STARBASES");
-	FbMove(2, 107);
+	FbMove(2, 116);
 	FbColor(color[2]);
 	FbWriteLine("# ENEMY SHIPS");
 	
@@ -524,12 +577,13 @@ static void st_srs(void) /* short range scanner */
 	char num[4];
 	const int left = 16;
 
-	sectorx = gs.player.x >> 3;
-	sectory = gs.player.y >> 3;
+	sectorx = coord_to_sector(gs.player.x);
+	sectory = coord_to_sector(gs.player.y);
 	memset(scan, 0, sizeof(scan));
 
 	screen_header("SHORT RANGE SCAN");
 	print_sector_quadrant_heading();
+	print_speed("IMP", "WRP", 95, 48, gs.player.warp_factor);
 
 	/* Draw a grid */
 	FbColor(BLUE);
@@ -559,8 +613,8 @@ static void st_srs(void) /* short range scanner */
 		if (gs.object[i].type == 0)
 			continue;
 
-		sx = gs.object[i].x >> 3;
-		sy = gs.object[i].y >> 3;
+		sx = coord_to_sector(gs.object[i].x);
+		sy = coord_to_sector(gs.object[i].y);
 
 		if (sx != sectorx || sy != sectory)
 			continue;
@@ -592,16 +646,16 @@ static void st_srs(void) /* short range scanner */
 			c[0] = '?';
 			break;
 		}
-		qx = gs.object[i].x & 0x7;
-		qy = gs.object[i].y & 0x7;
+		qx = coord_to_quadrant(gs.object[i].x);
+		qy = coord_to_quadrant(gs.object[i].y);
 		FbMove(left + qx * quadrant_width, 47 + qy * quadrant_width);
 		FbColor(color);
 		FbWriteLine(c);
 	}
 
 	/* Draw player */
-	qx = gs.player.x & 0x7;
-	qy = gs.player.y & 0x7;
+	qx = coord_to_quadrant(gs.player.x);
+	qy = coord_to_quadrant(gs.player.y);
 	FbMove(left + qx * quadrant_width, 47 + qy * quadrant_width);
 	FbColor(WHITE);
 	FbWriteLine("E");
@@ -647,7 +701,7 @@ static void st_set_course(void)
 	draw_heading_indicator(cx, cy, gs.player.heading, 150, BLACK);
 	draw_heading_indicator(cx, cy, gs.player.new_heading, 150, BLACK);
 
-    	if (BUTTON_PRESSED_AND_CONSUME) {
+	if (BUTTON_PRESSED_AND_CONSUME) {
 		gs.player.heading = gs.player.new_heading;
 		st_program_state = ST_PROCESS_INPUT;
 		finished = 1;
@@ -736,10 +790,10 @@ static void strcat_sector_quadrant(char *msg, int x, int y)
 {
 	int sx, sy, qx, qy;
 
-	sx = x >> 3;
-	sy = y >> 3;
-	qx = x & 0x07;
-	qy = y & 0x07;
+	sx = coord_to_sector(x);
+	sy = coord_to_sector(y);
+	qx = coord_to_quadrant(x);
+	qy = coord_to_quadrant(y);
 	strcat(msg, "S(");
 	strcatnum(msg, sx);
 	strcat(msg, ",");
@@ -823,16 +877,16 @@ static void st_sensors(void)
 	for (i = 0; i < NTOTAL; i++) {
 		switch (gs.object[i].type) {
 		case PLANET:
-			sx = gs.object[i].x >> 3;
-			sy = gs.object[i].y >> 3;
-			px = gs.player.x >> 3;
-			py = gs.player.y >> 3;
+			sx = coord_to_sector(gs.object[i].x);
+			sy = coord_to_sector(gs.object[i].y);
+			px = coord_to_sector(gs.player.x);
+			py = coord_to_sector(gs.player.y);
 			if (sx != px || sy != py)
 				break;
-			sx = gs.player.x & 0x07;
-			sy = gs.player.y & 0x07;
-			px = gs.object[i].x & 0x07;
-			py = gs.object[i].y & 0x07;
+			sx = coord_to_quadrant(gs.player.x);
+			sy = coord_to_quadrant(gs.player.y);
+			px = coord_to_quadrant(gs.object[i].x);
+			py = coord_to_quadrant(gs.object[i].y);
 			sx = px - sx;
 			sy = py - sy;
 			dist = sx * sx + sy * sy;
@@ -912,7 +966,7 @@ static void st_damage_report(void)
 
 static void st_status_report(void)
 {
-	int es, sb, i, sd, frac; 
+	int es, sb, i, sd, frac;
 	char num[10];
 	char msg[20];
 
@@ -939,7 +993,7 @@ static void st_status_report(void)
 	sd = (gs.enddate - gs.stardate) / 256;
 	msg[0] = '\0';
 	itoa(num, sd, 10);
-	strcat(msg, num); 
+	strcat(msg, num);
 	frac = (((gs.enddate - gs.stardate) % 256) * 100) / 256;
 	itoa(num, frac, 10);
 	strcat(msg, ".");
@@ -977,8 +1031,136 @@ static void st_status_report(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+static void move_player(void)
+{
+	int dx, dy, b, nx, ny;
+
+	/* Move player */
+	if (gs.player.warp_factor > 0) {
+		b = (gs.player.heading * 128) / 360;
+		if (b < 0)
+			b += 128;
+		if (b > 128)
+			b -= 128;
+		dx = (gs.player.warp_factor * cosine(b)) / 1024;
+		dy = (-gs.player.warp_factor * sine(b)) / 1024;
+		nx = gs.player.x + dx;
+		ny = gs.player.y + dy;
+
+		/* Keep the player in bounds */
+		if (nx < 0) {
+			gs.player.warp_factor = 0;
+			nx = 0;
+		}
+		if (nx > 0x0007ffff) {
+			gs.player.warp_factor = 0;
+			nx = 0x0007ffff;
+		}
+		if (ny < 0) {
+			gs.player.warp_factor = 0;
+			ny = 0;
+		}
+		if (ny > 0x0007ffff) {
+			gs.player.warp_factor = 0;
+			ny = 0x0007ffff;
+		}
+		gs.player.x = nx;
+		gs.player.y = ny;
+		/* if (gs.player.warp_factor == 0)
+			msg_from_starfleet("permission is not granted to enter the neutral zone or something"); */
+	}
+}
+
+static void move_objects(void)
+{
+	move_player();
+}
+
+static void draw_speed_gauge_ticks(void)
+{
+	int i;
+	char num[3];
+
+	FbColor(WHITE);
+	FbVerticalLine(127, 5, 127, 105);
+	num[2] = '\0';
+	for (i = 0; i <= 10; i++) {
+		FbHorizontalLine(120, 5 + i * 10, 126, 5 + i * 10);
+		if ((i % 5) == 0) {
+			FbMove(90, 5 + i * 10);
+			if (i == 0)
+				num[0] = '1';
+			else
+				num[0] = ' ';
+			num[1] = '0' + ((10 - i) % 10);
+			FbWriteLine(num);
+		}
+	}
+}
+
+static void draw_speed_gauge_marker(int color, int speed)
+{
+	int y1, y2, y3;
+
+	y2 = 105 - ((100 * speed) >> 16);
+	y1 = y2 - 5;
+	y3 = y2 + 5;
+	FbColor(color);
+	FbVerticalLine(115, y1, 115, y3);
+	FbLine(115, y1, 122, y2);
+	FbLine(115, y3, 122, y2);
+}
+
+static void draw_speed_gauge(int color, int color2, int speed, int new_speed)
+{
+	draw_speed_gauge_ticks();
+	draw_speed_gauge_marker(color, speed);
+	draw_speed_gauge_marker(color2, new_speed);
+	FbColor(GREEN);
+	print_speed("CURR IMPULSE", "CURR WARP", 2, 30, speed);
+	print_speed("NEW IMPULSE", "NEW WARP", 2, 60, new_speed);
+}
+
+static void st_warp()
+{
+	screen_header("WARP");
+	draw_speed_gauge(GREEN, RED, gs.player.warp_factor, gs.player.new_warp_factor);
+
+	FbSwapBuffers();
+	st_program_state = ST_WARP_INPUT;
+}
+
+static void st_warp_input()
+{
+	int old = gs.player.new_warp_factor;
+
+	if (BUTTON_PRESSED_AND_CONSUME) {
+		gs.player.warp_factor = gs.player.new_warp_factor;
+		st_warp();
+		st_program_state = ST_PROCESS_INPUT;
+		return;
+	} else if (UP_BTN_AND_CONSUME) {
+		gs.player.new_warp_factor += WARP1;
+	} else if (DOWN_BTN_AND_CONSUME) {
+		gs.player.new_warp_factor -= WARP1;
+	} else if (LEFT_BTN_AND_CONSUME) {
+		gs.player.new_warp_factor -= WARP1 / 10;
+	} else if (RIGHT_BTN_AND_CONSUME) {
+		gs.player.new_warp_factor += WARP1 / 10;
+	}
+	if (gs.player.new_warp_factor < 0)
+		gs.player.new_warp_factor = 0;
+	if (gs.player.new_warp_factor > WARP10)
+		gs.player.new_warp_factor = WARP10;
+
+	if (old != gs.player.new_warp_factor)
+		st_program_state = ST_WARP;
+}
+
 int spacetripper_cb(void)
 {
+	static int ticks = 0;
+
 	switch (st_program_state) {
 	case ST_GAME_INIT:
 		st_game_init();
@@ -1017,6 +1199,12 @@ int spacetripper_cb(void)
 	case ST_SET_COURSE:
 		st_set_course();
 		break;
+	case ST_WARP:
+		st_warp();
+		break;
+	case ST_WARP_INPUT:
+		st_warp_input();
+		break;
 	case ST_NOT_IMPL:
 		st_not_impl();
 		break;
@@ -1037,13 +1225,16 @@ int spacetripper_cb(void)
 		st_program_state = ST_CAPTAIN_MENU;
 		break;
 	}
+	ticks++;
+	if ((ticks % 60) == 0) /* Every 2 seconds */
+		move_objects();
 	return 0;
 }
 
 #ifdef __linux__
 int main(int argc, char *argv[])
 {
-        start_gtk(&argc, &argv, spacetripper_cb, 240);
-        return 0;
+	start_gtk(&argc, &argv, spacetripper_cb, 30);
+	return 0;
 }
 #endif
