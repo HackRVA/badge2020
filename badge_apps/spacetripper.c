@@ -396,12 +396,25 @@ static void print_sector_quadrant_heading(void)
 	print_current_heading();
 }
 
+static void single_digit_to_dec(int digit, char *num)
+{
+	if (digit < 0) {
+		num[0] = '-';
+		num[1] = -digit + '0';
+		num[2] = '\0';
+	} else {
+		num[0] = digit + '0';
+		num[1] = '\0';
+	}
+}
+
 static void st_lrs(void) /* long range scanner */
 {
 	int i, x, y, place;
 	int sectorx, sectory, sx, sy;
 	char scan[3][3][3];
-	int color[] = { WHITE, CYAN, YELLOW };
+	const int color[] = { WHITE, CYAN, YELLOW };
+	char num[4];
 
 	sectorx = gs.player.x >> 3;
 	sectory = gs.player.y >> 3;
@@ -439,6 +452,19 @@ static void st_lrs(void) /* long range scanner */
 	FbColor(WHITE);
 	FbWriteLine("LONG RANGE SCAN");
 	print_sector_quadrant_heading();
+
+	FbColor(CYAN);
+	for (x = -1; x < 2; x++) { /* Print out X coordinates */
+		single_digit_to_dec(x + (gs.player.x >> 3), num);
+		FbMove(35 + (x + 1) * 30, 40);
+		FbWriteLine(num);
+	}
+
+	for (y = -1; y < 2; y++) { /* Print out Y coordinates */
+		single_digit_to_dec(y + (gs.player.y >> 3), num);
+		FbMove(5, (y + 1) * 10 + 50);
+		FbWriteLine(num);
+	}
 
 	/* Print out scan[][][] */
 	for (y = 0; y < 3; y++) {
