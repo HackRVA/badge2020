@@ -174,6 +174,18 @@ struct game_state {
 #define START_DATE (2623)
 	short stardate;
 	short enddate;
+	unsigned char srs_needs_update;
+	unsigned char last_screen;
+#define LRS_SCREEN 1
+#define SRS_SCREEN 2
+#define WARP_SCREEN 3
+#define HEADING_SCREEN 4
+#define SENSORS_SCREEN 5
+#define DAMAGE_SCREEN 6
+#define STATUS_SCREEN 7
+#define PLANETS_SCREEN 8
+#define CAPN_SCREEN 9
+#define UNKNOWN_SCREEN 255;
 } gs = { 0 };
 
 static inline int coord_to_sector(int c)
@@ -248,6 +260,8 @@ static void st_game_init(void)
 	setup_main_menu();
 	st_draw_menu();
 	st_program_state = ST_RENDER_SCREEN;
+	gs.srs_needs_update = 0;
+	gs.last_screen = 255;
 }
 
 static void st_captain_menu(void)
@@ -277,6 +291,7 @@ static void st_captain_menu(void)
 	menu.menu_active = 1;
 	st_draw_menu();
 	FbSwapBuffers();
+	gs.last_screen = CAPN_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
 }
 
@@ -563,6 +578,7 @@ static void st_lrs(void) /* long range scanner */
 	FbWriteLine("# ENEMY SHIPS");
 	
 	FbSwapBuffers();
+	gs.last_screen = LRS_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
 }
 
@@ -661,6 +677,8 @@ static void st_srs(void) /* short range scanner */
 	FbWriteLine("E");
 
 	FbSwapBuffers();
+	gs.last_screen = SRS_SCREEN;
+	gs.srs_needs_update = 0;
 	st_program_state = ST_PROCESS_INPUT;
 }
 
@@ -738,6 +756,7 @@ static void st_set_course(void)
 		FbPoint(cx + x, cy + y);
 	}
 	FbSwapBuffers();
+	gs.last_screen = HEADING_SCREEN;
 }
 
 static void st_process_input(void)
@@ -776,6 +795,7 @@ static void st_not_impl()
 	FbMove(2, 60);
 	FbWriteLine("IMPLEMENTED");
 	FbSwapBuffers();
+	gs.last_screen = UNKNOWN_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
 }
 
@@ -864,6 +884,7 @@ static void st_planets(void)
 	strcat(msg, cs);
 	FbWriteLine(msg);
 	FbSwapBuffers();
+	gs.last_screen = PLANETS_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
 }
 
@@ -935,6 +956,7 @@ static void st_sensors(void)
 		
 	}
 	FbSwapBuffers();
+	gs.last_screen = SENSORS_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
 }
 
@@ -961,6 +983,7 @@ static void st_damage_report(void)
 		FbWriteLine(ds);
 	}
 	FbSwapBuffers();
+	gs.last_screen = DAMAGE_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
 }
 
@@ -1028,6 +1051,7 @@ static void st_status_report(void)
 	FbWriteLine(num);
 
 	FbSwapBuffers();
+	gs.last_screen = STATUS_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
 }
 
@@ -1050,19 +1074,29 @@ static void move_player(void)
 		/* Keep the player in bounds */
 		if (nx < 0) {
 			gs.player.warp_factor = 0;
+			gs.srs_needs_update = 1;
 			nx = 0;
 		}
 		if (nx > 0x0007ffff) {
 			gs.player.warp_factor = 0;
+			gs.srs_needs_update = 1;
 			nx = 0x0007ffff;
 		}
 		if (ny < 0) {
 			gs.player.warp_factor = 0;
+			gs.srs_needs_update = 1;
 			ny = 0;
 		}
 		if (ny > 0x0007ffff) {
 			gs.player.warp_factor = 0;
+			gs.srs_needs_update = 1;
 			ny = 0x0007ffff;
+		}
+		if (coord_to_sector(gs.player.x) != coord_to_sector(nx) ||
+			coord_to_sector(gs.player.y) != coord_to_sector(ny) ||
+			coord_to_quadrant(gs.player.x) != coord_to_quadrant(nx) ||
+			coord_to_quadrant(gs.player.y) != coord_to_quadrant(ny)) {
+			gs.srs_needs_update = 1;
 		}
 		gs.player.x = nx;
 		gs.player.y = ny;
@@ -1127,6 +1161,7 @@ static void st_warp()
 	draw_speed_gauge(GREEN, RED, gs.player.warp_factor, gs.player.new_warp_factor);
 
 	FbSwapBuffers();
+	gs.last_screen = WARP_SCREEN;
 	st_program_state = ST_WARP_INPUT;
 }
 
@@ -1226,8 +1261,11 @@ int spacetripper_cb(void)
 		break;
 	}
 	ticks++;
-	if ((ticks % 60) == 0) /* Every 2 seconds */
+	if ((ticks % 60) == 0) { /* Every 2 seconds */
 		move_objects();
+		if (gs.last_screen == SRS_SCREEN && gs.srs_needs_update)
+		st_program_state = ST_SRS;
+	}
 	return 0;
 }
 
