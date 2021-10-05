@@ -157,7 +157,8 @@ static const struct point lunar_base_points[] = {
 	{ -26, -23 },
 };
 
-static int terrain_y[1024] = { 0 };
+#define NUM_TERRAIN_POINTS 256
+static int terrain_y[NUM_TERRAIN_POINTS] = { 0 };
 
 static struct lander_data {
 	/* All values are 8x what is displayed. */
@@ -165,8 +166,8 @@ static struct lander_data {
 	int vx, vy;
 	int fuel;
 #define FULL_FUEL (1 << 16)
-#define HORIZONTAL_FUEL (256)
-#define VERTICAL_FUEL (768)
+#define HORIZONTAL_FUEL (256 * 4)
+#define VERTICAL_FUEL (768 * 4)
 	int alive;
 } lander;
 
@@ -380,9 +381,9 @@ static void lunarlander_init(void)
 	FbInit();
 	FbClear();
 	terrain_y[0] = -100;
-	terrain_y[1023] = -100;
-	init_terrain(0, 1023);
-	add_landing_zones(terrain_y, 0, 1023, NUM_LANDING_ZONES);
+	terrain_y[NUM_TERRAIN_POINTS - 1] = -100;
+	init_terrain(0, NUM_TERRAIN_POINTS - 1);
+	add_landing_zones(terrain_y, 0, NUM_TERRAIN_POINTS - 1, NUM_LANDING_ZONES);
 	place_astronauts();
 	place_lunar_base();
 	lunarlander_state = LUNARLANDER_RUN;
@@ -450,7 +451,7 @@ static void draw_terrain_segment(struct lander_data *lander, int i, int color)
 
 	if (i < 0)
 		return;
-	if (i > 1022)
+	if (i > NUM_TERRAIN_POINTS - 2)
 		return;
 	x1 = i * TERRAIN_SEGMENT_WIDTH;
 	if (x1 <= left || x1 >= right)
@@ -537,11 +538,11 @@ static void draw_terrain(struct lander_data *lander, int color)
 	start = ((lander->x >> 8) - TERRAIN_SEGMENT_WIDTH * LCD_XSIZE / 2) / TERRAIN_SEGMENT_WIDTH;
 	if (start < 0)
 		start = 0;
-	if (start > 1023)
+	if (start > NUM_TERRAIN_POINTS - 1)
 		return;
 	stop = ((lander->x >> 8) + TERRAIN_SEGMENT_WIDTH * LCD_XSIZE / 2) / TERRAIN_SEGMENT_WIDTH;
-	if (stop > 1023)
-		stop = 1023;
+	if (stop > NUM_TERRAIN_POINTS - 1)
+		stop = NUM_TERRAIN_POINTS - 1;
 	FbColor(color);
 	for (i = start; i < stop; i++)
 		draw_terrain_segment(lander, i, color);
@@ -622,8 +623,8 @@ static void move_lander(void)
 	lander.y += lander.vy;
 	lander.x += lander.vx;
 	if (lander.x < TERRAIN_SEGMENT_WIDTH << 8)
-		lander.x += ((int) (ARRAYSIZE(terrain_y) - 2) * 10 - TERRAIN_SEGMENT_WIDTH) << 8;
-	if (lander.x >= (((int) (ARRAYSIZE(terrain_y) - 1) * 10) << 8))
+		lander.x += ((int) (NUM_TERRAIN_POINTS - 2) * 10 - TERRAIN_SEGMENT_WIDTH) << 8;
+	if (lander.x >= (((int) (NUM_TERRAIN_POINTS - 1) * 10) << 8))
 		lander.x = (TERRAIN_SEGMENT_WIDTH << 8);
 }
 
