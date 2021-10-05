@@ -48,11 +48,34 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define NSTARS 20
 #define NTOTAL (NKLINGONS + NCOMMANDERS + NROMULANS + NPLANETS + NBLACKHOLES + NSTARBASES + NSTARS)
 
+#define INITIAL_TORPEDOES 10
+
 #define ENEMY_SHIP 'E'
 #define PLANET 'P'
 #define BLACKHOLE 'B'
 #define STARBASE 'S'
 #define STAR '*'
+
+static const char *object_type_name(char object_type)
+{
+	switch (object_type) {
+	case ENEMY_SHIP:
+		return "AN ENEMY\nSHIP";
+		break;
+	case PLANET:
+		return "A PLANET";
+		break;
+	case BLACKHOLE:
+		return "A BLACK HOLE";
+		break;
+	case STAR:
+		return "A STAR";
+		break;
+	default:
+		return "AN UNKNOWN\nOBJECT";
+		break;
+	}
+}
 
 /* Program states.  Initial state is MAZE_GAME_INIT */
 enum st_program_state_t {
@@ -63,11 +86,17 @@ enum st_program_state_t {
 	ST_LRS,
 	ST_SRS,
 	ST_SET_COURSE,
+	ST_AIM_WEAPONS,
+	ST_CHOOSE_WEAPONS,
+	ST_PHOTON_TORPEDOES,
+	ST_PHASER_BEAMS,
+	ST_PHASER_POWER,
+	ST_PHASER_POWER_INPUT,
+	ST_FIRE_PHASER,
+	ST_FIRE_TORPEDO,
 	ST_WARP,
 	ST_WARP_INPUT,
 	ST_SET_WEAPONS_BEARING,
-	ST_FIRE_PHASERS,
-	ST_FIRE_PHOTON_TORPEDO,
 	ST_GAME_LOST,
 	ST_GAME_WON,
 	ST_DRAW_MENU,
@@ -143,8 +172,12 @@ static const char *ship_system[] = { "WARP", "IMPULSE", "SHIELDS", "LIFE SUPP", 
 struct player_ship {
 	int x, y; /* 32 bits, 16 for sector, 16 for quadrant */
 	int heading, new_heading; /* in degrees */
+	int weapons_aim, new_weapons_aim; /* in degrees */
 	int energy;
+	int torpedoes;
 	int warp_factor, new_warp_factor; /* 0 to (1 << 16) */
+#define TORPEDO_POWER (1 << 17)
+	int phaser_power, new_phaser_power; /* 0 to (1 << 16) */
 #define WARP10 (1 << 16)
 #define WARP1 (WARP10 / 10)
 	unsigned char shields;
@@ -187,6 +220,8 @@ struct game_state {
 #define PLANETS_SCREEN 8
 #define CAPN_SCREEN 9
 #define ALERT_SCREEN 10
+#define AIMING_SCREEN 11
+#define PHASER_POWER_SCREEN 12
 #define UNKNOWN_SCREEN 255;
 } gs = { 0 };
 
@@ -263,6 +298,7 @@ static void setup_main_menu(void)
 static void st_draw_menu(void)
 {
 	dynmenu_draw(&menu);
+	gs.last_screen = UNKNOWN_SCREEN;
 	st_program_state = ST_RENDER_SCREEN;
 }
 
@@ -288,14 +324,12 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "SRS", ST_SRS, 0);
 	dynmenu_add_item(&menu, "STAR CHART", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "SET COURSE", ST_SET_COURSE, 0);
+	dynmenu_add_item(&menu, "FIRE WEAPONS", ST_AIM_WEAPONS, 0);
 	dynmenu_add_item(&menu, "WARP", ST_WARP, 0);
-	dynmenu_add_item(&menu, "PHASERS", ST_NOT_IMPL, 0);
-	dynmenu_add_item(&menu, "PHOTON TORPEDO", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "SHIELDS", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "DAMAGE REPORT", ST_DAMAGE_REPORT, 0);
 	dynmenu_add_item(&menu, "STATUS REPORT", ST_STATUS_REPORT, 0);
 	dynmenu_add_item(&menu, "SENSORS", ST_SENSORS, 0);
-	dynmenu_add_item(&menu, "DOCK", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "STANDARD ORBIT", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "TRANSPORTER", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "MINE DILITHIUM", ST_NOT_IMPL, 0);
@@ -372,6 +406,10 @@ static void init_player()
 	gs.player.shields_up = 0;
 	gs.player.dilithium_crystals = 255;
 	gs.player.warp_factor = 0;
+	gs.player.new_warp_factor = 0;
+	gs.player.torpedoes = INITIAL_TORPEDOES;
+	gs.player.phaser_power = 0;
+	gs.player.new_phaser_power = 0;
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++)
 		gs.player.damage[i] = 0;
@@ -483,6 +521,22 @@ static void print_speed(char *impulse, char *warp, int x, int y, int warp_f)
 		itoa(num, warp_factor_frac(warp_f), 10);
 		strcat(msg, num);
 	}
+	FbMove(x, y + 9);
+	FbWriteLine(msg);
+}
+
+static void print_power(int x, int y, int power)
+{
+	char num[5];
+	char msg[10];
+
+	FbMove(x, y);
+	FbWriteLine("POWER");
+	itoa(num, warp_factor(power), 10);
+	strcpy(msg, num);
+	strcat(msg, ".");
+	itoa(num, warp_factor_frac(power), 10);
+	strcat(msg, num);
 	FbMove(x, y + 9);
 	FbWriteLine(msg);
 }
@@ -721,7 +775,8 @@ static void draw_heading_indicator(const int cx, const int cy, const int degrees
 	FbLine(cx, cy, x, y);
 }
 
-static void st_set_course(void)
+static void st_choose_angle(char *new_head, char *cur_head, char *set_head,
+		int *heading, int *new_heading, int which_screen)
 {
 	int i, x, y, finished = 0;
 	const int cx = (LCD_XSIZE >> 1);
@@ -729,42 +784,42 @@ static void st_set_course(void)
 
 	/* Erase old stuff */
 	FbMove(2, 20);
-	write_heading("NEW HEADING: ", gs.player.new_heading, BLACK);
+	write_heading(new_head, *new_heading, BLACK);
 	FbMove(2, 11);
-	write_heading("CUR HEADING: ", gs.player.heading, BLACK);
-	draw_heading_indicator(cx, cy, gs.player.heading, 150, BLACK);
-	draw_heading_indicator(cx, cy, gs.player.new_heading, 150, BLACK);
+	write_heading(cur_head, *heading, BLACK);
+	draw_heading_indicator(cx, cy, *heading, 150, BLACK);
+	draw_heading_indicator(cx, cy, *new_heading, 150, BLACK);
 
 	if (BUTTON_PRESSED_AND_CONSUME) {
-		gs.player.heading = gs.player.new_heading;
+		*heading = *new_heading;
 		st_program_state = ST_PROCESS_INPUT;
 		finished = 1;
 	} else if (UP_BTN_AND_CONSUME) {
-		gs.player.new_heading += 10;
+		*new_heading += 10;
 	} else if (DOWN_BTN_AND_CONSUME) {
-		gs.player.new_heading -= 10;
+		*new_heading -= 10;
 	} else if (LEFT_BTN_AND_CONSUME) {
-		gs.player.new_heading++;
+		(*new_heading)++;
 	} else if (RIGHT_BTN_AND_CONSUME) {
-		gs.player.new_heading--;
+		(*new_heading)--;
 	}
-	if (gs.player.new_heading < 0)
-		gs.player.new_heading += 360;
-	if (gs.player.new_heading >= 360)
-		gs.player.new_heading -= 360;
+	if (*new_heading < 0)
+		*new_heading += 360;
+	if (*new_heading >= 360)
+		*new_heading -= 360;
 
 	if (!finished) {
 		FbColor(WHITE);
 		FbMove(2, 2);
-		FbWriteLine("SET HEADING");
+		FbWriteLine(set_head);
 		FbMove(2, 20);
-		write_heading("NEW HEADING: ", gs.player.new_heading, WHITE);
+		write_heading(new_head, *new_heading, WHITE);
 	}
 	FbMove(2, 11);
-	write_heading("CUR HEADING: ", gs.player.heading, WHITE);
+	write_heading(cur_head, *heading, WHITE);
 
-	draw_heading_indicator(cx, cy, gs.player.heading, 150, RED);
-	draw_heading_indicator(cx, cy, gs.player.new_heading, 150, WHITE);
+	draw_heading_indicator(cx, cy, *heading, 150, RED);
+	draw_heading_indicator(cx, cy, *new_heading, 150, WHITE);
 	/* Draw a circle of dots. */
 	for (i = 0; i < 128; i += 4) {
 		x = (-cosine(i) * 160) / 1024;
@@ -772,7 +827,21 @@ static void st_set_course(void)
 		FbPoint(cx + x, cy + y);
 	}
 	FbSwapBuffers();
-	gs.last_screen = HEADING_SCREEN;
+	gs.last_screen = which_screen;
+	if (finished && which_screen == AIMING_SCREEN) {
+		st_program_state = ST_CHOOSE_WEAPONS;
+	}
+}
+
+static void st_choose_weapons(void)
+{
+	clear_menu();	
+	strcpy(menu.title, "CHOOSE WEAPON");
+	dynmenu_add_item(&menu, "PHOTON TORPS", ST_PHOTON_TORPEDOES, 0);
+	dynmenu_add_item(&menu, "PHASER BEAMS", ST_PHASER_BEAMS, 0);
+	dynmenu_add_item(&menu, "CANCEL WEAPONS", ST_CAPTAIN_MENU, 0);
+	menu.menu_active = 1;
+	st_program_state = ST_DRAW_MENU;
 }
 
 static void st_process_input(void)
@@ -1076,7 +1145,7 @@ static int player_collision_detection(int *nx, int *ny)
 {
 	int i, sx, sy, qx, qy, osx, osy, oqx, oqy;
 	unsigned char neutral_zone;
-	char *object, msg[40];
+	char msg[40];
 
 	/* Keep the player in bounds */
 	neutral_zone = 0;
@@ -1125,23 +1194,7 @@ static int player_collision_detection(int *nx, int *ny)
 		oqy = coord_to_quadrant(gs.object[i].y);
 		if (oqy != qy)
 			continue;
-		switch (gs.object[i].type) {
-		case ENEMY_SHIP:
-			object = "AN ENEMY\nSHIP";
-			break;
-		case PLANET:
-			object = "A PLANET";
-			break;
-		case BLACKHOLE:
-			object = "A BLACK HOLE";
-			break;
-		case STAR:
-			object = "A STAR";
-			break;
-		default:
-			object = "AN UNKNOWN\nOBJECT";
-			break;
-		}
+		const char *object = object_type_name(gs.object[i].type);
 		strcpy(msg, "WE HAVE\nENCOUNTED");
 		strcat(msg, " ");
 		strcat(msg, object);
@@ -1221,27 +1274,48 @@ static void draw_speed_gauge_marker(int color, int speed)
 	FbLine(115, y3, 122, y2);
 }
 
-static void draw_speed_gauge(int color, int color2, int speed, int new_speed)
+#define SPEED_GAUGE 0
+#define PHASER_POWER_GAUGE 1 
+static void draw_speed_gauge(int gauge_type, int color, int color2, int speed, int new_speed)
 {
 	draw_speed_gauge_ticks();
 	draw_speed_gauge_marker(color, speed);
 	draw_speed_gauge_marker(color2, new_speed);
 	FbColor(GREEN);
-	print_speed("CURR IMPULSE", "CURR WARP", 2, 30, speed);
-	print_speed("NEW IMPULSE", "NEW WARP", 2, 60, new_speed);
+	switch (gauge_type) {
+	case SPEED_GAUGE:
+		print_speed("CURR IMPULSE", "CURR WARP", 2, 30, speed);
+		print_speed("NEW IMPULSE", "NEW WARP", 2, 60, new_speed);
+		break;
+	case PHASER_POWER_GAUGE:
+		print_power(2, 30, speed);
+		break;
+	default:
+		break;
+	}
 }
 
 static void st_warp()
 {
 	screen_header("WARP");
-	draw_speed_gauge(GREEN, RED, gs.player.warp_factor, gs.player.new_warp_factor);
+	draw_speed_gauge(SPEED_GAUGE, GREEN, RED, gs.player.warp_factor, gs.player.new_warp_factor);
 
 	FbSwapBuffers();
 	gs.last_screen = WARP_SCREEN;
 	st_program_state = ST_WARP_INPUT;
 }
 
-static void st_warp_input()
+static void st_phaser_power()
+{
+	screen_header("PHASER PWR");
+	draw_speed_gauge(PHASER_POWER_GAUGE, GREEN, RED, gs.player.phaser_power, gs.player.new_phaser_power);
+
+	FbSwapBuffers();
+	gs.last_screen = PHASER_POWER_SCREEN;
+	st_program_state = ST_PHASER_POWER_INPUT;
+}
+
+static void st_warp_input(void)
 {
 	int old = gs.player.new_warp_factor;
 
@@ -1268,10 +1342,135 @@ static void st_warp_input()
 		st_program_state = ST_WARP;
 }
 
+static void st_phaser_power_input(void)
+{
+	int old = gs.player.new_phaser_power;
+
+	if (BUTTON_PRESSED_AND_CONSUME) {
+		gs.player.phaser_power = gs.player.new_phaser_power;
+		st_phaser_power();
+		st_program_state = ST_FIRE_PHASER;
+		return;
+	} else if (UP_BTN_AND_CONSUME) {
+		gs.player.new_phaser_power += WARP1;
+	} else if (DOWN_BTN_AND_CONSUME) {
+		gs.player.new_phaser_power -= WARP1;
+	} else if (LEFT_BTN_AND_CONSUME) {
+		gs.player.new_phaser_power -= WARP1 / 10;
+	} else if (RIGHT_BTN_AND_CONSUME) {
+		gs.player.new_phaser_power += WARP1 / 10;
+	}
+	if (gs.player.new_phaser_power < 0)
+		gs.player.new_phaser_power = 0;
+	if (gs.player.new_phaser_power > WARP10)
+		gs.player.new_phaser_power = WARP10;
+
+	if (old != gs.player.new_phaser_power)
+		st_program_state = ST_PHASER_POWER;
+}
+
+static int check_weapon_collision(char *weapon_name, int i, int x, int y)
+{
+	int tx, ty; 
+	char msg[40];
+
+	tx = gs.object[i].x;
+	ty = gs.object[i].y;
+
+	/* Can't use pythagorean theorem because square of distance across 1 quadrant
+	 * will overflow an int.
+	 */
+	if (coord_to_sector(tx) != coord_to_sector(x))
+		return 0;
+	if (coord_to_sector(ty) != coord_to_sector(y))
+		return 0;
+	if (coord_to_quadrant(tx) != coord_to_quadrant(x))
+		return 0;
+	if (coord_to_quadrant(ty) != coord_to_quadrant(y))
+		return 0;
+	strcpy(msg, weapon_name);
+	strcat(msg, " HITS\n");
+	strcat(msg, object_type_name(gs.object[i].type));
+	strcat(msg, "!");
+	alert_player(weapon_name, msg);
+	FbSwapBuffers();
+	
+	return 1;
+}
+
+static void do_weapon_damage(int target, int power)
+{
+	int new_hp, scaled_power, damage;
+
+	if (gs.object[target].type != ENEMY_SHIP)
+		return;
+
+	scaled_power = (power >> 11) & 0x0ff;
+	damage = 127 + (xorshift(&xorshift_state) & 0x0ff) / 2;
+	damage = (damage * scaled_power) / 256;
+	new_hp = gs.object[target].tsd.ship.hitpoints;
+	new_hp -= damage;
+	if (new_hp <= 0) {
+		new_hp = 0;
+		delete_object(target);
+		alert_player("WEAPONS", "ENEMY SHIP\nDESTROYED!");
+		return;
+	}
+	gs.object[target].tsd.ship.hitpoints = new_hp;
+	return;
+}
+
+static void st_fire_weapon(char *weapon_name, int weapon_power)
+{
+	int i, j, x, y, a, dx, dy;
+
+	x = gs.player.x;
+	y = gs.player.y;
+
+	FbClear();
+	FbMove(2, 60);
+	FbColor(WHITE);
+
+	a = (gs.player.weapons_aim * 128) / 360;
+	dx = (cosine(a) * 100) / 1024;
+	dy = (-sine(a) * 100) / 1024;
+	dx = dx * (WARP1 / 1000);
+	dy = dy * (WARP1 / 1000);
+
+	for (i = 0; i < 20; i++) { /* FIXME, is this too much looping? */
+		for (j = 0; j < NTOTAL; j++) {
+			switch (gs.object[j].type) {
+			case ENEMY_SHIP:
+				if (check_weapon_collision(weapon_name, j, x, y)) {
+					do_weapon_damage(j, weapon_power);
+					return;
+				}
+				break;
+			default:
+				continue;
+			}
+			x += dx;
+			y += dy;
+		}
+	}
+	FbSwapBuffers();
+	alert_player(weapon_name, "MISSED!");
+}
+
 static void st_alert(void)
 {
 	if (BUTTON_PRESSED_AND_CONSUME)
 		st_program_state = ST_CAPTAIN_MENU;
+}
+
+static void st_photon_torpedoes(void)
+{
+	st_fire_weapon("TORPEDO", TORPEDO_POWER);
+}
+
+static void st_phaser_beams(void)
+{
+	st_program_state = ST_PHASER_POWER;
 }
 
 int spacetripper_cb(void)
@@ -1314,7 +1513,15 @@ int spacetripper_cb(void)
 		st_srs();
 		break;
 	case ST_SET_COURSE:
-		st_set_course();
+		st_choose_angle("NEW HEADING: ", "CUR HEADING", "SET HEADING: ",
+				&gs.player.heading, &gs.player.new_heading, HEADING_SCREEN);
+		break;
+	case ST_AIM_WEAPONS:
+		st_choose_angle("AIM WEAPONS: ", "CUR AIM", "SET AIM: ",
+				&gs.player.weapons_aim, &gs.player.new_weapons_aim, AIMING_SCREEN);
+		break;
+	case ST_CHOOSE_WEAPONS:
+		st_choose_weapons();
 		break;
 	case ST_WARP:
 		st_warp();
@@ -1340,6 +1547,24 @@ int spacetripper_cb(void)
 		break;
 	case ST_ALERT:
 		st_alert();
+		break;
+	case ST_PHOTON_TORPEDOES:
+		st_photon_torpedoes();
+		break;
+	case ST_PHASER_BEAMS:
+		st_phaser_beams();
+		break;
+	case ST_PHASER_POWER:
+		st_phaser_power();
+		break;
+	case ST_PHASER_POWER_INPUT:
+		st_phaser_power_input();
+		break;
+	case ST_FIRE_PHASER:
+		st_fire_weapon("PHASER", gs.player.phaser_power);
+		break;
+	case ST_FIRE_TORPEDO:
+		st_fire_weapon("TORPEDO", TORPEDO_POWER);
 		break;
 	default:
 		st_program_state = ST_CAPTAIN_MENU;
