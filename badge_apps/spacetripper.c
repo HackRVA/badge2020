@@ -77,6 +77,7 @@ enum st_program_state_t {
 	ST_SENSORS,
 	ST_DAMAGE_REPORT,
 	ST_STATUS_REPORT,
+	ST_ALERT,
 	ST_NOT_IMPL,
 };
 
@@ -185,6 +186,7 @@ struct game_state {
 #define STATUS_SCREEN 7
 #define PLANETS_SCREEN 8
 #define CAPN_SCREEN 9
+#define ALERT_SCREEN 10
 #define UNKNOWN_SCREEN 255;
 } gs = { 0 };
 
@@ -227,6 +229,20 @@ static void delete_object(int i)
 	if (i < 0 || i >= NTOTAL)
 		return;
 	memset(&gs.object[i], 0, sizeof(gs.object[i]));
+}
+
+static void alert_player(char *title, char *msg)
+{
+	FbClear();
+	FbMove(2, 0);
+	FbColor(WHITE);
+	FbWriteLine(title);
+	FbColor(GREEN);
+	FbMove(2, 20);
+	FbWriteString(msg);
+	FbSwapBuffers();
+	gs.last_screen = ALERT_SCREEN;
+	st_program_state = ST_ALERT;
 }
 
 static void clear_menu(void)
@@ -1100,8 +1116,8 @@ static void move_player(void)
 		}
 		gs.player.x = nx;
 		gs.player.y = ny;
-		/* if (gs.player.warp_factor == 0)
-			msg_from_starfleet("permission is not granted to enter the neutral zone or something"); */
+		if (gs.player.warp_factor == 0)
+			alert_player("STARFLEET MSG", "PERMISSION TO\nENTER NEUTRAL\nZONE DENIED\n\nSHUT DOWN\nWARP DRIVE\n\n-- STARFLEET");
 	}
 }
 
@@ -1192,6 +1208,12 @@ static void st_warp_input()
 		st_program_state = ST_WARP;
 }
 
+static void st_alert(void)
+{
+	if (BUTTON_PRESSED_AND_CONSUME)
+		st_program_state = ST_CAPTAIN_MENU;
+}
+
 int spacetripper_cb(void)
 {
 	static int ticks = 0;
@@ -1256,6 +1278,9 @@ int spacetripper_cb(void)
 		st_status_report();
 		gs.stardate++;
 		break;
+	case ST_ALERT:
+		st_alert();
+		break;
 	default:
 		st_program_state = ST_CAPTAIN_MENU;
 		break;
@@ -1264,7 +1289,7 @@ int spacetripper_cb(void)
 	if ((ticks % 60) == 0) { /* Every 2 seconds */
 		move_objects();
 		if (gs.last_screen == SRS_SCREEN && gs.srs_needs_update)
-		st_program_state = ST_SRS;
+			st_program_state = ST_SRS;
 	}
 	return 0;
 }
