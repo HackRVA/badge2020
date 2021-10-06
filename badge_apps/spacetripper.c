@@ -1069,6 +1069,26 @@ static void st_sensors(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+static void print_numeric_item(char *item, int value)
+{
+	char num[10];
+
+	FbWriteString(item);
+	itoa(num, value, 10);
+	FbWriteString(num);
+	FbMoveX(2);
+	FbMoveRelative(0, 9);
+}
+
+static void show_torps_energy_and_dilith(void)
+{
+	FbMoveRelative(0, 9);
+	FbMoveX(2);
+	print_numeric_item("ENERGY:", gs.player.energy);
+	print_numeric_item("TORPEDOES:", gs.player.torpedoes);
+	print_numeric_item("DILITH:", gs.player.dilithium_crystals);
+}
+
 static void st_damage_report(void)
 {
 	int i, d;
@@ -1091,6 +1111,7 @@ static void st_damage_report(void)
 		FbMove(LCD_XSIZE - 9 * 4, 18 + i * 9);
 		FbWriteLine(ds);
 	}
+	show_torps_energy_and_dilith();
 	FbSwapBuffers();
 	gs.last_screen = DAMAGE_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
@@ -1158,6 +1179,8 @@ static void st_status_report(void)
 	itoa(num, es, 10);
 	FbMove(80, 5 * 9);
 	FbWriteLine(num);
+
+	show_torps_energy_and_dilith();
 
 	FbSwapBuffers();
 	gs.last_screen = STATUS_SCREEN;
