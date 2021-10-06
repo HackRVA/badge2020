@@ -1083,10 +1083,12 @@ static void st_dock(void)
 	}
 
 	/* See if there is a starbase nearby */
-	if (player_is_next_to(STARBASE))
+	if (player_is_next_to(STARBASE)) {
 		alert_player("DOCKING CONTROL", "CAPTAIN THE\nSHIP HAS BEEN\nDOCKED WITH\nSTARBASE\n\nSUPPLIES\nREPLENISHING");
-	else
+		gs.player.docked = 1;
+	} else {
 		alert_player("DOCKING CONTROL", "CAPTAIN THERE\nARE NO NEARBY\nSTARBASES WITH\nWHICH TO DOCK");
+	}
 
 	/* Ship's supplies get replenished in move_player() */
 }
