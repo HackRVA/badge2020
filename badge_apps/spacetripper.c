@@ -226,6 +226,10 @@ struct game_state {
 #define AIMING_SCREEN 11
 #define PHASER_POWER_SCREEN 12
 #define UNKNOWN_SCREEN 255;
+	int score;
+#define KLINGON_POINTS 100
+#define ROMULAN_POINTS 200
+#define COMMANDER_POINTS 400
 } gs = { 0 };
 
 static inline int coord_to_sector(int c)
@@ -431,6 +435,7 @@ static void st_new_game(void)
 	init_player();
 	gs.stardate = 0;
 	gs.enddate = gs.stardate + 35 * TICKS_PER_DAY;
+	gs.score = 0;
 	st_program_state = ST_CAPTAIN_MENU;
 }
 
@@ -1181,6 +1186,8 @@ static void st_status_report(void)
 	FbWriteLine(num);
 
 	show_torps_energy_and_dilith();
+	FbColor(YELLOW);
+	print_numeric_item("SCORE:", gs.score);
 
 	FbSwapBuffers();
 	gs.last_screen = STATUS_SCREEN;
@@ -1465,6 +1472,19 @@ static void do_weapon_damage(int target, int power)
 	new_hp -= damage;
 	if (new_hp <= 0) {
 		new_hp = 0;
+		switch (gs.object[target].tsd.ship.shiptype) {
+		case 'K':
+			gs.score += KLINGON_POINTS;
+			break;
+		case 'C':
+			gs.score += COMMANDER_POINTS;
+			break;
+		case 'R':
+			gs.score += ROMULAN_POINTS;
+			break;
+		default:
+			break;
+		}
 		delete_object(target);
 		alert_player("WEAPONS", "ENEMY SHIP\nDESTROYED!");
 		return;
