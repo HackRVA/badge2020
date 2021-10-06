@@ -50,7 +50,7 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 
 #define INITIAL_TORPEDOES 10
 #define INITIAL_ENERGY 10000
-#define INITIAL_DILITHIUM 255
+#define INITIAL_DILITHIUM 100
 
 #define ENEMY_SHIP 'E'
 #define PLANET 'P'
@@ -116,6 +116,7 @@ enum st_program_state_t {
 	ST_STANDARD_ORBIT,
 	ST_TRANSPORTER,
 	ST_MINE_DILITHIUM,
+	ST_LOAD_DILITHIUM,
 	ST_NOT_IMPL,
 };
 
@@ -353,7 +354,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "DOCKING CTRL", ST_DOCK, 0);
 	dynmenu_add_item(&menu, "TRANSPORTER", ST_TRANSPORTER, 0);
 	dynmenu_add_item(&menu, "MINE DILITHIUM", ST_MINE_DILITHIUM, 0);
-	dynmenu_add_item(&menu, "LOAD DILITHIUM", ST_NOT_IMPL, 0);
+	dynmenu_add_item(&menu, "LOAD DILITHIUM", ST_LOAD_DILITHIUM, 0);
 	dynmenu_add_item(&menu, "SELF DESTRUCT", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "NEW GAME", ST_NEW_GAME, 0);
 	dynmenu_add_item(&menu, "QUIT GAME", ST_EXIT, 0);
@@ -1167,6 +1168,30 @@ static void st_mine_dilithium(void)
 			"FOUND NO\nDILITHIUM\nCRYSTALS");
 }
 
+static void st_load_dilithium(void)
+{
+	int n, leftover = 0;
+
+	if (gs.player.mined_dilithium == 0) {
+		alert_player("ENGINEERING", "CAPTAIN\n\nWE HAVEN'T GOT\nANY EXTRA\nDILITHIUM\nCRYSTALS\nTO LOAD INTO\nTHE WARP CHAMBER");
+		return;
+	}
+	if (gs.player.dilithium_crystals == 255) {
+		alert_player("ENGINEERING", "CAPTAIN\n\nTHE WARP DRIVE\nIS AT FULL\nCAPACITY ALREADY");
+		return;
+	}
+	n = gs.player.dilithium_crystals + gs.player.mined_dilithium;
+	if (n > 255) {
+		n = 255;
+		leftover = gs.player.dilithium_crystals + gs.player.mined_dilithium - 255;
+	}
+	gs.player.dilithium_crystals = n;
+	gs.player.mined_dilithium = leftover;
+	alert_player("ENGINEERING", "CAPTAIN\n\nWE HAVE LOADED\nUP THE MINED\n"
+				"DILITHIUM\nCRYSTALS\nINTO THE WARP\nCHAMBER\n"
+				"HOPEFULLY THE\nQUALITY IS NOT\nTOO POOR");
+}
+
 static void st_sensors(void)
 {
 	int i, sx, sy, px, py;
@@ -1812,6 +1837,9 @@ int spacetripper_cb(void)
 		break;
 	case ST_MINE_DILITHIUM:
 		st_mine_dilithium();
+		break;
+	case ST_LOAD_DILITHIUM:
+		st_load_dilithium();
 		break;
 	case ST_STANDARD_ORBIT:
 		st_standard_orbit();
