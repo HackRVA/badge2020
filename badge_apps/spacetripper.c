@@ -113,6 +113,7 @@ enum st_program_state_t {
 	ST_STATUS_REPORT,
 	ST_ALERT,
 	ST_DOCK,
+	ST_STANDARD_ORBIT,
 	ST_NOT_IMPL,
 };
 
@@ -191,6 +192,7 @@ struct player_ship {
 	unsigned char dilithium_crystals;
 	unsigned char damage[NSHIP_SYSTEMS];
 	unsigned char docked;
+	unsigned char standard_orbit;
 };
 
 static inline int warp_factor(int wf)
@@ -342,7 +344,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "STATUS REPORT", ST_STATUS_REPORT, 0);
 	dynmenu_add_item(&menu, "SENSORS", ST_SENSORS, 0);
 	dynmenu_add_item(&menu, "PLANETS", ST_PLANETS, 0);
-	dynmenu_add_item(&menu, "STANDARD ORBIT", ST_NOT_IMPL, 0);
+	dynmenu_add_item(&menu, "STANDARD ORBIT", ST_STANDARD_ORBIT, 0);
 	dynmenu_add_item(&menu, "DOCKING CTRL", ST_DOCK, 0);
 	dynmenu_add_item(&menu, "TRANSPORTER", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "MINE DILITHIUM", ST_NOT_IMPL, 0);
@@ -1012,25 +1014,18 @@ static void st_planets(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
-static void st_dock(void)
+static int player_is_next_to(unsigned char object_type)
 {
 	int i, sx, sy, qx, qy;
 
-	/* If player docked, undock player */
-	if (gs.player.docked) {
-		gs.player.docked = 0;
-		alert_player("DOCKING CONTROL", "CAPTAIN THE\nSHIP HAS BEEN\nUNDOCKED FROM\nSTARBASE");
-		return;
-	}
-
-	/* See if there is a starbase nearby */
+	/* See if there is an object of the specified type nearby */
 	sx = coord_to_sector(gs.player.x);
 	sy = coord_to_sector(gs.player.y);
 	qx = coord_to_quadrant(gs.player.x);
 	qy = coord_to_quadrant(gs.player.y);
 	for (i = 0; i < NTOTAL; i++) {
 		struct game_object *o = &gs.object[i];
-		if (o->type != STARBASE)
+		if (o->type != object_type)
 			continue;
 		if (sx != coord_to_sector(o->x))
 			continue;
@@ -1040,11 +1035,48 @@ static void st_dock(void)
 			continue;
 		if (abs(qy - coord_to_quadrant(o->y) > 1))
 			continue;
-		gs.player.docked = 1;
-		alert_player("DOCKING CONTROL", "CAPTAIN THE\nSHIP HAS BEEN\nDOCKED WITH\nSTARBASE\n\nSUPPLIES\nREPLENISHING");
+		return 1;
+	}
+	return 0;
+}
+
+static void st_dock(void)
+{
+	/* If player docked, undock player */
+	if (gs.player.docked) {
+		gs.player.docked = 0;
+		alert_player("DOCKING CONTROL", "CAPTAIN THE\nSHIP HAS BEEN\nUNDOCKED FROM\nSTARBASE");
 		return;
 	}
-	alert_player("DOCKING CONTROL", "CAPTAIN THERE\nARE NO NEARBY\nSTARBASES WITH\nWHICH TO DOCK");
+
+	/* See if there is a starbase nearby */
+	if (player_is_next_to(STARBASE))
+		alert_player("DOCKING CONTROL", "CAPTAIN THE\nSHIP HAS BEEN\nDOCKED WITH\nSTARBASE\n\nSUPPLIES\nREPLENISHING");
+	else
+		alert_player("DOCKING CONTROL", "CAPTAIN THERE\nARE NO NEARBY\nSTARBASES WITH\nWHICH TO DOCK");
+
+	/* Ship's supplies get replenished in move_player() */
+}
+
+static void st_standard_orbit(void)
+{
+	if (gs.player.docked) {
+		alert_player("NAVIGATION", "CAPTAIN THE\nSHIP CANNOT\nENTER STANDARD\nORBIT WHILE\nDOCKED WITH\nTHE STARBASE");
+		return;
+	}
+
+	if (gs.player.standard_orbit) {
+		gs.player.standard_orbit = 0;
+		alert_player("NAVIGATION", "CAPTAIN WE\nHAVE LEFT\nSTANDARD ORBIT\nAND ARE IN\nOPEN SPACE");
+		return;
+	}
+
+	if (player_is_next_to(PLANET)) {
+		gs.player.standard_orbit = 1;
+		alert_player("NAVIGATION", "CAPTAIN WE\nHAVE ENTERED\nSTANDARD ORBIT\nAROUND THE\nPLANET");
+	} else {
+		alert_player("NAVIGATION", "CAPTAIN THERE\nIS NO PLANET\nCLOSE ENOUGH\nTO ENTER\nSTANDARD ORBIT");
+	}
 }
 
 static void st_sensors(void)
@@ -1155,6 +1187,10 @@ static void st_damage_report(void)
 		FbColor(WHITE);
 		FbWriteString("CURRENTLY\nDOCKED AT\nSTARBASE");
 	}
+	if (gs.player.standard_orbit) {
+		FbColor(WHITE);
+		FbWriteString("CURRENTLY\nIN STANDARD\nORBIT");
+	}
 	FbSwapBuffers();
 	gs.last_screen = DAMAGE_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
@@ -1201,6 +1237,8 @@ static void st_status_report(void)
 	FbColor(WHITE);
 	if (gs.player.docked)
 		FbWriteString("CURRENTLY\nDOCKED AT\nSTARBASE");
+	if (gs.player.standard_orbit)
+		FbWriteString("CURRENTLY\nIN STANDARD\nORBIT");
 
 	FbSwapBuffers();
 	gs.last_screen = STATUS_SCREEN;
@@ -1412,6 +1450,12 @@ static void st_warp()
 			"WITH THE\nSTARBASE");
 		return;
 	}
+
+	if (gs.player.standard_orbit) {
+		alert_player("NAVIGATION", "CAPTAIN\nWE MUST LEAVE\nSTANDARD ORBIT\nBEFORE\nENGAGING THE\nWARP DRIVE");
+		return;
+	}
+
 	screen_header("WARP");
 	draw_speed_gauge(SPEED_GAUGE, GREEN, RED, gs.player.warp_factor, gs.player.new_warp_factor);
 
@@ -1673,6 +1717,9 @@ int spacetripper_cb(void)
 		break;
 	case ST_DOCK:
 		st_dock();
+		break;
+	case ST_STANDARD_ORBIT:
+		st_standard_orbit();
 		break;
 	case ST_SENSORS:
 		st_sensors();
