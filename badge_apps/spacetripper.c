@@ -1396,7 +1396,6 @@ static int check_weapon_collision(char *weapon_name, int i, int x, int y)
 	strcat(msg, object_type_name(gs.object[i].type));
 	strcat(msg, "!");
 	alert_player(weapon_name, msg);
-	FbSwapBuffers();
 	
 	return 1;
 }
