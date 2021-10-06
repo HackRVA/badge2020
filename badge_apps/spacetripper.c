@@ -117,6 +117,8 @@ enum st_program_state_t {
 	ST_TRANSPORTER,
 	ST_MINE_DILITHIUM,
 	ST_LOAD_DILITHIUM,
+	ST_SELF_DESTRUCT_CONFIRM,
+	ST_SELF_DESTRUCT,
 	ST_NOT_IMPL,
 };
 
@@ -242,6 +244,7 @@ struct game_state {
 #define KLINGON_POINTS 100
 #define ROMULAN_POINTS 200
 #define COMMANDER_POINTS 400
+	unsigned char game_over;
 } gs = { 0 };
 
 static inline int coord_to_sector(int c)
@@ -312,6 +315,7 @@ static void setup_main_menu(void)
 	dynmenu_add_item(&menu, "NEW GAME", ST_NEW_GAME, 0);
 	dynmenu_add_item(&menu, "QUIT", ST_EXIT, 0);
 	menu.menu_active = 1;
+	st_program_state = ST_DRAW_MENU;
 }
 
 static void st_draw_menu(void)
@@ -355,7 +359,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "TRANSPORTER", ST_TRANSPORTER, 0);
 	dynmenu_add_item(&menu, "MINE DILITHIUM", ST_MINE_DILITHIUM, 0);
 	dynmenu_add_item(&menu, "LOAD DILITHIUM", ST_LOAD_DILITHIUM, 0);
-	dynmenu_add_item(&menu, "SELF DESTRUCT", ST_NOT_IMPL, 0);
+	dynmenu_add_item(&menu, "SELF DESTRUCT", ST_SELF_DESTRUCT_CONFIRM, 0);
 	dynmenu_add_item(&menu, "NEW GAME", ST_NEW_GAME, 0);
 	dynmenu_add_item(&menu, "QUIT GAME", ST_EXIT, 0);
 	menu.menu_active = 1;
@@ -454,6 +458,7 @@ static void st_new_game(void)
 	gs.stardate = 0;
 	gs.enddate = gs.stardate + 35 * TICKS_PER_DAY;
 	gs.score = 0;
+	gs.game_over = 0;
 	st_program_state = ST_CAPTAIN_MENU;
 }
 
@@ -465,6 +470,11 @@ static void st_render_screen(void)
 
 static void button_pressed()
 {
+	if (gs.game_over) {
+		gs.game_over = 0;
+		st_program_state = ST_GAME_INIT;
+		return;
+	}
 	if (!menu.menu_active) {
 		menu.menu_active = 1;
 	} else {
@@ -1192,6 +1202,58 @@ static void st_load_dilithium(void)
 				"HOPEFULLY THE\nQUALITY IS NOT\nTOO POOR");
 }
 
+static void st_self_destruct_confirm(void)
+{
+	clear_menu();
+	strcpy(menu.title, "SELF DESTRUCT?");
+	dynmenu_add_item(&menu, "NO DO NOT DESTRUCT", ST_CAPTAIN_MENU, 0);
+	dynmenu_add_item(&menu, "YES SELF DESTRUCT", ST_SELF_DESTRUCT, 0);
+	menu.menu_active = 1;
+	st_program_state = ST_DRAW_MENU;
+}
+
+static void adjust_score_on_kill(int target)
+{
+	switch (gs.object[target].tsd.ship.shiptype) {
+	case 'K':
+		gs.score += KLINGON_POINTS;
+		break;
+	case 'C':
+		gs.score += COMMANDER_POINTS;
+		break;
+	case 'R':
+		gs.score += ROMULAN_POINTS;
+		break;
+	default:
+		break;
+	}
+}
+
+static void st_self_destruct(void)
+{
+	int i;
+	char msg[60];
+	char num[10];
+
+	/* Kill any enemy ships in the sector. */
+	for (i = 0; i < NTOTAL; i++) {
+		struct game_object *o = &gs.object[i];
+		if (o->type != ENEMY_SHIP)
+			continue;
+		if (coord_to_sector(o->x) != coord_to_sector(gs.player.x))
+			continue;
+		if (coord_to_sector(o->y) != coord_to_sector(gs.player.y))
+			continue;
+		adjust_score_on_kill(i);
+		delete_object(i);
+	}
+	strcpy(msg, "YOUR FINAL\nSCORE WAS: ");
+	itoa(num, gs.score, 10);
+	strcat(msg, num);
+	alert_player("GAME OVER", msg);
+	gs.game_over = 1;
+}
+
 static void st_sensors(void)
 {
 	int i, sx, sy, px, py;
@@ -1687,19 +1749,7 @@ static void do_weapon_damage(int target, int power)
 	new_hp -= damage;
 	if (new_hp <= 0) {
 		new_hp = 0;
-		switch (gs.object[target].tsd.ship.shiptype) {
-		case 'K':
-			gs.score += KLINGON_POINTS;
-			break;
-		case 'C':
-			gs.score += COMMANDER_POINTS;
-			break;
-		case 'R':
-			gs.score += ROMULAN_POINTS;
-			break;
-		default:
-			break;
-		}
+		adjust_score_on_kill(target);
 		delete_object(target);
 		alert_player("WEAPONS", "ENEMY SHIP\nDESTROYED!");
 		return;
@@ -1840,6 +1890,12 @@ int spacetripper_cb(void)
 		break;
 	case ST_LOAD_DILITHIUM:
 		st_load_dilithium();
+		break;
+	case ST_SELF_DESTRUCT_CONFIRM:
+		st_self_destruct_confirm();
+		break;
+	case ST_SELF_DESTRUCT:
+		st_self_destruct();
 		break;
 	case ST_STANDARD_ORBIT:
 		st_standard_orbit();
