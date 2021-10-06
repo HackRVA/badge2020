@@ -1071,8 +1071,14 @@ static void st_standard_orbit(void)
 		return;
 	}
 
+	if (gs.player.warp_factor > 0) {
+		alert_player("NAVIGATION", "CAPTAIN\n\nWE MUST\nCOME OUT OF\nWARP BEFORE\nENTERING\nSTANDARD ORBIT");
+		return;
+	}
+
 	if (player_is_next_to(PLANET)) {
 		gs.player.standard_orbit = 1;
+		gs.player.warp_factor = 0; /* belt and suspenders */
 		alert_player("NAVIGATION", "CAPTAIN WE\nHAVE ENTERED\nSTANDARD ORBIT\nAROUND THE\nPLANET");
 	} else {
 		alert_player("NAVIGATION", "CAPTAIN THERE\nIS NO PLANET\nCLOSE ENOUGH\nTO ENTER\nSTANDARD ORBIT");
