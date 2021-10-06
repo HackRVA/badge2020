@@ -326,22 +326,23 @@ static void st_game_init(void)
 static void st_captain_menu(void)
 {
 	clear_menu();
-	strcpy(menu.title, "CAPN'S ORDERS?");
-	dynmenu_add_item(&menu, "LRS", ST_LRS, 0);
-	dynmenu_add_item(&menu, "SRS", ST_SRS, 0);
+	strcpy(menu.title, "USS ENTERPRISE");
+	strcpy(menu.title3, "CAPN'S ORDERS?");
+	dynmenu_add_item(&menu, "LONG RNG SCAN", ST_LRS, 0);
+	dynmenu_add_item(&menu, "SHORT RNG SCAN", ST_SRS, 0);
 	dynmenu_add_item(&menu, "SET COURSE", ST_SET_COURSE, 0);
-	dynmenu_add_item(&menu, "FIRE WEAPONS", ST_AIM_WEAPONS, 0);
-	dynmenu_add_item(&menu, "WARP", ST_WARP, 0);
-	dynmenu_add_item(&menu, "SHIELDS", ST_NOT_IMPL, 0);
+	dynmenu_add_item(&menu, "WEAPONS CTRL", ST_AIM_WEAPONS, 0);
+	dynmenu_add_item(&menu, "WARP CTRL", ST_WARP, 0);
+	dynmenu_add_item(&menu, "SHIELD CTRL", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "DAMAGE REPORT", ST_DAMAGE_REPORT, 0);
 	dynmenu_add_item(&menu, "STATUS REPORT", ST_STATUS_REPORT, 0);
 	dynmenu_add_item(&menu, "SENSORS", ST_SENSORS, 0);
+	dynmenu_add_item(&menu, "PLANETS", ST_PLANETS, 0);
 	dynmenu_add_item(&menu, "STANDARD ORBIT", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "TRANSPORTER", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "MINE DILITHIUM", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "LOAD DILITHIUM", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "SELF DESTRUCT", ST_NOT_IMPL, 0);
-	dynmenu_add_item(&menu, "PLANETS", ST_PLANETS, 0);
 	dynmenu_add_item(&menu, "NEW GAME", ST_NEW_GAME, 0);
 	dynmenu_add_item(&menu, "QUIT GAME", ST_EXIT, 0);
 	menu.menu_active = 1;
