@@ -49,6 +49,8 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define NTOTAL (NKLINGONS + NCOMMANDERS + NROMULANS + NPLANETS + NBLACKHOLES + NSTARBASES + NSTARS)
 
 #define INITIAL_TORPEDOES 10
+#define INITIAL_ENERGY 10000
+#define INITIAL_DILITHIUM 255
 
 #define ENEMY_SHIP 'E'
 #define PLANET 'P'
@@ -110,6 +112,7 @@ enum st_program_state_t {
 	ST_DAMAGE_REPORT,
 	ST_STATUS_REPORT,
 	ST_ALERT,
+	ST_DOCK,
 	ST_NOT_IMPL,
 };
 
@@ -177,7 +180,7 @@ struct player_ship {
 	int heading, new_heading; /* in degrees */
 	int weapons_aim, new_weapons_aim; /* in degrees */
 	int energy;
-	int torpedoes;
+	unsigned char torpedoes;
 	int warp_factor, new_warp_factor; /* 0 to (1 << 16) */
 #define TORPEDO_POWER (1 << 17)
 	int phaser_power, new_phaser_power; /* 0 to (1 << 16) */
@@ -187,6 +190,7 @@ struct player_ship {
 	unsigned char shields_up;
 	unsigned char dilithium_crystals;
 	unsigned char damage[NSHIP_SYSTEMS];
+	unsigned char docked;
 };
 
 static inline int warp_factor(int wf)
@@ -339,6 +343,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "SENSORS", ST_SENSORS, 0);
 	dynmenu_add_item(&menu, "PLANETS", ST_PLANETS, 0);
 	dynmenu_add_item(&menu, "STANDARD ORBIT", ST_NOT_IMPL, 0);
+	dynmenu_add_item(&menu, "DOCKING CTRL", ST_DOCK, 0);
 	dynmenu_add_item(&menu, "TRANSPORTER", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "MINE DILITHIUM", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "LOAD DILITHIUM", ST_NOT_IMPL, 0);
@@ -408,15 +413,16 @@ static void init_player()
 	gs.player.y = random_coordinate();
 	gs.player.heading = 0;
 	gs.player.new_heading = 0;
-	gs.player.energy = 10000;
+	gs.player.energy = INITIAL_ENERGY;
 	gs.player.shields = 255;
 	gs.player.shields_up = 0;
-	gs.player.dilithium_crystals = 255;
+	gs.player.dilithium_crystals = INITIAL_DILITHIUM;
 	gs.player.warp_factor = 0;
 	gs.player.new_warp_factor = 0;
 	gs.player.torpedoes = INITIAL_TORPEDOES;
 	gs.player.phaser_power = 0;
 	gs.player.new_phaser_power = 0;
+	gs.player.docked = 0;
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++)
 		gs.player.damage[i] = 0;
@@ -1006,6 +1012,41 @@ static void st_planets(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+static void st_dock(void)
+{
+	int i, sx, sy, qx, qy;
+
+	/* If player docked, undock player */
+	if (gs.player.docked) {
+		gs.player.docked = 0;
+		alert_player("DOCKING CONTROL", "CAPTAIN THE\nSHIP HAS BEEN\nUNDOCKED FROM\nSTARBASE");
+		return;
+	}
+
+	/* See if there is a starbase nearby */
+	sx = coord_to_sector(gs.player.x);
+	sy = coord_to_sector(gs.player.y);
+	qx = coord_to_quadrant(gs.player.x);
+	qy = coord_to_quadrant(gs.player.y);
+	for (i = 0; i < NTOTAL; i++) {
+		struct game_object *o = &gs.object[i];
+		if (o->type != STARBASE)
+			continue;
+		if (sx != coord_to_sector(o->x))
+			continue;
+		if (sy != coord_to_sector(o->y))
+			continue;
+		if (abs(qx - coord_to_quadrant(o->x) > 1))
+			continue;
+		if (abs(qy - coord_to_quadrant(o->y) > 1))
+			continue;
+		gs.player.docked = 1;
+		alert_player("DOCKING CONTROL", "CAPTAIN THE\nSHIP HAS BEEN\nDOCKED WITH\nSTARBASE\n\nSUPPLIES\nREPLENISHING");
+		return;
+	}
+	alert_player("DOCKING CONTROL", "CAPTAIN THERE\nARE NO NEARBY\nSTARBASES WITH\nWHICH TO DOCK");
+}
+
 static void st_sensors(void)
 {
 	int i, sx, sy, px, py;
@@ -1110,6 +1151,10 @@ static void st_damage_report(void)
 		FbWriteLine(ds);
 	}
 	show_torps_energy_and_dilith();
+	if (gs.player.docked) {
+		FbColor(WHITE);
+		FbWriteString("CURRENTLY\nDOCKED AT\nSTARBASE");
+	}
 	FbSwapBuffers();
 	gs.last_screen = DAMAGE_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
@@ -1153,6 +1198,9 @@ static void st_status_report(void)
 	show_torps_energy_and_dilith();
 	FbColor(YELLOW);
 	print_numeric_item("SCORE:", gs.score);
+	FbColor(WHITE);
+	if (gs.player.docked)
+		FbWriteString("CURRENTLY\nDOCKED AT\nSTARBASE");
 
 	FbSwapBuffers();
 	gs.last_screen = STATUS_SCREEN;
@@ -1224,10 +1272,53 @@ static int player_collision_detection(int *nx, int *ny)
 	return 0;
 }
 
+static void replenish_int_supply(int *supply, int limit, int increment)
+{
+	if (*supply < limit) {
+		*supply += increment;
+		if (*supply > limit)
+			*supply = limit;
+	}
+}
+
+static void replenish_char_supply(unsigned char *supply, unsigned int limit, unsigned char increment)
+{
+	int v;
+
+	if (*supply < limit) {
+		v = *supply + increment;
+		if (v > (int) limit)
+			v = limit;
+		*supply = (unsigned char) v;;
+	}
+}
+
+static void replenish_supplies_and_repair_ship(void)
+{
+	int i, n;
+
+	replenish_char_supply(&gs.player.torpedoes, INITIAL_TORPEDOES, 1);
+	replenish_int_supply(&gs.player.energy, INITIAL_ENERGY, INITIAL_ENERGY / 10);
+	replenish_char_supply(&gs.player.dilithium_crystals, INITIAL_DILITHIUM, INITIAL_DILITHIUM / 10);
+	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) { /* Repair damaged systems */
+		if (gs.player.damage[i] > 0) {
+			n = gs.player.damage[i] - 25;
+			if (n < 0)
+				n = 0; 
+			gs.player.damage[i] = n;
+		}
+	}
+}
+
 static void move_player(void)
 {
 	int dx, dy, b, nx, ny;
 
+	if (gs.player.docked) {
+		gs.player.warp_factor = 0;
+		replenish_supplies_and_repair_ship();
+		return;
+	}
 	/* Move player */
 	if (gs.player.warp_factor > 0) {
 		b = (gs.player.heading * 128) / 360;
@@ -1316,6 +1407,12 @@ static void draw_speed_gauge(int gauge_type, int color, int color2, int speed, i
 
 static void st_warp()
 {
+	if (gs.player.docked) {
+		alert_player("WARP CONTROL", "CAPTAIN\n\n"
+			"WE CANNOT\nENGAGE\nPROPULSION\nWHILE DOCKED\n"
+			"WITH THE\nSTARBASE");
+		return;
+	}
 	screen_header("WARP");
 	draw_speed_gauge(SPEED_GAUGE, GREEN, RED, gs.player.warp_factor, gs.player.new_warp_factor);
 
@@ -1574,6 +1671,9 @@ int spacetripper_cb(void)
 		break;
 	case ST_PLANETS:
 		st_planets();
+		break;
+	case ST_DOCK:
+		st_dock();
 		break;
 	case ST_SENSORS:
 		st_sensors();
