@@ -1262,8 +1262,7 @@ static int player_collision_detection(int *nx, int *ny)
 		if (oqy != qy)
 			continue;
 		const char *object = object_type_name(gs.object[i].type);
-		strcpy(msg, "WE HAVE\nENCOUNTED");
-		strcat(msg, " ");
+		strcpy(msg, "WE HAVE\nENCOUNTERED\n");
 		strcat(msg, object);
 		alert_player("WARP SHUTDOWN", msg);
 		gs.player.warp_factor = 0;
