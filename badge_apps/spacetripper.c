@@ -1468,7 +1468,12 @@ static void st_alert(void)
 
 static void st_photon_torpedoes(void)
 {
-	st_fire_weapon("TORPEDO", TORPEDO_POWER);
+	if (gs.player.torpedoes > 0) {
+		st_fire_weapon("TORPEDO", TORPEDO_POWER);
+		gs.player.torpedoes--;
+	} else {
+		alert_player("WEAPONS", "NO PHOTON\nTORPEDOES\nREMAIN, SIR!");
+	}
 }
 
 static void st_phaser_beams(void)
