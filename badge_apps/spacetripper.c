@@ -329,7 +329,6 @@ static void st_captain_menu(void)
 	strcpy(menu.title, "CAPN'S ORDERS?");
 	dynmenu_add_item(&menu, "LRS", ST_LRS, 0);
 	dynmenu_add_item(&menu, "SRS", ST_SRS, 0);
-	dynmenu_add_item(&menu, "STAR CHART", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "SET COURSE", ST_SET_COURSE, 0);
 	dynmenu_add_item(&menu, "FIRE WEAPONS", ST_AIM_WEAPONS, 0);
 	dynmenu_add_item(&menu, "WARP", ST_WARP, 0);
