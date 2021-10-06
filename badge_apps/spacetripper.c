@@ -639,13 +639,13 @@ static void st_lrs(void) /* long range scanner */
 
 	FbMove(2, 98);
 	FbColor(color[0]);
-	FbWriteLine("# STARS");
+	FbWriteLine("# ENEMY SHIPS");
 	FbMove(2, 107);
 	FbColor(color[1]);
 	FbWriteLine("# STARBASES");
 	FbMove(2, 116);
 	FbColor(color[2]);
-	FbWriteLine("# ENEMY SHIPS");
+	FbWriteLine("# STARS");
 	
 	FbSwapBuffers();
 	gs.last_screen = LRS_SCREEN;
