@@ -778,8 +778,25 @@ static void draw_heading_indicator(const int cx, const int cy, const int degrees
 	FbLine(cx, cy, x, y);
 }
 
+static void show_energy_and_torps(void)
+{
+	char msg[20];
+	char num[10];
+
+	strcpy(msg, "ENERGY:");
+	itoa(num, gs.player.energy, 10);
+	strcat(msg, num);
+	FbMove(2, 29);
+	FbWriteLine(msg);
+	strcpy(msg, "TORP:");
+	itoa(num, gs.player.torpedoes, 10);
+	strcat(msg, num);
+	FbMove(2, 37);
+	FbWriteLine(msg);
+}
+
 static void st_choose_angle(char *new_head, char *cur_head, char *set_head,
-		int *heading, int *new_heading, int which_screen)
+		int *heading, int *new_heading, int which_screen, void (*show_extra_data)(void))
 {
 	int i, x, y, finished = 0;
 	const int cx = (LCD_XSIZE >> 1);
@@ -790,6 +807,8 @@ static void st_choose_angle(char *new_head, char *cur_head, char *set_head,
 	write_heading(new_head, *new_heading, BLACK);
 	FbMove(2, 11);
 	write_heading(cur_head, *heading, BLACK);
+	if (show_extra_data)
+		show_extra_data();
 	draw_heading_indicator(cx, cy, *heading, 150, BLACK);
 	draw_heading_indicator(cx, cy, *new_heading, 150, BLACK);
 
@@ -829,6 +848,8 @@ static void st_choose_angle(char *new_head, char *cur_head, char *set_head,
 		y = (sine(i) * 160) / 1024;
 		FbPoint(cx + x, cy + y);
 	}
+	if (show_extra_data)
+		show_extra_data();
 	FbSwapBuffers();
 	gs.last_screen = which_screen;
 	if (finished && which_screen == AIMING_SCREEN) {
@@ -1310,8 +1331,15 @@ static void st_warp()
 
 static void st_phaser_power()
 {
+	char num[10];
+
 	screen_header("PHASER PWR");
 	draw_speed_gauge(PHASER_POWER_GAUGE, GREEN, RED, gs.player.phaser_power, gs.player.new_phaser_power);
+
+	FbMove(2, 110);
+	FbWriteString("AVAILABLE\nENERGY:");
+	itoa(num, gs.player.energy, 10);
+	FbWriteString(num);
 
 	FbSwapBuffers();
 	gs.last_screen = PHASER_POWER_SCREEN;
@@ -1521,11 +1549,12 @@ int spacetripper_cb(void)
 		break;
 	case ST_SET_COURSE:
 		st_choose_angle("NEW HEADING: ", "CUR HEADING", "SET HEADING: ",
-				&gs.player.heading, &gs.player.new_heading, HEADING_SCREEN);
+				&gs.player.heading, &gs.player.new_heading, HEADING_SCREEN, NULL);
 		break;
 	case ST_AIM_WEAPONS:
 		st_choose_angle("AIM WEAPONS: ", "CUR AIM", "SET AIM: ",
-				&gs.player.weapons_aim, &gs.player.new_weapons_aim, AIMING_SCREEN);
+				&gs.player.weapons_aim, &gs.player.new_weapons_aim, AIMING_SCREEN,
+				show_energy_and_torps);
 		break;
 	case ST_CHOOSE_WEAPONS:
 		st_choose_weapons();
