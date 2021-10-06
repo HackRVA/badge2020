@@ -1862,6 +1862,10 @@ int spacetripper_cb(void)
 				&gs.player.heading, &gs.player.new_heading, HEADING_SCREEN, NULL);
 		break;
 	case ST_AIM_WEAPONS:
+		if (gs.player.docked) {
+			alert_player("WEAPONS", "CAPTAIN\n\nWE CANNOT FIRE\nWHILE DOCKED AT\nTHE STARBASE");
+			break;
+		}
 		st_choose_angle("AIM WEAPONS: ", "CUR AIM", "SET AIM: ",
 				&gs.player.weapons_aim, &gs.player.new_weapons_aim, AIMING_SCREEN,
 				show_energy_and_torps);
