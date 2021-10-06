@@ -115,6 +115,7 @@ enum st_program_state_t {
 	ST_DOCK,
 	ST_STANDARD_ORBIT,
 	ST_TRANSPORTER,
+	ST_MINE_DILITHIUM,
 	ST_NOT_IMPL,
 };
 
@@ -195,6 +196,8 @@ struct player_ship {
 	unsigned char docked;
 	unsigned char standard_orbit;
 	unsigned char away_team;
+	unsigned char away_teams_crystals;
+	unsigned char mined_dilithium;
 };
 
 static inline int warp_factor(int wf)
@@ -349,7 +352,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "STANDARD ORBIT", ST_STANDARD_ORBIT, 0);
 	dynmenu_add_item(&menu, "DOCKING CTRL", ST_DOCK, 0);
 	dynmenu_add_item(&menu, "TRANSPORTER", ST_TRANSPORTER, 0);
-	dynmenu_add_item(&menu, "MINE DILITHIUM", ST_NOT_IMPL, 0);
+	dynmenu_add_item(&menu, "MINE DILITHIUM", ST_MINE_DILITHIUM, 0);
 	dynmenu_add_item(&menu, "LOAD DILITHIUM", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "SELF DESTRUCT", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "NEW GAME", ST_NEW_GAME, 0);
@@ -427,6 +430,8 @@ static void init_player()
 	gs.player.phaser_power = 0;
 	gs.player.new_phaser_power = 0;
 	gs.player.docked = 0;
+	gs.player.away_teams_crystals = 0;
+	gs.player.mined_dilithium = 0;
 #define ABOARD_SHIP 255
 	gs.player.away_team = ABOARD_SHIP;
 
@@ -1114,7 +1119,19 @@ static void st_transporter(void)
 	if (gs.player.away_team != ABOARD_SHIP &&
 		object_is_next_to_player(gs.player.away_team)) {
 		gs.player.away_team = ABOARD_SHIP;
-		alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nABOARD FROM\nPLANET SURFACE");
+		if (gs.player.away_teams_crystals > 0) {
+			int dilith_crystals;
+
+			alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nABOARD FROM\n"
+							"PLANET SURFACE\nWITH DILITHIUM\nCRYSTALS");
+			dilith_crystals = gs.player.mined_dilithium + gs.player.away_teams_crystals;
+			if (dilith_crystals > 255)
+				dilith_crystals = 255;
+			gs.player.mined_dilithium = dilith_crystals;
+			gs.player.away_teams_crystals = 0;
+		} else {
+			alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nABOARD FROM\nPLANET SURFACE");
+		}
 		return;
 	}
 
@@ -1127,6 +1144,27 @@ static void st_transporter(void)
 	/* Remember on which planet we dropped off the away team. */
 	gs.player.away_team = planet - 1; /* player_is_next_to() added 1 so value can be used as boolean, so we subtract here. */
 	alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nDOWN TO THE\nPLANET SURFACE");
+}
+
+static void st_mine_dilithium(void)
+{
+	struct game_object *planet;
+
+	if (gs.player.away_team == ABOARD_SHIP) {
+		alert_player("COMMS", "CAPTAIN\n\nTHE AWAY TEAM\nIS STILL ABOARD\nTHE SHIP");
+		return;
+	}
+	planet = &gs.object[gs.player.away_team];
+	if (planet->tsd.planet.flags & PLANET_HAS_DILITHIUM) {
+		alert_player("COMMS", "CAPTAIN\n\nTHE AWAY\nTEAM REPORTS\nTHEY HAVE\n"
+				"FOUND\nDILITHIUM\nCRYSTALS");
+		gs.player.away_teams_crystals += 5 + (xorshift(&xorshift_state) & 0x07);
+		if (gs.player.away_teams_crystals > 50)
+			gs.player.away_teams_crystals = 50;
+		return;
+	}
+	alert_player("COMMS", "CAPTAIN\n\nTHE AWAY\nTEAM REPORTS\nTHEY HAVE\n"
+			"FOUND NO\nDILITHIUM\nCRYSTALS");
 }
 
 static void st_sensors(void)
@@ -1771,6 +1809,9 @@ int spacetripper_cb(void)
 		break;
 	case ST_TRANSPORTER:
 		st_transporter();
+		break;
+	case ST_MINE_DILITHIUM:
+		st_mine_dilithium();
 		break;
 	case ST_STANDARD_ORBIT:
 		st_standard_orbit();
