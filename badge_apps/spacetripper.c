@@ -114,6 +114,7 @@ enum st_program_state_t {
 	ST_ALERT,
 	ST_DOCK,
 	ST_STANDARD_ORBIT,
+	ST_TRANSPORTER,
 	ST_NOT_IMPL,
 };
 
@@ -193,6 +194,7 @@ struct player_ship {
 	unsigned char damage[NSHIP_SYSTEMS];
 	unsigned char docked;
 	unsigned char standard_orbit;
+	unsigned char away_team;
 };
 
 static inline int warp_factor(int wf)
@@ -346,7 +348,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "PLANETS", ST_PLANETS, 0);
 	dynmenu_add_item(&menu, "STANDARD ORBIT", ST_STANDARD_ORBIT, 0);
 	dynmenu_add_item(&menu, "DOCKING CTRL", ST_DOCK, 0);
-	dynmenu_add_item(&menu, "TRANSPORTER", ST_NOT_IMPL, 0);
+	dynmenu_add_item(&menu, "TRANSPORTER", ST_TRANSPORTER, 0);
 	dynmenu_add_item(&menu, "MINE DILITHIUM", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "LOAD DILITHIUM", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "SELF DESTRUCT", ST_NOT_IMPL, 0);
@@ -425,6 +427,8 @@ static void init_player()
 	gs.player.phaser_power = 0;
 	gs.player.new_phaser_power = 0;
 	gs.player.docked = 0;
+#define ABOARD_SHIP 255
+	gs.player.away_team = ABOARD_SHIP;
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++)
 		gs.player.damage[i] = 0;
@@ -1035,9 +1039,22 @@ static int player_is_next_to(unsigned char object_type)
 			continue;
 		if (abs(qy - coord_to_quadrant(o->y) > 1))
 			continue;
-		return 1;
+		return i + 1; /* Add 1 so that we never return 0 here and result can be used as boolean */
 	}
 	return 0;
+}
+
+static int object_is_next_to_player(int object)
+{
+	if (coord_to_sector(gs.player.x) != coord_to_sector(gs.object[object].x))
+		return 0;
+	if (coord_to_sector(gs.player.y) != coord_to_sector(gs.object[object].y))
+		return 0;
+	if (abs(coord_to_quadrant(gs.player.x) - coord_to_quadrant(gs.object[object].x)) > 1)
+		return 0;
+	if (abs(coord_to_quadrant(gs.player.y) - coord_to_quadrant(gs.object[object].y)) > 1)
+		return 0;
+	return 1;
 }
 
 static void st_dock(void)
@@ -1083,6 +1100,33 @@ static void st_standard_orbit(void)
 	} else {
 		alert_player("NAVIGATION", "CAPTAIN THERE\nIS NO PLANET\nCLOSE ENOUGH\nTO ENTER\nSTANDARD ORBIT");
 	}
+}
+
+static void st_transporter(void)
+{
+	int planet;
+
+	if (!gs.player.standard_orbit) {
+		alert_player("TRANSPORTER", "CAPTAIN\n\nWE ARE NOT\nCURRENTLY IN\nORBIT AROUND\nA SUITABLE\nPLANET");
+		return;
+	}
+
+	if (gs.player.away_team != ABOARD_SHIP &&
+		object_is_next_to_player(gs.player.away_team)) {
+		gs.player.away_team = ABOARD_SHIP;
+		alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nABOARD FROM\nPLANET SURFACE");
+		return;
+	}
+
+	planet = player_is_next_to(PLANET);
+	if (!planet) {
+		/* This is a bug. We should never be in standard orbit while not next to a planet. */
+		alert_player("TRANSPORTER", "CAPTAIN\n\nTHE PLANET HAS\nMYSTERIOUSLY\nDISAPPEARED!");
+		return;
+	}
+	/* Remember on which planet we dropped off the away team. */
+	gs.player.away_team = planet - 1; /* player_is_next_to() added 1 so value can be used as boolean, so we subtract here. */
+	alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nDOWN TO THE\nPLANET SURFACE");
 }
 
 static void st_sensors(void)
@@ -1189,14 +1233,13 @@ static void st_damage_report(void)
 		FbWriteLine(ds);
 	}
 	show_torps_energy_and_dilith();
-	if (gs.player.docked) {
-		FbColor(WHITE);
+	FbColor(WHITE);
+	if (gs.player.docked)
 		FbWriteString("CURRENTLY\nDOCKED AT\nSTARBASE");
-	}
-	if (gs.player.standard_orbit) {
-		FbColor(WHITE);
-		FbWriteString("CURRENTLY\nIN STANDARD\nORBIT");
-	}
+	if (gs.player.standard_orbit)
+		FbWriteString("CURRENTLY\nIN STANDARD\nORBIT\n");
+	if (gs.player.away_team != ABOARD_SHIP)
+		FbWriteString("AWAY TEAM OUT");
 	FbSwapBuffers();
 	gs.last_screen = DAMAGE_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
@@ -1244,7 +1287,9 @@ static void st_status_report(void)
 	if (gs.player.docked)
 		FbWriteString("CURRENTLY\nDOCKED AT\nSTARBASE");
 	if (gs.player.standard_orbit)
-		FbWriteString("CURRENTLY\nIN STANDARD\nORBIT");
+		FbWriteString("CURRENTLY\nIN STANDARD\nORBIT\n");
+	if (gs.player.away_team != ABOARD_SHIP)
+		FbWriteString("AWAY TEAM OUT");
 
 	FbSwapBuffers();
 	gs.last_screen = STATUS_SCREEN;
@@ -1723,6 +1768,9 @@ int spacetripper_cb(void)
 		break;
 	case ST_DOCK:
 		st_dock();
+		break;
+	case ST_TRANSPORTER:
+		st_transporter();
 		break;
 	case ST_STANDARD_ORBIT:
 		st_standard_orbit();
