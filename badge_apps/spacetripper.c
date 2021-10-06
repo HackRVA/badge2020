@@ -1129,21 +1129,29 @@ static void st_transporter(void)
 		return;
 	}
 
-	if (gs.player.away_team != ABOARD_SHIP &&
-		object_is_next_to_player(gs.player.away_team)) {
-		gs.player.away_team = ABOARD_SHIP;
-		if (gs.player.away_teams_crystals > 0) {
-			int dilith_crystals;
+	if (gs.player.away_team != ABOARD_SHIP) {
+		if (object_is_next_to_player(gs.player.away_team)) {
+			gs.player.away_team = ABOARD_SHIP;
+			if (gs.player.away_teams_crystals > 0) {
+				int dilith_crystals;
 
-			alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nABOARD FROM\n"
+				alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nABOARD FROM\n"
 							"PLANET SURFACE\nWITH DILITHIUM\nCRYSTALS");
-			dilith_crystals = gs.player.mined_dilithium + gs.player.away_teams_crystals;
-			if (dilith_crystals > 255)
-				dilith_crystals = 255;
-			gs.player.mined_dilithium = dilith_crystals;
-			gs.player.away_teams_crystals = 0;
+				dilith_crystals = gs.player.mined_dilithium + gs.player.away_teams_crystals;
+				if (dilith_crystals > 255)
+					dilith_crystals = 255;
+				gs.player.mined_dilithium = dilith_crystals;
+				gs.player.away_teams_crystals = 0;
+			} else {
+				alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nABOARD FROM\nPLANET SURFACE");
+			}
 		} else {
-			alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nABOARD FROM\nPLANET SURFACE");
+			planet = player_is_next_to(PLANET);
+			if (!planet) /* Shouldn't happen as we're in standard orbit, therefore next to a planet. */
+				alert_player("TRANSPORTER", "CAPTAIN\n\nTHE PLANET THE\nAWAY TEAM IS\nON IS NOT\nNEARBY");
+			else
+				alert_player("TRANSPORTER", "CAPTAIN\n\nUNABLE TO\nOBTAIN A LOCK\nON THE AWAY\nTEAM.\n"
+								"I THINK THEY\nARE ON ANOTHER\nPLANET");
 		}
 		return;
 	}
@@ -1151,7 +1159,7 @@ static void st_transporter(void)
 	planet = player_is_next_to(PLANET);
 	if (!planet) {
 		/* This is a bug. We should never be in standard orbit while not next to a planet. */
-		alert_player("TRANSPORTER", "CAPTAIN\n\nTHE PLANET HAS\nMYSTERIOUSLY\nDISAPPEARED!");
+		alert_player("TRANSPORTER", "CAPTAIN\n\nSOMETHING IS\nWRONG. I CAN'T\nGET A LOCK ON\nTHE PLANET");
 		return;
 	}
 	/* Remember on which planet we dropped off the away team. */
