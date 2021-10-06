@@ -71,6 +71,9 @@ static const char *object_type_name(char object_type)
 	case STAR:
 		return "A STAR";
 		break;
+	case STARBASE:
+		return "A STARBASE";
+		break;
 	default:
 		return "AN UNKNOWN\nOBJECT";
 		break;
