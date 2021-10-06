@@ -760,16 +760,35 @@ static void st_srs(void) /* short range scanner */
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+static void print_numeric_item_with_frac(char *item, int value, int frac)
+{
+	char num[10];
+
+	FbWriteString(item);
+	itoa(num, value, 10);
+	FbWriteString(num);
+	FbWriteString(".");
+	itoa(num, frac, 10);
+	FbWriteString(num);
+	FbMoveX(2);
+	FbMoveRelative(0, 9);
+}
+
+static void print_numeric_item(char *item, int value)
+{
+	char num[10];
+
+	FbWriteString(item);
+	itoa(num, value, 10);
+	FbWriteString(num);
+	FbMoveX(2);
+	FbMoveRelative(0, 9);
+}
+
 static void write_heading(char *msg, int heading, int color)
 {
-	char out[40];
-	char b[5];
-
-	itoa(b, heading, 10);
-	strcpy(out, msg);
-	strcat(out, b);
 	FbColor(color);
-	FbWriteLine(out);
+	print_numeric_item(msg, heading);
 }
 
 static void draw_heading_indicator(const int cx, const int cy, const int degrees, const int length, const int color)
@@ -785,19 +804,9 @@ static void draw_heading_indicator(const int cx, const int cy, const int degrees
 
 static void show_energy_and_torps(void)
 {
-	char msg[20];
-	char num[10];
-
-	strcpy(msg, "ENERGY:");
-	itoa(num, gs.player.energy, 10);
-	strcat(msg, num);
-	FbMove(2, 29);
-	FbWriteLine(msg);
-	strcpy(msg, "TORP:");
-	itoa(num, gs.player.torpedoes, 10);
-	strcat(msg, num);
-	FbMove(2, 37);
-	FbWriteLine(msg);
+	FbMove(2, 20);
+	print_numeric_item("ENERGY:", gs.player.energy);
+	print_numeric_item("TORP:", gs.player.torpedoes);
 }
 
 static void st_choose_angle(char *new_head, char *cur_head, char *set_head,
@@ -970,8 +979,6 @@ static void print_planets_report(int i, int n, int x, int y, int scanned)
 static void st_planets(void)
 {
 	int i, count, scanned;
-	char cs[5];
-	char msg[40];
 
 	screen_header("PLANETS:");
 	FbColor(GREEN);
@@ -992,11 +999,8 @@ static void st_planets(void)
 		}
 	}
 	FbColor(WHITE);
-	FbMove(2, (count) * 20 + 10);
-	strcpy(msg, "TOTAL COUNT: ");
-	itoa(cs, count, 10);
-	strcat(msg, cs);
-	FbWriteLine(msg);
+	FbMove(2, (count) * 20 + 1);
+	print_numeric_item("TOTAL COUNT: ", count);
 	FbSwapBuffers();
 	gs.last_screen = PLANETS_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
@@ -1074,17 +1078,6 @@ static void st_sensors(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
-static void print_numeric_item(char *item, int value)
-{
-	char num[10];
-
-	FbWriteString(item);
-	itoa(num, value, 10);
-	FbWriteString(num);
-	FbMoveX(2);
-	FbMoveRelative(0, 9);
-}
-
 static void show_torps_energy_and_dilith(void)
 {
 	FbMoveRelative(0, 9);
@@ -1125,39 +1118,20 @@ static void st_damage_report(void)
 static void st_status_report(void)
 {
 	int es, sb, i, sd, frac;
-	char num[10];
-	char msg[20];
 
 	screen_header("STATUS REPORT");
 	FbColor(CYAN);
 
 	/* Compute and print current star date */
 	FbMove(2, 2 * 9);
-	FbWriteLine("STARDATE");
 	sd = (gs.stardate / 256) + START_DATE;
 	frac = ((gs.stardate % 256) * 100) / 256;
-	itoa(num, sd, 10);
-	msg[0] = '\0';
-	strcat(msg, num);
-	itoa(num, frac, 10);
-	strcat(msg, ".");
-	strcat(msg, num);
-	FbMove(80, 2 * 9);
-	FbWriteLine(msg);
+	print_numeric_item_with_frac("STARDATE:", sd, frac);
 
 	/* Compute and print time remaining */
-	FbMove(2, 3 * 9);
-	FbWriteLine("DAYS LEFT");
 	sd = (gs.enddate - gs.stardate) / 256;
-	msg[0] = '\0';
-	itoa(num, sd, 10);
-	strcat(msg, num);
 	frac = (((gs.enddate - gs.stardate) % 256) * 100) / 256;
-	itoa(num, frac, 10);
-	strcat(msg, ".");
-	strcat(msg, num);
-	FbMove(80, 3 * 9);
-	FbWriteLine(msg);
+	print_numeric_item_with_frac("DAYS LEFT:", sd, frac);
 
 	/* Count remaining starbases and enemy ships */
 	es = 0;
@@ -1174,17 +1148,8 @@ static void st_status_report(void)
 			break;
 		}
 	}
-	FbMove(2, 4 * 9);
-	FbWriteLine("STARBASES");
-	itoa(num, sb, 10);
-	FbMove(80, 4 * 9);
-	FbWriteLine(num);
-	FbMove(2, 5 * 9);
-	FbWriteLine("ENEMY SHP");
-	itoa(num, es, 10);
-	FbMove(80, 5 * 9);
-	FbWriteLine(num);
-
+	print_numeric_item("STARBASES", sb);
+	print_numeric_item("ENEMY SHP", es);
 	show_torps_energy_and_dilith();
 	FbColor(YELLOW);
 	print_numeric_item("SCORE:", gs.score);
@@ -1361,15 +1326,11 @@ static void st_warp()
 
 static void st_phaser_power()
 {
-	char num[10];
-
 	screen_header("PHASER PWR");
 	draw_speed_gauge(PHASER_POWER_GAUGE, GREEN, RED, gs.player.phaser_power, gs.player.new_phaser_power);
 
 	FbMove(2, 110);
-	FbWriteString("AVAILABLE\nENERGY:");
-	itoa(num, gs.player.energy, 10);
-	FbWriteString(num);
+	print_numeric_item("AVAILABLE\nENERGY: ", gs.player.energy);
 
 	FbSwapBuffers();
 	gs.last_screen = PHASER_POWER_SCREEN;
