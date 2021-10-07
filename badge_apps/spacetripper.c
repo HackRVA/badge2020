@@ -253,6 +253,7 @@ struct game_state {
 #define ROMULAN_POINTS 200
 #define COMMANDER_POINTS 400
 	unsigned char game_over;
+	unsigned char last_capn_menu_item;
 } gs = { 0 };
 
 static inline int coord_to_sector(int c)
@@ -345,12 +346,13 @@ static void st_game_init(void)
 	st_program_state = ST_RENDER_SCREEN;
 	gs.srs_needs_update = 0;
 	gs.last_screen = 255;
+	gs.last_capn_menu_item = 0;
 }
 
 static void st_captain_menu(void)
 {
 	clear_menu();
-	strcpy(menu.title, "USS ENTERPRISE");
+	strcpy(menu.title, "USS ENTERPRISE"); /* <-- If you change this line, you also must change button_pressed() */
 	strcpy(menu.title3, "CAPN'S ORDERS?");
 	dynmenu_add_item(&menu, "LONG RNG SCAN", ST_LRS, 0);
 	dynmenu_add_item(&menu, "SHORT RNG SCAN", ST_SRS, 0);
@@ -370,6 +372,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "SELF DESTRUCT", ST_SELF_DESTRUCT_CONFIRM, 0);
 	dynmenu_add_item(&menu, "NEW GAME", ST_NEW_GAME, 0);
 	dynmenu_add_item(&menu, "QUIT GAME", ST_EXIT, 0);
+	menu.current_item = gs.last_capn_menu_item;
 	menu.menu_active = 1;
 	st_draw_menu();
 	FbSwapBuffers();
@@ -467,6 +470,7 @@ static void st_new_game(void)
 	gs.enddate = gs.stardate + 35 * TICKS_PER_DAY;
 	gs.score = 0;
 	gs.game_over = 0;
+	gs.last_capn_menu_item = 0;
 	st_program_state = ST_CAPTAIN_MENU;
 }
 
@@ -488,6 +492,9 @@ static void button_pressed()
 	} else {
 		st_program_state = menu.item[menu.current_item].next_state;
 		menu.menu_active = 0;
+		/* hacky way to tell if the current menu is the capn menu */
+		if (menu.title[0] == 'U' && menu.title[1] == 'S' && menu.title[2] == 'S')
+			gs.last_capn_menu_item = menu.current_item; /* Remember where we are on capn menu */
 		FbClear();
 	}
 }
