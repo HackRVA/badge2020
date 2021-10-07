@@ -54,6 +54,8 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define MAX_SHIELD_ENERGY 2500
 #define INITIAL_DILITHIUM 100
 #define WARP_ENERGY_PER_SEC 4
+#define PHASER_ENERGY 3 /* multiplied by energy setting */
+#define TORPEDO_ENERGY 10
 
 #define ENEMY_SHIP 'E'
 #define PLANET 'P'
@@ -209,7 +211,7 @@ struct player_ship {
 	int energy;
 	unsigned char torpedoes;
 	int warp_factor, new_warp_factor; /* 0 to (1 << 16) */
-#define TORPEDO_POWER (1 << 17)
+#define TORPEDO_POWER (1 << 17) /* energy delivered to target, not required to fire */
 	int phaser_power, new_phaser_power; /* 0 to (1 << 16) */
 	int shield_xfer, new_shield_xfer;
 #define WARP10 (1 << 16)
@@ -1984,6 +1986,20 @@ static void st_fire_weapon(char *weapon_name, int weapon_power)
 {
 	int i, j, x, y, a, dx, dy;
 
+	if (weapon_name[0] == 'P' && weapon_name[1] == 'H') { /* PHASER? */
+		int energy_units;
+		/* Check if we have enough power */
+		energy_units = PHASER_ENERGY * 10 * weapon_power / (1 << 16);
+		if (gs.player.energy < energy_units) {
+			alert_player("WEAPONS", "CAPTAIN\n\nWE DON'T\nHAVE ENOUGH\nENERGY TO\n"
+						"FIRE PHASERS\nAT THAT\nLEVEL");
+			return;
+		}
+		reduce_player_energy(energy_units);
+	} else { /* must be a torpedo */
+		reduce_player_energy(TORPEDO_ENERGY);
+	}
+
 	x = gs.player.x;
 	y = gs.player.y;
 
@@ -2025,6 +2041,12 @@ static void st_alert(void)
 
 static void st_photon_torpedoes(void)
 {
+	if (gs.player.energy < TORPEDO_ENERGY) {
+		alert_player("WEAPONS", "CAPTAIN\n\nWE DON'T HAVE\nENOUGH\n"
+					"ENERGY TO\nLAUNCH A\nTORPEDO!");
+		return;
+	}
+
 	if (gs.player.torpedoes > 0) {
 		st_fire_weapon("TORPEDO", TORPEDO_POWER);
 		gs.player.torpedoes--;
