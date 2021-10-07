@@ -323,6 +323,12 @@ static void reduce_player_energy(int amount)
 		return;
 
 	gs.player.energy -= amount;
+	if (gs.player.dilithium_crystals < 10)
+		amount *= 2;
+	else if (gs.player.dilithium_crystals < 5)
+		amount *= 4;
+	else if (gs.player.dilithium_crystals == 0)
+		amount *= 10;
 	if (gs.player.energy < 0) {
 		gs.player.energy = 0;
 		gs.player.warp_factor = 0;
@@ -1629,12 +1635,22 @@ static void replenish_supplies_and_repair_ship(void)
 static void move_player(void)
 {
 	int dx, dy, b, nx, ny;
+	char decayed = 0;
 
 	if (gs.player.docked) {
 		gs.player.warp_factor = 0;
 		replenish_supplies_and_repair_ship();
 		return;
 	}
+
+	if ((xorshift(&xorshift_state) & 0x07) == 0) { /* 1 in 8 chance of dilithium crystal decaying. */
+		int x = gs.player.dilithium_crystals - 1;
+		if (x < 0)
+			x = 0;
+		gs.player.dilithium_crystals = x;
+		decayed = 1;
+	}
+
 	/* Move player */
 	if (gs.player.warp_factor > 0) {
 		int warp_energy = (WARP_ENERGY_PER_SEC * gs.player.warp_factor) / WARP1;
@@ -1659,6 +1675,15 @@ static void move_player(void)
 		if (!player_collision_detection(&nx, &ny)) {
 			gs.player.x = nx;
 			gs.player.y = ny;
+		}
+	}
+
+	if (decayed) {
+		if (gs.player.dilithium_crystals == 30 ||
+			gs.player.dilithium_crystals == 20 ||
+			gs.player.dilithium_crystals == 15) {
+			alert_player("ENGINEERING", "CAPTAIN\n\nOUR SUPPLY OF\nDILITHIUM\nCRYSTALS IS\nDANGEROUSLY\nLOW\n");
+			return;
 		}
 	}
 }
