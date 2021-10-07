@@ -59,6 +59,7 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define LRS_ENERGY 2
 #define STEERING_ENERGY_PER_DEG 5
 #define SHIELDS_UP_ENERGY 10
+#define TRANSPORTER_ENERGY 100
 
 #define ENEMY_SHIP 'E'
 #define PLANET 'P'
@@ -1204,9 +1205,16 @@ static void st_transporter(void)
 		return;
 	}
 
+	if (gs.player.energy < TRANSPORTER_ENERGY) {
+		alert_player("TRANSPORTER", "CAPTAIN\n\nTHERE IS NOT\nENOUGH\n"
+						"ENERGY TO\nUSE THE\nTRANSPORTER\n");
+		return;
+	}
+
 	if (gs.player.away_team != ABOARD_SHIP) {
 		if (object_is_next_to_player(gs.player.away_team)) {
 			gs.player.away_team = ABOARD_SHIP;
+			reduce_player_energy(TRANSPORTER_ENERGY);
 			if (gs.player.away_teams_crystals > 0) {
 				int dilith_crystals;
 
@@ -1240,6 +1248,7 @@ static void st_transporter(void)
 	/* Remember on which planet we dropped off the away team. */
 	gs.player.away_team = planet - 1; /* player_is_next_to() added 1 so value can be used as boolean, so we subtract here. */
 	alert_player("TRANSPORTER", "CAPTAIN\n\nAWAY TEAM\nHAS BEAMED\nDOWN TO THE\nPLANET SURFACE");
+	reduce_player_energy(TRANSPORTER_ENERGY);
 }
 
 static void st_mine_dilithium(void)
