@@ -50,7 +50,8 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define NTOTAL (NKLINGONS + NCOMMANDERS + NROMULANS + NPLANETS + NBLACKHOLES + NSTARBASES + NSTARS)
 
 #define INITIAL_TORPEDOES 10
-#define INITIAL_ENERGY 10000
+#define INITIAL_ENERGY 5000
+#define MAX_SHIELD_ENERGY 2500
 #define INITIAL_DILITHIUM 100
 
 #define ENEMY_SHIP 'E'
@@ -127,6 +128,12 @@ enum st_program_state_t {
 	ST_LOAD_DILITHIUM,
 	ST_SELF_DESTRUCT_CONFIRM,
 	ST_SELF_DESTRUCT,
+	ST_SHIELD_CONTROL,
+	ST_SHIELDS_UP,
+	ST_SHIELDS_DOWN,
+	ST_SHIELD_ENERGY,
+	ST_SHIELD_ENERGY_INPUT,
+	ST_SHIELD_EXEC_ENERGY_XFER,
 	ST_NOT_IMPL,
 };
 
@@ -188,6 +195,11 @@ struct game_object {
 
 static const char *ship_system[] = { "WARP", "IMPULSE", "SHIELDS", "LIFE SUPP", "PHASERS"};
 #define NSHIP_SYSTEMS ARRAYSIZE(ship_system)
+#define WARP_SYSTEM 0
+#define IMPULSE_SYSTEM 1
+#define SHIELD_SYSTEM 2
+#define LIFE_SUPP_SYSTEM 3
+#define PHASER_SYSTEM 4
 
 struct player_ship {
 	int x, y; /* 32 bits, 16 for sector, 16 for quadrant */
@@ -198,6 +210,7 @@ struct player_ship {
 	int warp_factor, new_warp_factor; /* 0 to (1 << 16) */
 #define TORPEDO_POWER (1 << 17)
 	int phaser_power, new_phaser_power; /* 0 to (1 << 16) */
+	int shield_xfer, new_shield_xfer;
 #define WARP10 (1 << 16)
 #define WARP1 (WARP10 / 10)
 	unsigned char shields;
@@ -359,7 +372,7 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "SET COURSE", ST_SET_COURSE, 0);
 	dynmenu_add_item(&menu, "WARP CTRL", ST_WARP, 0);
 	dynmenu_add_item(&menu, "WEAPONS CTRL", ST_AIM_WEAPONS, 0);
-	dynmenu_add_item(&menu, "SHIELD CTRL", ST_NOT_IMPL, 0);
+	dynmenu_add_item(&menu, "SHIELD CTRL", ST_SHIELD_CONTROL, 0);
 	dynmenu_add_item(&menu, "DAMAGE REPORT", ST_DAMAGE_REPORT, 0);
 	dynmenu_add_item(&menu, "STATUS REPORT", ST_STATUS_REPORT, 0);
 	dynmenu_add_item(&menu, "SENSORS", ST_SENSORS, 0);
@@ -1705,6 +1718,165 @@ static void st_warp_input(void)
 		st_program_state = ST_WARP;
 }
 
+static void st_shield_control(void)
+{
+	char num[10];
+
+	clear_menu();
+	strcpy(menu.title, "SHIELD CONTROL");
+	strcpy(menu.title2, "SHIELDS: ");
+	if (gs.player.shields_up)
+		strcat(menu.title2, "UP");
+	else
+		strcat(menu.title2, "DOWN");
+	strcpy(menu.title3, "ENERGY: ");
+	itoa(num, (MAX_SHIELD_ENERGY * gs.player.shields) / 255, 10);
+	strcat(menu.title3, num);
+	dynmenu_add_item(&menu, "SHIELDS UP", ST_SHIELDS_UP, 0);
+	dynmenu_add_item(&menu, "SHIELDS DOWN", ST_SHIELDS_DOWN, 0);
+	dynmenu_add_item(&menu, "ENERGY XFER", ST_SHIELD_ENERGY, 0);
+	dynmenu_add_item(&menu, "CANCEL ORDER", ST_CAPTAIN_MENU, 0);
+	menu.menu_active = 1;
+	st_program_state = ST_DRAW_MENU;
+}
+
+static void st_shields_updown(int x)
+{
+	char msg[50];
+	char num[10];
+	int energy, damage;
+
+	gs.player.shields_up = x;
+	energy = (2500 * gs.player.shields) / 255;
+	damage = (100 * gs.player.damage[SHIELD_SYSTEM]) / 255;
+	if (x) {
+		strcpy(msg, "SHIELDS UP\n");
+	} else {
+		strcpy(msg, "SHIELDS DOWN\n");
+	}
+	strcat(msg, "ENERGY: ");
+	itoa(num, energy, 10);
+	strcat(msg, num);
+	strcat(msg, "\nDAMAGE: ");
+	itoa(num, damage, 10);
+	strcat(msg, num);
+	strcat(msg, "%");
+	alert_player("SHIELD CONTROL", msg);
+}
+
+static void st_shield_energy(void)
+{
+	int shield_energy, min, max, max_ship;
+
+	shield_energy = (MAX_SHIELD_ENERGY * gs.player.shields) / 255;
+	min = -shield_energy;
+	max = MAX_SHIELD_ENERGY - shield_energy;
+	max_ship = INITIAL_ENERGY - gs.player.energy;
+	if (-max_ship > min)
+		min = -max_ship;
+
+	if (max == 0 && min == 0) {
+		alert_player("SHIELD CONTROL", "CAPTAIN\n\nNO ENERGY XFER\nIS POSSIBLE\n\n"
+				"SHIP ENERGY\nAND SHIELD\nENERGY BOTH\nAT MAXIMUM\nALREADY");
+		return;
+	}
+
+	FbClear();
+	FbMove(2, 2);
+	FbColor(WHITE);
+	FbWriteZString("SHIELD ENERGY\n");
+	FbColor(GREEN);
+	print_numeric_item("SHLD ENRG: ", shield_energy);
+	print_numeric_item("SHIP ENRG: ", gs.player.energy);
+	print_numeric_item("MIN XFER: ", min);
+	print_numeric_item("MAX XFER: ", max);
+	FbColor(WHITE);
+	FbWriteZString("\n");
+	print_numeric_item("XFER?  ", gs.player.new_shield_xfer);
+	FbColor(GREEN);
+	FbWriteZString("\nL/R - 100 UNITS\n");
+	FbWriteZString("U/D - 500 UNITS\n");
+	FbColor(WHITE);
+	if (gs.player.new_shield_xfer < 0)
+		FbWriteZString("XFER TO SHIP\n");
+	else if (gs.player.new_shield_xfer > 0)
+		FbWriteZString("XFER TO SHIELDS\n");
+	else
+		FbWriteZString("0 ENERGY XFER\n");
+	FbColor(GREEN);
+	FbWriteZString("2% ENERGY LOSS\nINCURRED ON\nXFER");
+	FbSwapBuffers();
+	st_program_state = ST_SHIELD_ENERGY_INPUT;
+}
+
+static void st_shield_energy_input()
+{
+	int old = gs.player.new_shield_xfer;
+	int shield_energy, min, max, max_ship;
+	shield_energy = (MAX_SHIELD_ENERGY * gs.player.shields) / 255;
+	min = -shield_energy;
+	max = MAX_SHIELD_ENERGY - shield_energy;
+	max_ship = INITIAL_ENERGY - gs.player.energy;
+	if (-max_ship > min)
+		min = -max_ship;
+
+	if (BUTTON_PRESSED_AND_CONSUME) {
+		gs.player.shield_xfer = gs.player.new_shield_xfer;
+		st_program_state = ST_SHIELD_EXEC_ENERGY_XFER;
+		return;
+	} else if (UP_BTN_AND_CONSUME) {
+		gs.player.new_shield_xfer += 500;
+	} else if (DOWN_BTN_AND_CONSUME) {
+		gs.player.new_shield_xfer -= 500;
+	} else if (LEFT_BTN_AND_CONSUME) {
+		gs.player.new_shield_xfer -= 100;
+	} else if (RIGHT_BTN_AND_CONSUME) {
+		gs.player.new_shield_xfer += 100;
+	}
+	if (gs.player.new_shield_xfer < min)
+		gs.player.new_shield_xfer = min;
+	if (gs.player.new_shield_xfer > max)
+		gs.player.new_shield_xfer = max;
+
+	if (old != gs.player.new_shield_xfer)
+		st_program_state = shield_energy;
+	st_program_state = ST_SHIELD_ENERGY;
+}
+
+static void st_shield_exec_energy_xfer(void)
+{
+	int from_shields, two_percent;
+
+	if (gs.player.shield_xfer == 0) {
+		alert_player("SHIELD CONTROL", "CAPTAIN\n\nZERO ENERGY\nTRANSFERED");
+		return;
+	}
+	if (gs.player.shield_xfer > 0) { /* xfer > 0, ship to shields xfer */
+		int to_shields;
+
+		two_percent = (2 * gs.player.shield_xfer) / 100;
+
+		gs.player.energy -= gs.player.shield_xfer;
+		to_shields = (255 * (gs.player.shield_xfer - two_percent)) / MAX_SHIELD_ENERGY;
+		to_shields += gs.player.shields;
+		if (to_shields > 255)
+			to_shields = 255;
+		gs.player.shields = to_shields;
+		alert_player("SHIELD CONTROL", "CAPTAIN\n\nENERGY XFER\nFROM SHIP\nTO SHIELDS\nCOMPLETE");
+		return;
+	}
+	/* else xfer < 0, shields to ship xfer */
+
+	two_percent = (2 * -gs.player.shield_xfer) / 100;
+	gs.player.energy += (-gs.player.shield_xfer) - two_percent;
+	from_shields = (255 * -gs.player.shield_xfer) / MAX_SHIELD_ENERGY;
+	from_shields = gs.player.shields - from_shields;
+	if (from_shields < 0)
+		from_shields = 0;
+	gs.player.shields = from_shields;
+	alert_player("SHIELD CONTROL", "CAPTAIN\n\nENERGY XFER\nFROM SHIELDS\nTO SHIP\nCOMPLETE");
+}
+
 static void st_phaser_power_input(void)
 {
 	int old = gs.player.new_phaser_power;
@@ -1916,6 +2088,24 @@ int spacetripper_cb(void)
 		break;
 	case ST_WARP_INPUT:
 		st_warp_input();
+		break;
+	case ST_SHIELD_CONTROL:
+		st_shield_control();
+		break;
+	case ST_SHIELDS_UP:
+		st_shields_updown(1);
+		break;
+	case ST_SHIELDS_DOWN:
+		st_shields_updown(0);
+		break;
+	case ST_SHIELD_ENERGY:
+		st_shield_energy();
+		break;
+	case ST_SHIELD_ENERGY_INPUT:
+		st_shield_energy_input();
+		break;
+	case ST_SHIELD_EXEC_ENERGY_XFER:
+		st_shield_exec_energy_xfer();
 		break;
 	case ST_NOT_IMPL:
 		st_not_impl();
