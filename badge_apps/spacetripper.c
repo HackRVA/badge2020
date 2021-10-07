@@ -58,6 +58,7 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define TORPEDO_ENERGY 10
 #define LRS_ENERGY 2
 #define STEERING_ENERGY_PER_DEG 5
+#define SHIELDS_UP_ENERGY 10
 
 #define ENEMY_SHIP 'E'
 #define PLANET 'P'
@@ -1808,6 +1809,12 @@ static void st_shields_updown(int x)
 	energy = (2500 * gs.player.shields) / 255;
 	damage = (100 * gs.player.damage[SHIELD_SYSTEM]) / 255;
 	if (x) {
+		if (gs.player.energy < SHIELDS_UP_ENERGY) {
+			alert_player("SHIELDS CONTROL", "CAPTAIN\n\nTHERE IS\nINSUFFICIENT\n"
+							"ENERGY TO\nRAISE SHIELDS");
+			return;
+		}
+		reduce_player_energy(SHIELDS_UP_ENERGY);
 		strcpy(msg, "SHIELDS UP\n");
 	} else {
 		strcpy(msg, "SHIELDS DOWN\n");
