@@ -56,6 +56,7 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define WARP_ENERGY_PER_SEC 4
 #define PHASER_ENERGY 3 /* multiplied by energy setting */
 #define TORPEDO_ENERGY 10
+#define LRS_ENERGY 2
 
 #define ENEMY_SHIP 'E'
 #define PLANET 'P'
@@ -648,6 +649,13 @@ static void st_lrs(void) /* long range scanner */
 	char scan[3][3][3];
 	const int color[] = { WHITE, CYAN, YELLOW };
 	char num[4];
+
+	if (gs.player.energy < LRS_ENERGY) {
+		alert_player("SENSORS", "CAPTAIN\n\nWE DON'T HAVE\nENOUGH ENERGY\n"
+					"FOR THE LONG\nRANGE SCAN");
+		return;
+	}
+	reduce_player_energy(LRS_ENERGY);
 
 	sectorx = coord_to_sector(gs.player.x);
 	sectory = coord_to_sector(gs.player.y);
