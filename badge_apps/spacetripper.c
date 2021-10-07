@@ -151,6 +151,8 @@ static enum st_program_state_t st_program_state = ST_GAME_INIT;
 struct enemy_ship {
 	char hitpoints;
 	char shiptype;
+	char flags;
+#define NEAR_PLAYER 0x01
 };
 
 const char *planet_class = "MNOGRVI?";
@@ -229,6 +231,7 @@ struct player_ship {
 	unsigned char away_team;
 	unsigned char away_teams_crystals;
 	unsigned char mined_dilithium;
+	unsigned char damage_flags;
 };
 
 static inline int warp_factor(int wf)
@@ -476,7 +479,7 @@ static void init_player()
 	gs.player.new_heading = 0;
 	gs.player.energy = INITIAL_ENERGY;
 	gs.player.shields = 255;
-	gs.player.shields_up = 0;
+	gs.player.shields_up = 1;
 	gs.player.dilithium_crystals = INITIAL_DILITHIUM;
 	gs.player.warp_factor = 0;
 	gs.player.new_warp_factor = 0;
@@ -1521,6 +1524,19 @@ static void st_status_report(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+static int keep_in_bounds(int *coord)
+{
+	if (*coord < 0) {
+		*coord = 0;
+		return 1;
+	}
+	if (*coord > 0x0007ffff) {
+		*coord = 0x0007ffff;
+		return 1;
+	}
+	return 0;
+}
+
 /* returns true if collision */
 static int player_collision_detection(int *nx, int *ny)
 {
@@ -1530,22 +1546,8 @@ static int player_collision_detection(int *nx, int *ny)
 
 	/* Keep the player in bounds */
 	neutral_zone = 0;
-	if (*nx < 0) {
-		neutral_zone = 1;
-		*nx = 0;
-	}
-	if (*nx > 0x0007ffff) {
-		neutral_zone = 1;
-		*nx = 0x0007ffff;
-	}
-	if (*ny < 0) {
-		neutral_zone = 1;
-		*ny = 0;
-	}
-	if (*ny > 0x0007ffff) {
-		neutral_zone = 1;
-		*ny = 0x0007ffff;
-	}
+	neutral_zone |= keep_in_bounds(nx);
+	neutral_zone |= keep_in_bounds(ny);
 	braking_energy = 0;
 	if (neutral_zone) {
 		if (gs.player.warp_factor != 0) {
@@ -1688,9 +1690,90 @@ static void move_player(void)
 	}
 }
 
+static void fire_on_player(void)
+{
+	int i, damage, mitigation;
+
+	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) {
+		damage = xorshift(&xorshift_state) % 100;
+		if (damage < 50)
+			continue;
+		mitigation = 0;
+		if (gs.player.shields_up) {
+			mitigation = gs.player.shields * 75 / 255;
+			damage = damage - mitigation;
+			if (damage < 0)
+				damage = 0;
+			if (damage == 0)
+				continue;
+		}
+		damage = gs.player.damage[i] + damage;
+		if (damage > 255)
+			damage = 255;
+		gs.player.damage[i] = damage;
+		gs.player.damage_flags |= (1 << i);
+	}
+}
+
+static void move_enemy_ship(struct game_object *g)
+{
+	int angle, distance, x, y;
+
+	if ((xorshift(&xorshift_state) % 1000) < 500) { /* 50 percent chance  */
+		angle = (xorshift(&xorshift_state) % 128);
+		distance = WARP1 * 3;
+		x = g->x + cosine(angle) * (distance / 1024);
+		y = g->y - sine(angle) * (distance / 1024);
+		(void) keep_in_bounds(&x);
+		(void) keep_in_bounds(&y);
+		g->x = x;
+		g->y = y;
+		if (coord_to_sector(x) == coord_to_sector(gs.player.x) &&
+			coord_to_sector(y) == coord_to_sector(gs.player.y)) {
+			gs.srs_needs_update = 1;
+		}
+	}
+	if (coord_to_sector(g->x) == coord_to_sector(gs.player.x) &&
+		coord_to_sector(g->y) == coord_to_sector(gs.player.y)) {
+		if ((xorshift(&xorshift_state) % 1000) < 500) { /* 50 percent chance  */
+			fire_on_player();
+		}
+	}
+}
+
+static void move_enemies(void)
+{
+#define MOVEMENT_TRANCHES 5
+	static int begin = 0;
+	static int end = NTOTAL / MOVEMENT_TRANCHES;
+	int i;
+
+	/* Only move 1/10th of the objects each time. */
+	for (i = begin; i < end; i++) {
+		struct game_object *g = &gs.object[i];
+		switch (g->type) {
+		case ENEMY_SHIP:
+			move_enemy_ship(g);
+			break;
+		default:
+			continue;
+		}
+	}
+
+	/* Set up to move the next set of 1/10 of the objects the next time we get called */
+	begin = end;
+	if (begin >= NTOTAL)
+		begin = 0;
+	end = begin + NTOTAL / MOVEMENT_TRANCHES;
+	if (end > NTOTAL)
+		end = NTOTAL;
+}
+
 static void move_objects(void)
 {
+	gs.player.damage_flags = 0;
 	move_player();
+	move_enemies();
 }
 
 static void draw_speed_gauge_ticks(void)
@@ -2149,6 +2232,26 @@ static int time_to_move_objects(void) /* Returns true once per second */
 #endif
 }
 
+static void report_damage(void)
+{
+	int i;
+
+	FbClear();
+	FbColor(WHITE);
+	FbMove(2, 2);
+	FbWriteZString("CAPTAIN, WE HAVE\nBEEN HIT BY\nENEMY FIRE\nDAMAGE TO:\n");
+	FbColor(CYAN);
+	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) {
+		if (gs.player.damage_flags & (1 << i)) {
+			FbWriteZString((char *) ship_system[i]);
+			FbMoveX(2);
+			FbMoveRelative(0, 8);
+		}
+	}
+	FbSwapBuffers();
+	st_program_state = ST_PROCESS_INPUT;
+}
+
 int spacetripper_cb(void)
 {
 	switch (st_program_state) {
@@ -2293,6 +2396,9 @@ int spacetripper_cb(void)
 		if (gs.last_screen == SRS_SCREEN && gs.srs_needs_update)
 			st_program_state = ST_SRS;
 	}
+
+	if (gs.player.damage_flags)
+		report_damage();
 	return 0;
 }
 
