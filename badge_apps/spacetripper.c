@@ -57,6 +57,7 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define PHASER_ENERGY 3 /* multiplied by energy setting */
 #define TORPEDO_ENERGY 10
 #define LRS_ENERGY 2
+#define STEERING_ENERGY_PER_DEG 5
 
 #define ENEMY_SHIP 'E'
 #define PLANET 'P'
@@ -948,6 +949,28 @@ static void st_choose_angle(char *new_head, char *cur_head, char *set_head,
 	if (finished && which_screen == AIMING_SCREEN) {
 		st_program_state = ST_CHOOSE_WEAPONS;
 	}
+}
+
+static void st_set_course(void)
+{
+	int old_heading = gs.player.heading;
+	int energy_units, angle, warp_multiplier;
+
+	st_choose_angle("NEW HEADING: ", "CUR HEADING", "SET HEADING: ",
+			&gs.player.heading, &gs.player.new_heading, HEADING_SCREEN, NULL);
+
+	angle = abs(gs.player.heading - old_heading);
+	if (angle > 180)
+		angle = 360 - angle;
+	warp_multiplier = gs.player.warp_factor / WARP1;
+	energy_units = (STEERING_ENERGY_PER_DEG * angle * warp_multiplier) / 100;
+
+	if (energy_units > gs.player.energy) {
+		alert_player("NAVIGATION", "CAPTAIN\n\nTHERE IS NOT\nENOUGH\nENERGY TO\nCHANGE COURSE");
+		gs.player.heading = old_heading;
+		return;
+	}
+	reduce_player_energy(energy_units);
 }
 
 static void st_choose_weapons(void)
@@ -2123,8 +2146,7 @@ int spacetripper_cb(void)
 		st_srs();
 		break;
 	case ST_SET_COURSE:
-		st_choose_angle("NEW HEADING: ", "CUR HEADING", "SET HEADING: ",
-				&gs.player.heading, &gs.player.new_heading, HEADING_SCREEN, NULL);
+		st_set_course();
 		break;
 	case ST_AIM_WEAPONS:
 		if (gs.player.docked) {
