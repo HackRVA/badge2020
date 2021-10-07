@@ -357,8 +357,8 @@ static void st_captain_menu(void)
 	dynmenu_add_item(&menu, "LONG RNG SCAN", ST_LRS, 0);
 	dynmenu_add_item(&menu, "SHORT RNG SCAN", ST_SRS, 0);
 	dynmenu_add_item(&menu, "SET COURSE", ST_SET_COURSE, 0);
-	dynmenu_add_item(&menu, "WEAPONS CTRL", ST_AIM_WEAPONS, 0);
 	dynmenu_add_item(&menu, "WARP CTRL", ST_WARP, 0);
+	dynmenu_add_item(&menu, "WEAPONS CTRL", ST_AIM_WEAPONS, 0);
 	dynmenu_add_item(&menu, "SHIELD CTRL", ST_NOT_IMPL, 0);
 	dynmenu_add_item(&menu, "DAMAGE REPORT", ST_DAMAGE_REPORT, 0);
 	dynmenu_add_item(&menu, "STATUS REPORT", ST_STATUS_REPORT, 0);
