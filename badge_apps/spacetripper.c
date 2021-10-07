@@ -17,6 +17,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "timer1_int.h"
 #include "fb.h"
 
 /* TODO: I shouldn't have to declare these myself. */
@@ -57,6 +58,13 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define BLACKHOLE 'B'
 #define STARBASE 'S'
 #define STAR '*'
+
+#ifndef __linux__
+static int get_time(void)
+{
+	return 3600 * (int) wclock.hour + 60 * (int) wclock.min + (int) wclock.sec;
+}
+#endif
 
 static const char *object_type_name(char object_type)
 {
@@ -1826,10 +1834,25 @@ static void st_phaser_beams(void)
 	st_program_state = ST_PHASER_POWER;
 }
 
-int spacetripper_cb(void)
+static int time_to_move_objects(void) /* Returns true once per second */
 {
 	static int ticks = 0;
 
+#ifdef __linux__
+	ticks++;
+	return (ticks % 30) == 0;
+#else
+	int new_ticks = get_time();
+	if (new_ticks != ticks) {
+		ticks = new_ticks;
+		return 1;
+	}
+	return 0;
+#endif
+}
+
+int spacetripper_cb(void)
+{
 	switch (st_program_state) {
 	case ST_GAME_INIT:
 		st_game_init();
@@ -1949,8 +1972,8 @@ int spacetripper_cb(void)
 		st_program_state = ST_CAPTAIN_MENU;
 		break;
 	}
-	ticks++;
-	if ((ticks % 60) == 0) { /* Every 2 seconds */
+
+	if (time_to_move_objects()) {
 		move_objects();
 		if (gs.last_screen == SRS_SCREEN && gs.srs_needs_update)
 			st_program_state = ST_SRS;
