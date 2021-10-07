@@ -296,7 +296,7 @@ static void alert_player(char *title, char *msg)
 	FbWriteLine(title);
 	FbColor(GREEN);
 	FbMove(2, 20);
-	FbWriteString(msg);
+	FbWriteZString(msg);
 	FbSwapBuffers();
 	gs.last_screen = ALERT_SCREEN;
 	st_program_state = ST_ALERT;
@@ -792,12 +792,12 @@ static void print_numeric_item_with_frac(char *item, int value, int frac)
 {
 	char num[10];
 
-	FbWriteString(item);
+	FbWriteZString(item);
 	itoa(num, value, 10);
-	FbWriteString(num);
-	FbWriteString(".");
+	FbWriteZString(num);
+	FbWriteZString(".");
 	itoa(num, frac, 10);
-	FbWriteString(num);
+	FbWriteZString(num);
 	FbMoveX(2);
 	FbMoveRelative(0, 9);
 }
@@ -806,9 +806,9 @@ static void print_numeric_item(char *item, int value)
 {
 	char num[10];
 
-	FbWriteString(item);
+	FbWriteZString(item);
 	itoa(num, value, 10);
-	FbWriteString(num);
+	FbWriteZString(num);
 	FbMoveX(2);
 	FbMoveRelative(0, 9);
 }
@@ -1370,11 +1370,11 @@ static void st_damage_report(void)
 	show_torps_energy_and_dilith();
 	FbColor(WHITE);
 	if (gs.player.docked)
-		FbWriteString("CURRENTLY\nDOCKED AT\nSTARBASE");
+		FbWriteZString("CURRENTLY\nDOCKED AT\nSTARBASE");
 	if (gs.player.standard_orbit)
-		FbWriteString("CURRENTLY\nIN STANDARD\nORBIT\n");
+		FbWriteZString("CURRENTLY\nIN STANDARD\nORBIT\n");
 	if (gs.player.away_team != ABOARD_SHIP)
-		FbWriteString("AWAY TEAM OUT");
+		FbWriteZString("AWAY TEAM OUT");
 	FbSwapBuffers();
 	gs.last_screen = DAMAGE_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
@@ -1420,11 +1420,11 @@ static void st_status_report(void)
 	print_numeric_item("SCORE:", gs.score);
 	FbColor(WHITE);
 	if (gs.player.docked)
-		FbWriteString("CURRENTLY\nDOCKED AT\nSTARBASE");
+		FbWriteZString("CURRENTLY\nDOCKED AT\nSTARBASE");
 	if (gs.player.standard_orbit)
-		FbWriteString("CURRENTLY\nIN STANDARD\nORBIT\n");
+		FbWriteZString("CURRENTLY\nIN STANDARD\nORBIT\n");
 	if (gs.player.away_team != ABOARD_SHIP)
-		FbWriteString("AWAY TEAM OUT");
+		FbWriteZString("AWAY TEAM OUT");
 
 	FbSwapBuffers();
 	gs.last_screen = STATUS_SCREEN;

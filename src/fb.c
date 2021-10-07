@@ -566,9 +566,9 @@ void FbWriteLine(unsigned char *string)
 	FbCharacter(string[j]);
     }
     G_Fb.changed = 1;
-
 }
 
+/* Why does this need a length? */
 void FbWriteString(unsigned char *string, unsigned char length)
 {
     unsigned char j, x, y;
@@ -585,6 +585,26 @@ void FbWriteString(unsigned char *string, unsigned char length)
 	FbMove(x + j * assetList[G_Fb.font].x, y);
 	FbCharacter(string[j]);
 
+    }
+    G_Fb.changed = 1;
+}
+
+/* Version of FbWriteString that does not need a length */
+void FbWriteZString(unsigned char *string)
+{
+    unsigned char j, x, y;
+
+    x = G_Fb.pos.x;
+    y = G_Fb.pos.y;
+    
+    for(j=0; string[j] != 0; j++) {
+	if (string[j] == '\n') {
+		FbMoveRelative(0, 8);
+		FbMoveX(x);
+	} else {
+		FbCharacter(string[j]);
+		FbMoveRelative(8, 0);
+	}
     }
     G_Fb.changed = 1;
 }
