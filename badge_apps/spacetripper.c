@@ -53,6 +53,7 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define INITIAL_ENERGY 5000
 #define MAX_SHIELD_ENERGY 2500
 #define INITIAL_DILITHIUM 100
+#define WARP_ENERGY_PER_SEC 4
 
 #define ENEMY_SHIP 'E'
 #define PLANET 'P'
@@ -308,6 +309,18 @@ static void delete_object(int i)
 	if (i < 0 || i >= NTOTAL)
 		return;
 	memset(&gs.object[i], 0, sizeof(gs.object[i]));
+}
+
+static void reduce_player_energy(int amount)
+{
+	if (gs.player.energy == 0)
+		return;
+
+	gs.player.energy -= amount;
+	if (gs.player.energy < 0) {
+		gs.player.energy = 0;
+		gs.player.warp_factor = 0;
+	}
 }
 
 static void alert_player(char *title, char *msg)
@@ -1462,7 +1475,7 @@ static void st_status_report(void)
 /* returns true if collision */
 static int player_collision_detection(int *nx, int *ny)
 {
-	int i, sx, sy, qx, qy, osx, osy, oqx, oqy;
+	int i, sx, sy, qx, qy, osx, osy, oqx, oqy, braking_energy;
 	unsigned char neutral_zone;
 	char msg[40];
 
@@ -1484,12 +1497,17 @@ static int player_collision_detection(int *nx, int *ny)
 		neutral_zone = 1;
 		*ny = 0x0007ffff;
 	}
+	braking_energy = 0;
 	if (neutral_zone) {
-		gs.player.warp_factor = 0;
+		if (gs.player.warp_factor != 0) {
+			braking_energy = (gs.player.warp_factor / WARP1) * WARP_ENERGY_PER_SEC / 2;
+			gs.player.warp_factor = 0;
+		}
 		gs.srs_needs_update = 1;
 		alert_player("STARFLEET MSG",
 			"PERMISSION TO\nENTER NEUTRAL\nZONE DENIED\n\n"
 			"SHUT DOWN\nWARP DRIVE\n\n-- STARFLEET");
+		reduce_player_energy(braking_energy);
 		return 0;
 	}
 
@@ -1516,8 +1534,11 @@ static int player_collision_detection(int *nx, int *ny)
 		const char *object = object_type_name(gs.object[i].type);
 		strcpy(msg, "WE HAVE\nENCOUNTERED\n");
 		strcat(msg, object);
-		alert_player("WARP SHUTDOWN", msg);
+		braking_energy = (gs.player.warp_factor / WARP1) * WARP_ENERGY_PER_SEC / 2;
+		reduce_player_energy(braking_energy);
 		gs.player.warp_factor = 0;
+		alert_player("WARP SHUTDOWN", msg);
+		reduce_player_energy(braking_energy);
 		return 1;
 	}
 	return 0;
@@ -1551,6 +1572,7 @@ static void replenish_supplies_and_repair_ship(void)
 	replenish_char_supply(&gs.player.torpedoes, INITIAL_TORPEDOES, 1);
 	replenish_int_supply(&gs.player.energy, INITIAL_ENERGY, INITIAL_ENERGY / 10);
 	replenish_char_supply(&gs.player.dilithium_crystals, INITIAL_DILITHIUM, INITIAL_DILITHIUM / 10);
+	replenish_char_supply(&gs.player.shields, MAX_SHIELD_ENERGY, MAX_SHIELD_ENERGY / 10);
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) { /* Repair damaged systems */
 		if (gs.player.damage[i] > 0) {
 			n = gs.player.damage[i] - 25;
@@ -1572,6 +1594,9 @@ static void move_player(void)
 	}
 	/* Move player */
 	if (gs.player.warp_factor > 0) {
+		int warp_energy = (WARP_ENERGY_PER_SEC * gs.player.warp_factor) / WARP1;
+		reduce_player_energy(warp_energy);
+		
 		b = (gs.player.heading * 128) / 360;
 		if (b < 0)
 			b += 128;
