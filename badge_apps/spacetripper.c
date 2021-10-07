@@ -141,6 +141,8 @@ enum st_program_state_t {
 	ST_SHIELD_ENERGY,
 	ST_SHIELD_ENERGY_INPUT,
 	ST_SHIELD_EXEC_ENERGY_XFER,
+	ST_HULL_DESTROYED,
+	ST_LIFE_SUPPORT_FAILED,
 	ST_NOT_IMPL,
 };
 
@@ -1691,14 +1693,14 @@ static void move_player(void)
 		}
 	}
 
-	if (gs.player.damage[LIFE_SUPP_SYSTEM] > 70) {
+	if (100 * gs.player.damage[LIFE_SUPP_SYSTEM] / 255 > 70) {
 		int n = gs.player.life_support_reserves - 1;
 		if (n < 0)
 			n = 0;
 		gs.player.life_support_reserves = n;
 		if (gs.player.life_support_reserves < 200 && (gs.player.life_support_reserves % 30) == 0) {
 			alert_player("ENGINEERING", "CAPTAIN\n\nOUR LIFE\nSUPPORT SYSTEM\nIS BADLY\n"
-							"DAMAGED AND\nRESERVES\nARE RUNNING\nLOW\n");
+							"DAMAGED AND\nRESERVES\nARE RUNNING\nLOW!\n");
 			return;
 		}
 	}
@@ -2225,6 +2227,28 @@ static void st_fire_weapon(char *weapon_name, int weapon_power)
 	alert_player(weapon_name, "MISSED!");
 }
 
+static void st_player_died(char *how)
+{
+	clear_menu();
+	strcpy(menu.title, how);
+	strcpy(menu.title2, "GAME OVER");
+	strcpy(menu.title3, "PLAY AGAIN?");
+	dynmenu_add_item(&menu, "PLAY AGAIN", ST_NEW_GAME, 0);
+	dynmenu_add_item(&menu, "QUIT", ST_EXIT, 0);
+	menu.menu_active = 1;
+	st_program_state = ST_DRAW_MENU;
+}
+
+static void st_hull_destroyed(void)
+{
+	st_player_died("HULL BREACH!");
+}
+
+static void st_life_support_failed(void)
+{
+	st_player_died("ASPHYXIATION");
+}
+
 static void st_alert(void)
 {
 	if (BUTTON_PRESSED_AND_CONSUME)
@@ -2280,7 +2304,7 @@ static void report_damage(void)
 	FbClear();
 	FbColor(WHITE);
 	FbMove(2, 2);
-	FbWriteZString("CAPTAIN, WE HAVE\nBEEN HIT BY\nENEMY FIRE\nDAMAGE TO:\n");
+	FbWriteZString("CAPTAIN\n\nWE HAVE BEEN\nHIT BY ENEMY\nFIRE\n\nDAMAGE TO:\n");
 	FbColor(CYAN);
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) {
 		if (gs.player.damage_flags & (1 << i)) {
@@ -2427,6 +2451,12 @@ int spacetripper_cb(void)
 	case ST_FIRE_TORPEDO:
 		st_fire_weapon("TORPEDO", TORPEDO_POWER);
 		break;
+	case ST_HULL_DESTROYED:
+		st_hull_destroyed();
+		break;
+	case ST_LIFE_SUPPORT_FAILED:
+		st_life_support_failed();
+		break;
 	default:
 		st_program_state = ST_CAPTAIN_MENU;
 		break;
@@ -2440,6 +2470,11 @@ int spacetripper_cb(void)
 
 	if (gs.player.damage_flags)
 		report_damage();
+
+	if (gs.player.damage[HULL_SYSTEM] == 255)
+		st_program_state = ST_HULL_DESTROYED;
+	if (100 * gs.player.damage[LIFE_SUPP_SYSTEM] > 70 && gs.player.life_support_reserves == 0)
+		st_program_state = ST_LIFE_SUPPORT_FAILED;
 	return 0;
 }
 
