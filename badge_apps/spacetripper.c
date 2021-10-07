@@ -202,13 +202,14 @@ struct game_object {
 	char type;
 };
 
-static const char *ship_system[] = { "WARP", "IMPULSE", "SHIELDS", "LIFE SUPP", "PHASERS"};
+static const char *ship_system[] = { "WARP", "SHIELDS", "LIFE SUPP", "PHASERS", "TORP TUBE", "HULL"};
 #define NSHIP_SYSTEMS ARRAYSIZE(ship_system)
 #define WARP_SYSTEM 0
-#define IMPULSE_SYSTEM 1
-#define SHIELD_SYSTEM 2
-#define LIFE_SUPP_SYSTEM 3
-#define PHASER_SYSTEM 4
+#define SHIELD_SYSTEM 1
+#define LIFE_SUPP_SYSTEM 2
+#define PHASER_SYSTEM 3
+#define TORPEDO_SYSTEM 4
+#define HULL_SYSTEM 5
 
 struct player_ship {
 	int x, y; /* 32 bits, 16 for sector, 16 for quadrant */
@@ -232,6 +233,8 @@ struct player_ship {
 	unsigned char away_teams_crystals;
 	unsigned char mined_dilithium;
 	unsigned char damage_flags;
+	unsigned char life_support_reserves;
+	unsigned char hull;
 };
 
 static inline int warp_factor(int wf)
@@ -491,6 +494,8 @@ static void init_player()
 	gs.player.mined_dilithium = 0;
 #define ABOARD_SHIP 255
 	gs.player.away_team = ABOARD_SHIP;
+	gs.player.life_support_reserves = 255;
+	gs.player.hull = 255;
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++)
 		gs.player.damage[i] = 0;
@@ -1447,7 +1452,7 @@ static void st_damage_report(void)
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) {
 		FbColor(CYAN);
-		FbMove(2, 18 + i * 9);
+		FbMove(2, 9 + i * 9);
 		FbWriteLine((char *) ship_system[i]);
 		d = ((((256 - gs.player.damage[i]) * 1024) / 256) * 100) / 1024;
 		if (d < 70)
@@ -1457,7 +1462,7 @@ static void st_damage_report(void)
 		else
 			FbColor(GREEN);
 		itoa(ds, d, 10);
-		FbMove(LCD_XSIZE - 9 * 4, 18 + i * 9);
+		FbMove(LCD_XSIZE - 9 * 4, 9 + i * 9);
 		FbWriteLine(ds);
 	}
 	show_torps_energy_and_dilith();
@@ -1624,6 +1629,8 @@ static void replenish_supplies_and_repair_ship(void)
 	replenish_int_supply(&gs.player.energy, INITIAL_ENERGY, INITIAL_ENERGY / 10);
 	replenish_char_supply(&gs.player.dilithium_crystals, INITIAL_DILITHIUM, INITIAL_DILITHIUM / 10);
 	replenish_char_supply(&gs.player.shields, MAX_SHIELD_ENERGY, MAX_SHIELD_ENERGY / 10);
+	replenish_char_supply(&gs.player.life_support_reserves, 255, 25);
+	replenish_char_supply(&gs.player.hull, 255, 25);
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) { /* Repair damaged systems */
 		if (gs.player.damage[i] > 0) {
 			n = gs.player.damage[i] - 25;
@@ -1637,6 +1644,7 @@ static void replenish_supplies_and_repair_ship(void)
 static void move_player(void)
 {
 	int dx, dy, b, nx, ny;
+	int damage_factor;
 	char decayed = 0;
 
 	if (gs.player.docked) {
@@ -1665,8 +1673,11 @@ static void move_player(void)
 			b -= 128;
 		dx = (gs.player.warp_factor * cosine(b)) / 1024;
 		dy = (-gs.player.warp_factor * sine(b)) / 1024;
-		nx = gs.player.x + dx;
-		ny = gs.player.y + dy;
+
+		damage_factor = 100 - (100 * gs.player.damage[WARP_SYSTEM] / 255);
+
+		nx = gs.player.x + damage_factor * dx / 100;
+		ny = gs.player.y + damage_factor * dy / 100;
 
 		if (coord_to_sector(gs.player.x) != coord_to_sector(nx) ||
 			coord_to_sector(gs.player.y) != coord_to_sector(ny) ||
@@ -1677,6 +1688,18 @@ static void move_player(void)
 		if (!player_collision_detection(&nx, &ny)) {
 			gs.player.x = nx;
 			gs.player.y = ny;
+		}
+	}
+
+	if (gs.player.damage[LIFE_SUPP_SYSTEM] > 70) {
+		int n = gs.player.life_support_reserves - 1;
+		if (n < 0)
+			n = 0;
+		gs.player.life_support_reserves = n;
+		if (gs.player.life_support_reserves < 200 && (gs.player.life_support_reserves % 30) == 0) {
+			alert_player("ENGINEERING", "CAPTAIN\n\nOUR LIFE\nSUPPORT SYSTEM\nIS BADLY\n"
+							"DAMAGED AND\nRESERVES\nARE RUNNING\nLOW\n");
+			return;
 		}
 	}
 
@@ -1692,7 +1715,7 @@ static void move_player(void)
 
 static void fire_on_player(void)
 {
-	int i, damage, mitigation;
+	int i, damage, mitigation, shield_damage;
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) {
 		damage = xorshift(&xorshift_state) % 100;
@@ -1701,6 +1724,8 @@ static void fire_on_player(void)
 		mitigation = 0;
 		if (gs.player.shields_up) {
 			mitigation = gs.player.shields * 75 / 255;
+			shield_damage = 100 * gs.player.damage[SHIELD_SYSTEM] / 256;
+			mitigation = (mitigation * shield_damage) / 100;
 			damage = damage - mitigation;
 			if (damage < 0)
 				damage = 0;
@@ -1848,6 +1873,11 @@ static void st_warp()
 
 	screen_header("WARP");
 	draw_speed_gauge(SPEED_GAUGE, GREEN, RED, gs.player.warp_factor, gs.player.new_warp_factor);
+
+	if (gs.player.damage[WARP_SYSTEM] > 0) {
+		FbMove(2, 110);
+		FbWriteZString("WARP SYS DAMAGED");
+	}
 
 	FbSwapBuffers();
 	gs.last_screen = WARP_SCREEN;
@@ -2140,7 +2170,9 @@ static void do_weapon_damage(int target, int power)
 static void st_fire_weapon(char *weapon_name, int weapon_power)
 {
 	int i, j, x, y, a, dx, dy;
+	int damage_factor;
 
+	damage_factor = 100;
 	if (weapon_name[0] == 'P' && weapon_name[1] == 'H') { /* PHASER? */
 		int energy_units;
 		/* Check if we have enough power */
@@ -2148,6 +2180,11 @@ static void st_fire_weapon(char *weapon_name, int weapon_power)
 		if (gs.player.energy < energy_units) {
 			alert_player("WEAPONS", "CAPTAIN\n\nWE DON'T\nHAVE ENOUGH\nENERGY TO\n"
 						"FIRE PHASERS\nAT THAT\nLEVEL");
+			return;
+		}
+		damage_factor = 100 - (100 * gs.player.damage[PHASER_SYSTEM] / 255);
+		if (damage_factor < 10) {
+			alert_player("WEAPONS", "CAPTAIN\n\nTHE PHASER\nSYSTEM IS SO\nDAMAGED IT\nCANNOT BE\nUSED");
 			return;
 		}
 		reduce_player_energy(energy_units);
@@ -2173,7 +2210,7 @@ static void st_fire_weapon(char *weapon_name, int weapon_power)
 			switch (gs.object[j].type) {
 			case ENEMY_SHIP:
 				if (check_weapon_collision(weapon_name, j, x, y)) {
-					do_weapon_damage(j, weapon_power);
+					do_weapon_damage(j, damage_factor * weapon_power / 100);
 					return;
 				}
 				break;
@@ -2199,6 +2236,10 @@ static void st_photon_torpedoes(void)
 	if (gs.player.energy < TORPEDO_ENERGY) {
 		alert_player("WEAPONS", "CAPTAIN\n\nWE DON'T HAVE\nENOUGH\n"
 					"ENERGY TO\nLAUNCH A\nTORPEDO!");
+		return;
+	}
+	if (100 * gs.player.damage[TORPEDO_SYSTEM] / 255 >= 90) {
+		alert_player("WEAPONS", "CAPTAIN\n\nTHE TORPEDO\nSYSTEM IS TOO\nDAMAGED TO BE\nUSED");
 		return;
 	}
 
