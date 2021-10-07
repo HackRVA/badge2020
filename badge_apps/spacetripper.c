@@ -922,9 +922,9 @@ static void st_choose_angle(char *new_head, char *cur_head, char *set_head,
 		st_program_state = ST_PROCESS_INPUT;
 		finished = 1;
 	} else if (UP_BTN_AND_CONSUME) {
-		*new_heading += 10;
+		*new_heading += 15;
 	} else if (DOWN_BTN_AND_CONSUME) {
-		*new_heading -= 10;
+		*new_heading -= 15;
 	} else if (LEFT_BTN_AND_CONSUME) {
 		(*new_heading)++;
 	} else if (RIGHT_BTN_AND_CONSUME) {
