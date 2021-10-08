@@ -288,6 +288,11 @@ static void draw_fuel_gauge(struct lander_data *lander, int color)
 	if (color != BLACK)
 		draw_fuel_gauge_ticks();
 	draw_fuel_gauge_marker(lander, color);
+	if (lander->fuel == 0) {
+		FbColor(YELLOW);
+		FbMove(2, 110);
+		FbWriteLine("OUT OF FUEL");	
+	}
 }
 
 static void draw_sparks(struct lander_data *lander, int color)
