@@ -361,7 +361,8 @@ static void place_astronauts(void)
 	int i, j;
 
 	for (i = 0; i < NUM_ASTRONAUTS; i++) {
-		j = (xorshift(&xorshift_state) % 800) + 100;
+		j = (xorshift(&xorshift_state) % ((80 * NUM_TERRAIN_POINTS) / 100)) +
+				(10 * NUM_TERRAIN_POINTS) / 100;
 		astronaut[i].y = terrain_y[j] - 5;
 		astronaut[i].x = j * TERRAIN_SEGMENT_WIDTH;
 		astronaut[i].picked_up = 0;
@@ -371,7 +372,7 @@ static void place_astronauts(void)
 static void place_lunar_base(void)
 {
 	int j;
-	j = (xorshift(&xorshift_state) % 50) + 925;
+	j = (xorshift(&xorshift_state) % 25) + (85 * NUM_TERRAIN_POINTS) / 100;
 	lunar_base.y = terrain_y[j] - 5;
 	lunar_base.x = j * TERRAIN_SEGMENT_WIDTH;
 }
