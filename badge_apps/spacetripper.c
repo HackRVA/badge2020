@@ -278,6 +278,7 @@ struct game_state {
 #define AIMING_SCREEN 11
 #define PHASER_POWER_SCREEN 12
 #define STAR_CHART_SCREEN 13
+#define REPORT_DAMAGE_SCREEN 14
 #define UNKNOWN_SCREEN 255;
 	int score;
 #define KLINGON_POINTS 100
@@ -2473,6 +2474,8 @@ static void report_damage(void)
 		}
 	}
 	FbSwapBuffers();
+	gs.last_screen = REPORT_DAMAGE_SCREEN;
+	gs.player.damage_flags = 0;
 	st_program_state = ST_PROCESS_INPUT;
 }
 
