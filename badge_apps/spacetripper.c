@@ -236,6 +236,7 @@ struct player_ship {
 	unsigned char mined_dilithium;
 	unsigned char damage_flags;
 	unsigned char life_support_reserves;
+	unsigned char alive;
 };
 
 static inline int warp_factor(int wf)
@@ -496,6 +497,7 @@ static void init_player()
 #define ABOARD_SHIP 255
 	gs.player.away_team = ABOARD_SHIP;
 	gs.player.life_support_reserves = 255;
+	gs.player.alive = 1;
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++)
 		gs.player.damage[i] = 0;
@@ -2224,26 +2226,33 @@ static void st_fire_weapon(char *weapon_name, int weapon_power)
 	alert_player(weapon_name, "MISSED!");
 }
 
-static void st_player_died(char *how)
+static void st_player_died(char *msg, char *first_menu_item, enum st_program_state_t state)
 {
 	clear_menu();
-	strcpy(menu.title, how);
-	strcpy(menu.title2, "GAME OVER");
-	strcpy(menu.title3, "PLAY AGAIN?");
+	strcpy(menu.title, "GAME OVER");
+	strcpy(menu.title2, "PLAY AGAIN?");
+	dynmenu_add_item(&menu, first_menu_item, state, 0);
 	dynmenu_add_item(&menu, "PLAY AGAIN", ST_NEW_GAME, 0);
 	dynmenu_add_item(&menu, "QUIT", ST_EXIT, 0);
 	menu.menu_active = 1;
-	st_program_state = ST_DRAW_MENU;
+	dynmenu_draw(&menu);
+	FbMove(2, 21);
+	FbColor(CYAN);
+	FbWriteZString(msg);
+	FbSwapBuffers();
+	st_program_state = ST_PROCESS_INPUT;
 }
 
 static void st_hull_destroyed(void)
 {
-	st_player_died("HULL BREACH!");
+	gs.player.alive = 0;
+	st_player_died("HULL BREACHED\nYOU HAVE DIED\n", "OH NO!", st_program_state);
 }
 
 static void st_life_support_failed(void)
 {
-	st_player_died("ASPHYXIATION");
+	gs.player.alive = 0;
+	st_player_died("LIFE SUPPORT\nFAILED. YOU\nHAVE DIED OF\nASPHYXIATION", "OH NO!", st_program_state);
 }
 
 static void st_alert(void)
@@ -2458,6 +2467,9 @@ int spacetripper_cb(void)
 		st_program_state = ST_CAPTAIN_MENU;
 		break;
 	}
+
+	if (!gs.player.alive)
+		return 0;
 
 	if (time_to_move_objects()) {
 		move_objects();
