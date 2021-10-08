@@ -1494,8 +1494,8 @@ static void st_status_report(void)
 	print_numeric_item_with_frac("STARDATE:", sd, frac);
 
 	/* Compute and print time remaining */
-	sd = (gs.enddate - gs.stardate) / 256;
-	frac = (((gs.enddate - gs.stardate) % 256) * 100) / 256;
+	sd = (gs.enddate - gs.stardate) / TICKS_PER_DAY;
+	frac = (((gs.enddate - gs.stardate) % TICKS_PER_DAY) * 100) / 256;
 	print_numeric_item_with_frac("DAYS LEFT:", sd, frac);
 
 	/* Count remaining starbases and enemy ships */
@@ -2323,6 +2323,18 @@ static void report_damage(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+static int time_has_run_out(void)
+{
+	gs.stardate++; /* advance game time */
+	if (gs.stardate >= gs.enddate) {
+		alert_player("STARFLEET", "YOU HAVE RUN\nOUT OF TIME\nWE WILL GIVE\n"
+						"YOU AN\nADDITIONAL\n10 DAYS.");
+		gs.enddate += 10 * TICKS_PER_DAY;
+		return 1;
+	}
+	return 0;
+}
+
 int spacetripper_cb(void)
 {
 	switch (st_program_state) {
@@ -2434,7 +2446,6 @@ int spacetripper_cb(void)
 		break;
 	case ST_STATUS_REPORT:
 		st_status_report();
-		gs.stardate++;
 		break;
 	case ST_ALERT:
 		st_alert();
@@ -2472,6 +2483,8 @@ int spacetripper_cb(void)
 		return 0;
 
 	if (time_to_move_objects()) {
+		if (time_has_run_out())
+			return 1;
 		move_objects();
 		if (gs.last_screen == SRS_SCREEN && gs.srs_needs_update)
 			st_program_state = ST_SRS;
