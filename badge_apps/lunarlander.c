@@ -166,8 +166,8 @@ static struct lander_data {
 	int vx, vy;
 	int fuel;
 #define FULL_FUEL (1 << 16)
-#define HORIZONTAL_FUEL (256 * 4)
-#define VERTICAL_FUEL (768 * 4)
+#define HORIZONTAL_FUEL (256 * 3)
+#define VERTICAL_FUEL (768 * 3)
 	int alive;
 } lander;
 
