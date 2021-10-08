@@ -40,9 +40,9 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 
 #define ARRAYSIZE(x) (sizeof((x)) / sizeof((x)[0]))
 
-#define NKLINGONS 15
+#define NKLINGONS 10
 #define NCOMMANDERS 5
-#define NROMULANS 10
+#define NROMULANS 5 
 #define NPLANETS 20
 #define NBLACKHOLES 10
 #define NSTARBASES 10
