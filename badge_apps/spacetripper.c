@@ -105,6 +105,7 @@ enum st_program_state_t {
 	ST_CAPTAIN_MENU,
 	ST_PROCESS_INPUT,
 	ST_LRS,
+	ST_STAR_CHART,
 	ST_SRS,
 	ST_SET_COURSE,
 	ST_AIM_WEAPONS,
@@ -276,6 +277,7 @@ struct game_state {
 #define ALERT_SCREEN 10
 #define AIMING_SCREEN 11
 #define PHASER_POWER_SCREEN 12
+#define STAR_CHART_SCREEN 13
 #define UNKNOWN_SCREEN 255;
 	int score;
 #define KLINGON_POINTS 100
@@ -283,6 +285,7 @@ struct game_state {
 #define COMMANDER_POINTS 400
 	unsigned char game_over;
 	unsigned char last_capn_menu_item;
+	unsigned char visited_sectors[8];
 } gs = { 0 };
 
 static inline int coord_to_sector(int c)
@@ -293,6 +296,20 @@ static inline int coord_to_sector(int c)
 static inline int coord_to_quadrant(int c)
 {
 	return (c >> 13) & 0x07;
+}
+
+static void mark_sector_visited(unsigned char sx, unsigned char sy)
+{
+	sx = sx % 8;
+	sy = sy % 8;
+	gs.visited_sectors[sy] |= (1 << sx);
+}
+
+static int sector_visited(unsigned char sx, unsigned char sy)
+{
+	sx = sx % 8;
+	sy = sy % 8;
+	return gs.visited_sectors[sy] & (1 << sx);
 }
 
 static int find_free_obj(void)
@@ -401,8 +418,9 @@ static void st_captain_menu(void)
 	clear_menu();
 	strcpy(menu.title, "USS ENTERPRISE"); /* <-- If you change this line, you also must change button_pressed() */
 	strcpy(menu.title3, "CAPN'S ORDERS?");
-	dynmenu_add_item(&menu, "LONG RNG SCAN", ST_LRS, 0);
 	dynmenu_add_item(&menu, "SHORT RNG SCAN", ST_SRS, 0);
+	dynmenu_add_item(&menu, "LONG RNG SCAN", ST_LRS, 0);
+	dynmenu_add_item(&menu, "STAR CHART", ST_STAR_CHART, 0);
 	dynmenu_add_item(&menu, "SET COURSE", ST_SET_COURSE, 0);
 	dynmenu_add_item(&menu, "WARP CTRL", ST_WARP, 0);
 	dynmenu_add_item(&menu, "WEAPONS CTRL", ST_AIM_WEAPONS, 0);
@@ -520,6 +538,7 @@ static void st_new_game(void)
 	gs.score = 0;
 	gs.game_over = 0;
 	gs.last_capn_menu_item = 0;
+	memset(&gs.visited_sectors, 0, sizeof(gs.visited_sectors));
 	st_program_state = ST_CAPTAIN_MENU;
 }
 
@@ -725,6 +744,19 @@ static void st_lrs(void) /* long range scanner */
 		FbWriteLine(num);
 	}
 
+	/* Mark visited sectors */
+	for (x = -1; x < 2; x++) {
+		sx = sectorx + x;
+		if (sx < 0 || sx > 7)
+			continue;
+		for (y = -1; y < 2; y++) {
+			sy = sectory + y;
+			if (sy < 0 || sy > 7)
+				continue;
+			mark_sector_visited((unsigned char) sx, (unsigned char) sy);
+		}
+	}
+
 	/* Print out scan[][][] */
 	for (y = 0; y < 3; y++) {
 		for (x = 0; x < 3; x++) {
@@ -759,6 +791,75 @@ static void st_lrs(void) /* long range scanner */
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+static void star_chart_question_mark(int sx, int sy)
+{
+	FbColor(GREEN);
+	FbMove(6 + sx * 16, 6 + sy * 16);
+	FbWriteLine("?");
+}
+
+static void plot_on_star_chart(int sx, int sy, int qx, int qy, int color)
+{
+	FbColor(color);
+	FbPoint(2 + sx * 16 + qx, 2 + sy * 16 + qy);
+	FbPoint(3 + sx * 16 + qx, 2 + sy * 16 + qy);
+	FbPoint(2 + sx * 16 + qx, 3 + sy * 16 + qy);
+	FbPoint(3 + sx * 16 + qx, 3 + sy * 16 + qy);
+}
+
+static void st_star_chart(void)
+{
+	int i, sx, sy, qx, qy, color;
+
+	FbClear();
+
+	for (sx = 0; sx < 8; sx++)
+		for (sy = 0; sy < 8; sy++)
+			if (!sector_visited(sx, sy))
+				star_chart_question_mark(sx, sy);
+
+	sx = coord_to_sector(gs.player.x);
+	sy = coord_to_sector(gs.player.y);
+	qx = coord_to_quadrant(gs.player.x);
+	qy = coord_to_quadrant(gs.player.y);
+	plot_on_star_chart(sx, sy, qx, qy, MAGENTA);
+
+	for (i = 0; i < NTOTAL; i++) {
+		switch (gs.object[i].type) {
+		case 0:
+			continue;
+		case ENEMY_SHIP:
+			color = WHITE;
+			break;
+		case PLANET:
+			color = CYAN;
+			break;
+		case BLACKHOLE:
+			color = RED;
+			break;
+		case STARBASE:
+			color = GREEN;
+			break;
+		case STAR:
+			color = YELLOW;
+			break;
+		default:
+			continue;
+		}
+
+		sx = coord_to_sector(gs.object[i].x);
+		sy = coord_to_sector(gs.object[i].y);
+		if (!sector_visited((unsigned char) sx, (unsigned char) sy))
+			continue;
+		qx = coord_to_quadrant(gs.object[i].x);
+		qy = coord_to_quadrant(gs.object[i].y);
+		plot_on_star_chart(sx, sy, qx, qy, color);
+	}
+	FbSwapBuffers();
+	gs.last_screen = STAR_CHART_SCREEN;
+	st_program_state = ST_PROCESS_INPUT;
+}
+
 static void st_srs(void) /* short range scanner */
 {
 	int i, x, y;
@@ -772,6 +873,7 @@ static void st_srs(void) /* short range scanner */
 
 	sectorx = coord_to_sector(gs.player.x);
 	sectory = coord_to_sector(gs.player.y);
+	mark_sector_visited((unsigned char) sectorx, (unsigned char) sectory);
 	memset(scan, 0, sizeof(scan));
 
 	screen_header("SHORT RANGE SCAN");
@@ -2396,6 +2498,9 @@ int spacetripper_cb(void)
 		break;
 	case ST_LRS:
 		st_lrs();
+		break;
+	case ST_STAR_CHART:
+		st_star_chart();
 		break;
 	case ST_SRS:
 		st_srs();
