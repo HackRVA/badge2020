@@ -1745,6 +1745,27 @@ static void replenish_supplies_and_repair_ship(void)
 	}
 }
 
+static void conduct_repairs()
+{
+	static int repair_time = 0;
+	char msg[60];
+	int n;
+
+	repair_time = (repair_time + 1) % NSHIP_SYSTEMS;
+	n = gs.player.damage[repair_time];
+	if (n > 0) {
+		n -= 15 + (xorshift(&xorshift_state) % 20);
+		if (n <= 0) {
+			n = 0;
+			strcpy(msg, "CAPTAIN\n\nTHE ");
+			strcat(msg, ship_system[repair_time]);
+			strcat(msg, " HAS BEEN\nREPAIRED");
+			alert_player("ENGINEERING", msg);
+		}
+		gs.player.damage[repair_time] = n;
+	}
+}
+
 static void move_player(void)
 {
 	int dx, dy, b, nx, ny;
@@ -1794,6 +1815,8 @@ static void move_player(void)
 			gs.player.y = ny;
 		}
 	}
+
+	conduct_repairs();
 
 	if (100 * gs.player.damage[LIFE_SUPP_SYSTEM] / 255 > 70) {
 		int n = gs.player.life_support_reserves - 1;
