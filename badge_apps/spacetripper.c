@@ -143,6 +143,7 @@ enum st_program_state_t {
 	ST_SHIELD_EXEC_ENERGY_XFER,
 	ST_HULL_DESTROYED,
 	ST_LIFE_SUPPORT_FAILED,
+	ST_PLAYER_WON,
 	ST_NOT_IMPL,
 };
 
@@ -257,7 +258,7 @@ static inline int impulse_factor(int wf)
 struct game_state {
 	struct game_object object[NTOTAL];
 	struct player_ship player;
-#define TICKS_PER_DAY 256  /* Each tick is about 5.6 minutes of game time */
+#define TICKS_PER_DAY 20 /* 30 days, 1 tick per second, 20 ticks per day == 10 minutes. */
 #define START_DATE (2623)
 	short stardate;
 	short enddate;
@@ -515,7 +516,7 @@ static void st_new_game(void)
 	add_simple_objects(NPLANETS, PLANET, planet_customizer);
 	init_player();
 	gs.stardate = 0;
-	gs.enddate = gs.stardate + 35 * TICKS_PER_DAY;
+	gs.enddate = gs.stardate + 30 * TICKS_PER_DAY;
 	gs.score = 0;
 	gs.game_over = 0;
 	gs.last_capn_menu_item = 0;
@@ -1795,6 +1796,22 @@ static void move_enemies(void)
 		end = NTOTAL;
 }
 
+static int player_has_won(void)
+{
+	int i;
+
+	for (i = 0; i < NTOTAL; i++) {
+		switch (gs.object[i].type) {
+		case ENEMY_SHIP:
+			return 0;
+		default:
+			break;
+		}
+	}
+	gs.player.alive = 0;
+	return 1;
+}
+
 static void move_objects(void)
 {
 	gs.player.damage_flags = 0;
@@ -2255,6 +2272,17 @@ static void st_life_support_failed(void)
 	st_player_died("LIFE SUPPORT\nFAILED. YOU\nHAVE DIED OF\nASPHYXIATION", "OH NO!", st_program_state);
 }
 
+static void st_player_won(void)
+{
+	char num[10];
+	char msg[80];
+
+	itoa(num, gs.score, 10);
+	strcpy(msg, "YOU DESTROYED\nALL THE ENEMY\nSHIPS. YOUR\nFINAL SCORE\nWAS ");
+	strcat(msg, num);
+	st_player_died(msg, "CONGRATS!", st_program_state);
+}
+
 static void st_alert(void)
 {
 	if (BUTTON_PRESSED_AND_CONSUME)
@@ -2474,6 +2502,9 @@ int spacetripper_cb(void)
 	case ST_LIFE_SUPPORT_FAILED:
 		st_life_support_failed();
 		break;
+	case ST_PLAYER_WON:
+		st_player_won();
+		break;
 	default:
 		st_program_state = ST_CAPTAIN_MENU;
 		break;
@@ -2497,6 +2528,8 @@ int spacetripper_cb(void)
 		st_program_state = ST_HULL_DESTROYED;
 	if (100 * gs.player.damage[LIFE_SUPP_SYSTEM] > 70 && gs.player.life_support_reserves == 0)
 		st_program_state = ST_LIFE_SUPPORT_FAILED;
+	if (player_has_won())
+		st_program_state = ST_PLAYER_WON;
 	return 0;
 }
 
