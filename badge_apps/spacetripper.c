@@ -236,7 +236,6 @@ struct player_ship {
 	unsigned char mined_dilithium;
 	unsigned char damage_flags;
 	unsigned char life_support_reserves;
-	unsigned char hull;
 };
 
 static inline int warp_factor(int wf)
@@ -497,7 +496,6 @@ static void init_player()
 #define ABOARD_SHIP 255
 	gs.player.away_team = ABOARD_SHIP;
 	gs.player.life_support_reserves = 255;
-	gs.player.hull = 255;
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++)
 		gs.player.damage[i] = 0;
@@ -1632,7 +1630,6 @@ static void replenish_supplies_and_repair_ship(void)
 	replenish_char_supply(&gs.player.dilithium_crystals, INITIAL_DILITHIUM, INITIAL_DILITHIUM / 10);
 	replenish_char_supply(&gs.player.shields, MAX_SHIELD_ENERGY, MAX_SHIELD_ENERGY / 10);
 	replenish_char_supply(&gs.player.life_support_reserves, 255, 25);
-	replenish_char_supply(&gs.player.hull, 255, 25);
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) { /* Repair damaged systems */
 		if (gs.player.damage[i] > 0) {
 			n = gs.player.damage[i] - 25;
