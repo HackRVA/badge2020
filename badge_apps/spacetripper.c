@@ -206,6 +206,7 @@ struct game_object {
 	char type;
 };
 
+/* "HULL" must be last in ship_system[] to exclude it from repair by ship's crew. */
 static const char *ship_system[] = { "WARP", "SHIELDS", "LIFE SUPP", "PHASERS", "TORP TUBE", "HULL"};
 #define NSHIP_SYSTEMS ARRAYSIZE(ship_system)
 #define WARP_SYSTEM 0
@@ -1736,7 +1737,7 @@ static void replenish_supplies_and_repair_ship(void)
 	replenish_char_supply(&gs.player.dilithium_crystals, INITIAL_DILITHIUM, INITIAL_DILITHIUM / 10);
 	replenish_char_supply(&gs.player.shields, MAX_SHIELD_ENERGY, MAX_SHIELD_ENERGY / 10);
 	replenish_char_supply(&gs.player.life_support_reserves, 255, 25);
-	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) { /* Repair damaged systems */
+	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) { /* Repair damaged systems, including hull */
 		if (gs.player.damage[i] > 0) {
 			n = gs.player.damage[i] - 25;
 			if (n < 0)
@@ -1752,7 +1753,7 @@ static void conduct_repairs()
 	char msg[60];
 	int n;
 
-	repair_time = (repair_time + 1) % NSHIP_SYSTEMS;
+	repair_time = (repair_time + 1) % (NSHIP_SYSTEMS - 1); /* -1 to exclude hull */
 	n = gs.player.damage[repair_time];
 	if (n > 0) {
 		n -= 15 + (xorshift(&xorshift_state) % 20);
@@ -1760,7 +1761,7 @@ static void conduct_repairs()
 			n = 0;
 			strcpy(msg, "CAPTAIN\n\nTHE ");
 			strcat(msg, ship_system[repair_time]);
-			strcat(msg, " HAS BEEN\nREPAIRED");
+			strcat(msg, "\nHAS BEEN\nREPAIRED");
 			alert_player("ENGINEERING", msg);
 		}
 		gs.player.damage[repair_time] = n;
