@@ -119,8 +119,6 @@ enum st_program_state_t {
 	ST_WARP,
 	ST_WARP_INPUT,
 	ST_SET_WEAPONS_BEARING,
-	ST_GAME_LOST,
-	ST_GAME_WON,
 	ST_DRAW_MENU,
 	ST_RENDER_SCREEN,
 	ST_EXIT,
@@ -145,7 +143,6 @@ enum st_program_state_t {
 	ST_HULL_DESTROYED,
 	ST_LIFE_SUPPORT_FAILED,
 	ST_PLAYER_WON,
-	ST_NOT_IMPL,
 };
 
 static struct dynmenu menu;
@@ -177,13 +174,6 @@ struct planet {
 #define PLANET_HAS_DILITHIUM	(1 << 3)
 #define PLANET_UNUSED_FLAG	(1 << 4);
 #define PLANET_CLASS(x) (x >> 5) & 0x7
-#define PLANET_CLASS_M 0x000 /* suitable for human life */
-#define PLANET_CLASS_N 0x001 /* low gravity */
-#define PLANET_CLASS_O 0x010 /* mostly water */
-#define PLANET_CLASS_G 0x011 /* gas giant */
-#define PLANET_CLASS_R 0x100 /* rocky planetoid */
-#define PLANET_CLASS_V 0x101 /* venus like */
-#define PLANET_CLASS_I 0x110 /* iceball/comet */
 };
 
 const char *star_class = "OBAFGKM";
@@ -201,7 +191,7 @@ union type_specific_data {
 };
 
 struct game_object {
-	int x, y; /* 32 bits, 16 for sector, 16 for quadrant, high 3 bits of sector and hi 3 bits of quadrant */
+	int x, y; /* 32 bits, 16 for sector, 16 for quadrant, see coord_to_sector(), coord_to_quadrant() */
 	union type_specific_data tsd;
 	char type;
 };
@@ -302,15 +292,11 @@ static inline int coord_to_quadrant(int c)
 
 static void mark_sector_visited(unsigned char sx, unsigned char sy)
 {
-	sx = sx % 8;
-	sy = sy % 8;
 	gs.visited_sectors[sy] |= (1 << sx);
 }
 
 static int sector_visited(unsigned char sx, unsigned char sy)
 {
-	sx = sx % 8;
-	sy = sy % 8;
 	return gs.visited_sectors[sy] & (1 << sx);
 }
 
@@ -447,14 +433,6 @@ static void st_captain_menu(void)
 	st_program_state = ST_PROCESS_INPUT;
 }
 
-static void st_game_lost(void)
-{
-}
-
-static void st_game_won(void)
-{
-}
-
 static int random_coordinate(void)
 {
 	return xorshift(&xorshift_state) & 0x0007ffff;
@@ -569,35 +547,33 @@ static void button_pressed()
 	}
 }
 
-static void do_something(void)
+static void strcatnum(char *s, int n)
 {
+	char num[10];
+	itoa(num, n, 10);
+	strcat(s, num);
 }
 
 static void print_current_sector(void)
 {
-	char sx[5], sy[5];
 	char msg[40];
 
-	itoa(sx, coord_to_sector(gs.player.x), 10);
-	itoa(sy, coord_to_sector(gs.player.y), 10);
 	strcpy(msg, "SECTOR: (");
-	strcat(msg, sx);
+	strcatnum(msg, coord_to_sector(gs.player.x));
 	strcat(msg, ",");
-	strcat(msg, sy);
+	strcatnum(msg, coord_to_sector(gs.player.y));
 	strcat(msg, ")");
 	FbWriteLine(msg);
 }
 
 static void print_current_quadrant(void)
 {
-	char sx[5], sy[5];
 	char msg[40];
-	itoa(sx, coord_to_quadrant(gs.player.x), 10);
-	itoa(sy, coord_to_quadrant(gs.player.y), 10);
+
 	strcpy(msg, "QUADRANT: (");
-	strcat(msg, sx);
+	strcatnum(msg, coord_to_quadrant(gs.player.x));
 	strcat(msg, ",");
-	strcat(msg, sy);
+	strcatnum(msg, coord_to_quadrant(gs.player.x));
 	strcat(msg, ")");
 	FbWriteLine(msg);
 }
@@ -605,10 +581,8 @@ static void print_current_quadrant(void)
 static void print_current_heading(void)
 {
 	char msg[40];
-	char heading[5];
-	itoa(heading, gs.player.heading, 10);
 	strcpy(msg, "BEARING: ");
-	strcat(msg, heading);
+	strcatnum(msg, gs.player.heading);
 	FbWriteLine(msg);
 }
 
@@ -625,22 +599,19 @@ static void print_sector_quadrant_heading(void)
 
 static void print_speed(char *impulse, char *warp, int x, int y, int warp_f)
 {
-	char num[5];
 	char msg[10];
 
 	FbMove(x, y);
 	if (warp_f < WARP1) {
 		FbWriteLine(impulse);
 		strcpy(msg, "0.");
-		itoa(num, impulse_factor(warp_f), 10);
-		strcat(msg, num);
+		strcatnum(msg, impulse_factor(warp_f));
 	} else {
 		FbWriteLine(warp);
-		itoa(num, warp_factor(warp_f), 10);
-		strcpy(msg, num);
+		strcpy(msg, "");
+		strcatnum(msg, warp_factor(warp_f));
 		strcat(msg, ".");
-		itoa(num, warp_factor_frac(warp_f), 10);
-		strcat(msg, num);
+		strcatnum(msg, warp_factor_frac(warp_f));
 	}
 	FbMove(x, y + 9);
 	FbWriteLine(msg);
@@ -648,16 +619,14 @@ static void print_speed(char *impulse, char *warp, int x, int y, int warp_f)
 
 static void print_power(int x, int y, int power)
 {
-	char num[5];
 	char msg[10];
 
 	FbMove(x, y);
 	FbWriteLine("POWER");
-	itoa(num, warp_factor(power), 10);
-	strcpy(msg, num);
+	strcpy(msg, "");
+	strcatnum(msg, warp_factor(power));
 	strcat(msg, ".");
-	itoa(num, warp_factor_frac(power), 10);
-	strcat(msg, num);
+	strcatnum(msg, warp_factor_frac(power));
 	FbMove(x, y + 9);
 	FbWriteLine(msg);
 }
@@ -1117,10 +1086,6 @@ static void st_process_input(void)
     } else if (DOWN_BTN_AND_CONSUME) {
         if (menu.menu_active)
             dynmenu_change_current_selection(&menu, 1);
-    } else if (LEFT_BTN_AND_CONSUME) {
-	do_something();
-    } else if (RIGHT_BTN_AND_CONSUME) {
-	do_something();
     } else {
         return;
     }
@@ -1129,29 +1094,6 @@ static void st_process_input(void)
         if (menu.menu_active)
             st_program_state = ST_DRAW_MENU;
     }
-}
-
-static void st_not_impl()
-{
-	menu.menu_active = 0;
-	FbClear();
-	FbColor(GREEN);
-	FbMove(2, 40);
-	FbWriteLine("SORRY, THAT");
-	FbMove(2, 50);
-	FbWriteLine("FUNCTION IS NOT");
-	FbMove(2, 60);
-	FbWriteLine("IMPLEMENTED");
-	FbSwapBuffers();
-	gs.last_screen = UNKNOWN_SCREEN;
-	st_program_state = ST_PROCESS_INPUT;
-}
-
-static void strcatnum(char *s, int n)
-{
-	char num[10];
-	itoa(num, n, 10);
-	strcat(s, num);
 }
 
 static void strcat_sector_quadrant(char *msg, int x, int y)
@@ -1448,7 +1390,6 @@ static void st_self_destruct(void)
 {
 	int i;
 	char msg[60];
-	char num[10];
 
 	/* Kill any enemy ships in the sector. */
 	for (i = 0; i < NTOTAL; i++) {
@@ -1463,8 +1404,7 @@ static void st_self_destruct(void)
 		delete_object(i);
 	}
 	strcpy(msg, "YOUR FINAL\nSCORE WAS: ");
-	itoa(num, gs.score, 10);
-	strcat(msg, num);
+	strcatnum(msg, gs.score);
 	alert_player("GAME OVER", msg);
 	gs.game_over = 1;
 }
@@ -2071,8 +2011,6 @@ static void st_warp_input(void)
 
 static void st_shield_control(void)
 {
-	char num[10];
-
 	clear_menu();
 	strcpy(menu.title, "SHIELD CONTROL");
 	strcpy(menu.title2, "SHIELDS: ");
@@ -2081,8 +2019,7 @@ static void st_shield_control(void)
 	else
 		strcat(menu.title2, "DOWN");
 	strcpy(menu.title3, "ENERGY: ");
-	itoa(num, (MAX_SHIELD_ENERGY * gs.player.shields) / 255, 10);
-	strcat(menu.title3, num);
+	strcatnum(menu.title3, (MAX_SHIELD_ENERGY * gs.player.shields) / 255);
 	dynmenu_add_item(&menu, "SHIELDS UP", ST_SHIELDS_UP, 0);
 	dynmenu_add_item(&menu, "SHIELDS DOWN", ST_SHIELDS_DOWN, 0);
 	dynmenu_add_item(&menu, "ENERGY XFER", ST_SHIELD_ENERGY, 0);
@@ -2094,7 +2031,6 @@ static void st_shield_control(void)
 static void st_shields_updown(int x)
 {
 	char msg[50];
-	char num[10];
 	int energy, damage;
 
 	gs.player.shields_up = x;
@@ -2112,11 +2048,9 @@ static void st_shields_updown(int x)
 		strcpy(msg, "SHIELDS DOWN\n");
 	}
 	strcat(msg, "ENERGY: ");
-	itoa(num, energy, 10);
-	strcat(msg, num);
+	strcatnum(msg, energy);
 	strcat(msg, "\nDAMAGE: ");
-	itoa(num, damage, 10);
-	strcat(msg, num);
+	strcatnum(msg, damage);
 	strcat(msg, "%");
 	alert_player("SHIELD CONTROL", msg);
 }
@@ -2350,7 +2284,7 @@ static void st_fire_weapon(char *weapon_name, int weapon_power)
 	dx = dx * (WARP1 / 1000);
 	dy = dy * (WARP1 / 1000);
 
-	for (i = 0; i < 20; i++) { /* FIXME, is this too much looping? */
+	for (i = 0; i < 20; i++) { /* FIXME, is this too much looping (20x80 == 1600 loops) ? */
 		for (j = 0; j < NTOTAL; j++) {
 			switch (gs.object[j].type) {
 			case ENEMY_SHIP:
@@ -2401,12 +2335,10 @@ static void st_life_support_failed(void)
 
 static void st_player_won(void)
 {
-	char num[10];
 	char msg[80];
 
-	itoa(num, gs.score, 10);
 	strcpy(msg, "YOU DESTROYED\nALL THE ENEMY\nSHIPS. YOUR\nFINAL SCORE\nWAS ");
-	strcat(msg, num);
+	strcatnum(msg, gs.score);
 	st_player_died(msg, "CONGRATS!", st_program_state);
 }
 
@@ -2508,12 +2440,6 @@ int spacetripper_cb(void)
 		st_program_state = ST_GAME_INIT;
 		returnToMenus();
 		break;
-	case ST_GAME_LOST:
-		st_game_lost();
-		break;
-	case ST_GAME_WON:
-		st_game_won();
-		break;
 	case ST_DRAW_MENU:
 		st_draw_menu();
 		break;
@@ -2570,9 +2496,6 @@ int spacetripper_cb(void)
 		break;
 	case ST_SHIELD_EXEC_ENERGY_XFER:
 		st_shield_exec_energy_xfer();
-		break;
-	case ST_NOT_IMPL:
-		st_not_impl();
 		break;
 	case ST_PLANETS:
 		st_planets();
