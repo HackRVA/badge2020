@@ -154,7 +154,7 @@ static struct dynmenu menu;
 static enum st_program_state_t st_program_state = ST_GAME_INIT;
 
 struct enemy_ship {
-	char hitpoints;
+	unsigned char hitpoints;
 	char shiptype;
 	char flags;
 #define NEAR_PLAYER 0x01
