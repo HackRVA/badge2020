@@ -182,6 +182,8 @@ static int time_to_quit = 0;
 static unsigned char current_color = BLUE;
 static unsigned char current_background_color = BLACK;
 static int serial_port_fd = -1;
+static int g_callback_hz = 30;
+static int g_timer = 0;
 
 #define BUTTON 0
 #define LEFT 1
@@ -222,9 +224,51 @@ void clear_point(int x, int y, void *context)
     screen_color[x * LCD_YSIZE + y] = BLACK;
 }
 
+#define SWAPBUF_PERF_TICKS 30
+static int swapbuf_timestamp[SWAPBUF_PERF_TICKS] = { 0 };
+static int swapbuf_index = 0;
+
+static void detect_high_swapbuffers_rate(void)
+{
+	int i;
+	int total_time, start_time, end_time, frames, mspf;
+
+	swapbuf_timestamp[swapbuf_index] = g_timer;
+	swapbuf_index = (swapbuf_index + 1) % SWAPBUF_PERF_TICKS;
+	start_time = 0;
+	end_time = 0;
+	total_time = 0;
+	frames = 0;
+	for (i = 0; i < 30; i++) {
+		if (swapbuf_timestamp[i] == 0)
+			continue;
+		frames++;
+		if (start_time == 0)
+			start_time = swapbuf_timestamp[i];
+		if (end_time == 0)
+			end_time = swapbuf_timestamp[i];
+		if (swapbuf_timestamp[i] < start_time)
+			start_time = swapbuf_timestamp[i];
+		if (swapbuf_timestamp[i] > end_time)
+			end_time = swapbuf_timestamp[i];
+	}
+	if (frames > 0) {
+		total_time = end_time - start_time;
+		if (total_time > 0) {
+			mspf = 1000 * (total_time / g_callback_hz) / frames;
+			if (mspf > 0 && mspf < 100) {
+				printf("Warning, high SwapBuffers() rate detected.\n");
+				printf("Performance on badge likely to be terrible.\n");
+			}
+		}
+	}
+}
+
+
 void FbSwapBuffers(void)
 {
 	memcpy(live_screen_color, screen_color, sizeof(live_screen_color));
+	detect_high_swapbuffers_rate();
 }
 
 void FbPushBuffer(void)
@@ -853,6 +897,7 @@ static int drawing_area_expose(GtkWidget *widget, UNUSED GdkEvent *event, UNUSED
 	int x, y, w, h;
 
 	timer++;
+	g_timer++;
 	w = real_screen_width / LCD_XSIZE;
 	if (w < 1)
 		w = 1;
@@ -987,6 +1032,7 @@ void start_gtk(int *argc, char ***argv, int (*main_badge_function)(void), int ca
 	setup_gtk_window_and_drawing_area(&window, &vbox, &drawing_area);
 	badge_function = main_badge_function;
 	flareled(0, 0, 0);
+	g_callback_hz = callback_hz;
 	timer_tag = g_timeout_add(1000 / callback_hz, advance_game, NULL);
 
 #if 0
