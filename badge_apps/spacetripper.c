@@ -1123,14 +1123,18 @@ static void st_choose_weapons(void)
 
 static void st_process_input(void)
 {
+    int something_happened = 0;
     if (BUTTON_PRESSED_AND_CONSUME) {
         button_pressed();
+	something_happened = 1;
     } else if (UP_BTN_AND_CONSUME) {
         if (menu.menu_active)
             dynmenu_change_current_selection(&menu, -1);
+	something_happened = 1;
     } else if (DOWN_BTN_AND_CONSUME) {
         if (menu.menu_active)
             dynmenu_change_current_selection(&menu, 1);
+	something_happened = 1;
     } else if (LEFT_BTN_AND_CONSUME) {
         if (gs.last_screen == SRS_SCREEN) {
             st_program_state = ST_SRS_LEGEND;
@@ -1150,11 +1154,10 @@ static void st_process_input(void)
             return;
         }
     }
-    if (st_program_state == ST_PROCESS_INPUT) {
+    if (st_program_state == ST_PROCESS_INPUT && something_happened) {
         if (menu.menu_active)
             st_program_state = ST_DRAW_MENU;
     }
-
 }
 
 static void strcat_sector_quadrant(char *msg, int x, int y)
