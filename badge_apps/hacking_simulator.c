@@ -996,7 +996,6 @@ static void render_difficulty_label()
 	FbColor(RED);
 	FbMove(30, 110);
 	FbWriteLine(difficulty_descriptor[difficulty_level_state]);
-	FbPaintNewRows();
 }
 
 static void render_screen()
