@@ -267,7 +267,7 @@ struct weapon_t {
 
 struct angle_chooser_t {
 	char *cur_angle_name, *new_angle_name, *set_angle_name;
-	int angle, new_angle, *angle_ptr, *new_angle_ptr; /* in degrees */
+	int *angle, *new_angle; /* in degrees */
 	int old_angle, old_new_angle;
 	int finished;
 	void (*show_extra_data)(void);
@@ -1041,36 +1041,34 @@ static void st_choose_angle_input(void)
 {
 	int something_changed = 0;
 
-	gs.angle_chooser.old_angle = gs.angle_chooser.angle;
-	gs.angle_chooser.old_new_angle = gs.angle_chooser.new_angle;
+	gs.angle_chooser.old_angle = *gs.angle_chooser.angle;
+	gs.angle_chooser.old_new_angle = *gs.angle_chooser.new_angle;
 
 	if (BUTTON_PRESSED_AND_CONSUME) {
-		int angle = gs.angle_chooser.new_angle;
-		gs.angle_chooser.angle = angle;
+		int angle = *gs.angle_chooser.new_angle;
+		*gs.angle_chooser.angle = angle;
 		gs.angle_chooser.old_angle = angle;
 		gs.angle_chooser.old_new_angle = angle;
-		*gs.angle_chooser.angle_ptr = angle;
-		*gs.angle_chooser.new_angle_ptr = angle;
 		gs.angle_chooser.finished = 1;
 		something_changed = 1;
 	} else if (UP_BTN_AND_CONSUME) {
-		gs.angle_chooser.new_angle += 15;
+		*gs.angle_chooser.new_angle += 15;
 		something_changed = 1;
 	} else if (DOWN_BTN_AND_CONSUME) {
-		gs.angle_chooser.new_angle -= 15;
+		*gs.angle_chooser.new_angle -= 15;
 		something_changed = 1;
 	} else if (LEFT_BTN_AND_CONSUME) {
-		gs.angle_chooser.new_angle++;
+		(*gs.angle_chooser.new_angle)++;
 		something_changed = 1;
 	} else if (RIGHT_BTN_AND_CONSUME) {
-		gs.angle_chooser.new_angle--;
+		(*gs.angle_chooser.new_angle)--;
 		something_changed = 1;
 	}
 	if (something_changed) {
-		if (gs.angle_chooser.new_angle < 0)
-			gs.angle_chooser.new_angle += 360;
-		if (gs.angle_chooser.new_angle >= 360)
-			gs.angle_chooser.new_angle -= 360;
+		if (*gs.angle_chooser.new_angle < 0)
+			*gs.angle_chooser.new_angle += 360;
+		if (*gs.angle_chooser.new_angle >= 360)
+			*gs.angle_chooser.new_angle -= 360;
 		st_program_state = ST_DRAW_ANGLE_CHOOSER;
 	}
 }
@@ -1098,13 +1096,13 @@ static void st_draw_angle_chooser(void)
 		FbMove(2, 2);
 		FbWriteLine(a->set_angle_name);
 		FbMove(2, 20);
-		write_heading(a->new_angle_name, a->new_angle, WHITE);
+		write_heading(a->new_angle_name, *a->new_angle, WHITE);
 	}
 	FbMove(2, 11);
-	write_heading(a->cur_angle_name, a->angle, WHITE);
+	write_heading(a->cur_angle_name, *a->angle, WHITE);
 
-	draw_heading_indicator(cx, cy, a->angle, 150, RED);
-	draw_heading_indicator(cx, cy, a->new_angle, 150, WHITE);
+	draw_heading_indicator(cx, cy, *a->angle, 150, RED);
+	draw_heading_indicator(cx, cy, *a->new_angle, 150, WHITE);
 	/* Draw a circle of dots. */
 	for (i = 0; i < 128; i += 4) {
 		x = (-cosine(i) * 160) / 1024;
@@ -1115,7 +1113,7 @@ static void st_draw_angle_chooser(void)
 		gs.angle_chooser.show_extra_data();
 	FbSwapBuffers();
 	if (gs.angle_chooser.finished) {
-		if (gs.angle_chooser.angle_ptr == &gs.player.weapons_aim)
+		if (gs.angle_chooser.angle == &gs.player.weapons_aim)
 			st_program_state = ST_CHOOSE_WEAPONS;
 		else
 			st_program_state = ST_CAPTAIN_MENU; 
@@ -1127,10 +1125,10 @@ static void st_draw_angle_chooser(void)
 static void st_choose_angle(char *new_head, char *cur_head, char *set_head,
 		int *heading, int *new_heading, int which_screen, void (*show_extra_data)(void))
 {
-	gs.angle_chooser.angle = *heading;
-	gs.angle_chooser.new_angle = *new_heading;
-	gs.angle_chooser.angle_ptr = heading;
-	gs.angle_chooser.new_angle_ptr = new_heading;
+	gs.angle_chooser.angle = heading;
+	gs.angle_chooser.new_angle = new_heading;
+	gs.angle_chooser.old_angle = *heading;
+	gs.angle_chooser.old_new_angle = *new_heading;
 	gs.angle_chooser.new_angle_name = new_head;
 	gs.angle_chooser.cur_angle_name = cur_head;
 	gs.angle_chooser.set_angle_name = set_head;
