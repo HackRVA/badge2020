@@ -2502,6 +2502,14 @@ static int time_to_move_objects(void) /* Returns true once per second */
 {
 	static int ticks = 0;
 
+	/* Don't move stuff while the player is trying to read an alert */
+	if (st_program_state == ST_ALERT)
+		return 0;
+
+	/* Don't move stuff while the player is trying to read a damage alert */
+	if (gs.last_screen == REPORT_DAMAGE_SCREEN && st_program_state == ST_PROCESS_INPUT)
+		return 0;
+
 #ifdef __linux__
 	ticks++;
 	return (ticks % 30) == 0;
