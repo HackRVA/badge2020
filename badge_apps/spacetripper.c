@@ -110,6 +110,7 @@ enum st_program_state_t {
 	ST_LRS,
 	ST_STAR_CHART,
 	ST_SRS,
+	ST_SRS_LEGEND,
 	ST_SET_COURSE,
 	ST_AIM_WEAPONS,
 	ST_CHOOSE_WEAPONS,
@@ -285,7 +286,9 @@ struct game_state {
 #define PHASER_POWER_SCREEN 12
 #define STAR_CHART_SCREEN 13
 #define REPORT_DAMAGE_SCREEN 14
+#define SRS_LEGEND_SCREEN 15
 #define UNKNOWN_SCREEN 255;
+
 	struct weapon_t weapon;
 	int score;
 #define KLINGON_POINTS 100
@@ -949,6 +952,27 @@ static void st_srs(void) /* short range scanner */
 	st_program_state = ST_PROCESS_INPUT;
 }
 
+static void st_srs_legend(void)
+{
+	FbClear();
+	FbColor(WHITE);
+	FbMove(2, 2);
+	FbWriteZString("SRS LEGEND\n\n");
+	FbWriteZString("E ENTERPRISE\n");
+	FbWriteZString("K KLINGON\n");
+	FbWriteZString("C KLINGON CMDR\n");
+	FbWriteZString("R ROMULAN\n");
+	FbWriteZString("S STAR BASE\n");
+	FbWriteZString("B BLACK HOLE\n");
+	FbColor(YELLOW);
+	FbWriteZString("* STAR\n");
+	FbColor(CYAN);
+	FbWriteZString("O PLANET\n");
+	FbSwapBuffers();
+	gs.last_screen = SRS_LEGEND_SCREEN;
+	st_program_state = ST_PROCESS_INPUT;
+}
+
 static void print_numeric_item_with_frac(char *item, int value, int frac)
 {
 	char num[10];
@@ -1103,14 +1127,30 @@ static void st_process_input(void)
     } else if (DOWN_BTN_AND_CONSUME) {
         if (menu.menu_active)
             dynmenu_change_current_selection(&menu, 1);
-    } else {
-        return;
+    } else if (LEFT_BTN_AND_CONSUME) {
+        if (gs.last_screen == SRS_SCREEN) {
+            st_program_state = ST_SRS_LEGEND;
+	    return;
+	}
+        if (gs.last_screen == SRS_LEGEND_SCREEN) {
+            st_program_state = ST_SRS;
+            return;
+        }
+    } else if (RIGHT_BTN_AND_CONSUME) {
+        if (gs.last_screen == SRS_SCREEN) {
+            st_program_state = ST_SRS_LEGEND;
+	    return;
+	}
+        if (gs.last_screen == SRS_LEGEND_SCREEN) {
+            st_program_state = ST_SRS;
+            return;
+        }
     }
-
     if (st_program_state == ST_PROCESS_INPUT) {
         if (menu.menu_active)
             st_program_state = ST_DRAW_MENU;
     }
+
 }
 
 static void strcat_sector_quadrant(char *msg, int x, int y)
@@ -2484,6 +2524,9 @@ int spacetripper_cb(void)
 		break;
 	case ST_SRS:
 		st_srs();
+		break;
+	case ST_SRS_LEGEND:
+		st_srs_legend();
 		break;
 	case ST_SET_COURSE:
 		st_set_course();
