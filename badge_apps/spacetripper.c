@@ -920,11 +920,11 @@ static void st_srs(void) /* short range scanner */
 			c[0] = '*';
 			break;
 		case STARBASE:
-			color = WHITE;
+			color = GREEN;
 			c[0] = 'S';
 			break;
 		case BLACKHOLE:
-			color = WHITE;
+			color = RED;
 			c[0] = 'B';
 			break;
 		default:
@@ -943,7 +943,7 @@ static void st_srs(void) /* short range scanner */
 	qx = coord_to_quadrant(gs.player.x);
 	qy = coord_to_quadrant(gs.player.y);
 	FbMove(left + qx * quadrant_width, 47 + qy * quadrant_width);
-	FbColor(WHITE);
+	FbColor(MAGENTA);
 	FbWriteLine("E");
 
 	FbSwapBuffers();
@@ -958,11 +958,15 @@ static void st_srs_legend(void)
 	FbColor(WHITE);
 	FbMove(2, 2);
 	FbWriteZString("SRS LEGEND\n\n");
+	FbColor(MAGENTA);
 	FbWriteZString("E ENTERPRISE\n");
+	FbColor(WHITE);
 	FbWriteZString("K KLINGON\n");
 	FbWriteZString("C KLINGON CMDR\n");
 	FbWriteZString("R ROMULAN\n");
+	FbColor(GREEN);
 	FbWriteZString("S STAR BASE\n");
+	FbColor(RED);
 	FbWriteZString("B BLACK HOLE\n");
 	FbColor(YELLOW);
 	FbWriteZString("* STAR\n");
