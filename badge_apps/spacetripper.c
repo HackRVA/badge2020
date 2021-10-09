@@ -67,6 +67,9 @@ static unsigned int xorshift_state = 0xa5a5a5a5;
 #define STARBASE 'S'
 #define STAR '*'
 
+static char *torpedo_name = "TORPEDO";
+static char *phaser_name = "PHASER";
+
 #ifndef __linux__
 static int get_time(void)
 {
@@ -142,6 +145,7 @@ enum st_program_state_t {
 	ST_HULL_DESTROYED,
 	ST_LIFE_SUPPORT_FAILED,
 	ST_PLAYER_WON,
+	ST_MOVE_WEAPON,
 };
 
 static struct dynmenu menu;
@@ -246,6 +250,18 @@ static inline int impulse_factor(int wf)
 	return 10 * wf / WARP1;
 }
 
+/* Struct to keep state for unrolled loop for weapon motion / collision detection */
+struct weapon_t {
+	int i; /* iterator */
+#define WEAPON_LIFETIME 20
+	int x, y; /* position */
+#define WEAPON_SPEED (3 * WARP1)
+	int dx, dy; /* velocity */
+	int damage_factor;
+	int weapon_power;
+	char *name;
+};
+
 struct game_state {
 	struct game_object object[NTOTAL];
 	struct player_ship player;
@@ -270,6 +286,7 @@ struct game_state {
 #define STAR_CHART_SCREEN 13
 #define REPORT_DAMAGE_SCREEN 14
 #define UNKNOWN_SCREEN 255;
+	struct weapon_t weapon;
 	int score;
 #define KLINGON_POINTS 100
 #define ROMULAN_POINTS 200
@@ -398,6 +415,7 @@ static void st_game_init(void)
 	gs.srs_needs_update = 0;
 	gs.last_screen = 255;
 	gs.last_capn_menu_item = 0;
+	memset(&gs.weapon, 0, sizeof(gs.weapon));
 }
 
 static void st_captain_menu(void)
@@ -2245,9 +2263,38 @@ static void do_weapon_damage(int target, int power)
 	return;
 }
 
+static void st_move_weapon(void)
+{
+	int j;
+	struct weapon_t *w = &gs.weapon;
+
+	if (w->i <= 0) {
+		alert_player(w->name, "MISSED!");
+		memset(w, 0, sizeof(*w));
+		return;
+	}
+
+	for (j = 0; j < NTOTAL; j++) {
+		switch (gs.object[j].type) {
+		case ENEMY_SHIP:
+			if (check_weapon_collision(w->name, j, w->x, w->y)) {
+				do_weapon_damage(j, w->damage_factor * w->weapon_power / 100);
+				gs.weapon.i = 0; /* kill this weapon */
+				return;
+			}
+			break;
+		default:
+			continue;
+		}
+	}
+	w->x += w->dx;
+	w->y += w->dy;
+	w->i--;
+}
+
 static void st_fire_weapon(char *weapon_name, int weapon_power)
 {
-	int i, j, x, y, a, dx, dy;
+	int a;
 	int damage_factor;
 
 	damage_factor = 100;
@@ -2270,37 +2317,18 @@ static void st_fire_weapon(char *weapon_name, int weapon_power)
 		reduce_player_energy(TORPEDO_ENERGY);
 	}
 
-	x = gs.player.x;
-	y = gs.player.y;
-
-	FbClear();
-	FbMove(2, 60);
-	FbColor(WHITE);
-
 	a = (gs.player.weapons_aim * 128) / 360;
-	dx = (cosine(a) * 100) / 1024;
-	dy = (-sine(a) * 100) / 1024;
-	dx = dx * (WARP1 / 1000);
-	dy = dy * (WARP1 / 1000);
+	gs.weapon.dx = (cosine(a) * WEAPON_SPEED) / 1024;
+	gs.weapon.dy = (-sine(a) * WEAPON_SPEED) / 1024;
+	gs.weapon.i = WEAPON_LIFETIME;
+	gs.weapon.x = gs.player.x;
+	gs.weapon.y = gs.player.y;
+	gs.weapon.damage_factor = damage_factor;
+	gs.weapon.weapon_power = weapon_power;
+	gs.weapon.name = weapon_name;
 
-	for (i = 0; i < 20; i++) { /* FIXME, is this too much looping (20x80 == 1600 loops) ? */
-		for (j = 0; j < NTOTAL; j++) {
-			switch (gs.object[j].type) {
-			case ENEMY_SHIP:
-				if (check_weapon_collision(weapon_name, j, x, y)) {
-					do_weapon_damage(j, damage_factor * weapon_power / 100);
-					return;
-				}
-				break;
-			default:
-				continue;
-			}
-			x += dx;
-			y += dy;
-		}
-	}
-	FbSwapBuffers();
-	alert_player(weapon_name, "MISSED!");
+	st_program_state = ST_MOVE_WEAPON;
+	return;
 }
 
 static void st_player_died(char *msg, char *first_menu_item, enum st_program_state_t state)
@@ -2360,7 +2388,7 @@ static void st_photon_torpedoes(void)
 	}
 
 	if (gs.player.torpedoes > 0) {
-		st_fire_weapon("TORPEDO", TORPEDO_POWER);
+		st_fire_weapon(torpedo_name, TORPEDO_POWER);
 		gs.player.torpedoes--;
 	} else {
 		alert_player("WEAPONS", "NO PHOTON\nTORPEDOES\nREMAIN, SIR!");
@@ -2545,7 +2573,10 @@ int spacetripper_cb(void)
 		st_phaser_power_input();
 		break;
 	case ST_FIRE_PHASER:
-		st_fire_weapon("PHASER", gs.player.phaser_power);
+		st_fire_weapon(phaser_name, gs.player.phaser_power);
+		break;
+	case ST_MOVE_WEAPON:
+		st_move_weapon();
 		break;
 	case ST_HULL_DESTROYED:
 		st_hull_destroyed();
