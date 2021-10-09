@@ -217,7 +217,7 @@ struct player_ship {
 	int energy;
 	unsigned char torpedoes;
 	int warp_factor, new_warp_factor; /* 0 to (1 << 16) */
-#define TORPEDO_POWER (1 << 17) /* energy delivered to target, not required to fire */
+#define TORPEDO_POWER (1 << 18) /* energy delivered to target, not required to fire */
 	int phaser_power, new_phaser_power; /* 0 to (1 << 16) */
 	int shield_xfer, new_shield_xfer;
 #define WARP10 (1 << 16)
@@ -1844,12 +1844,12 @@ static void fire_on_player(void)
 	int i, damage, mitigation, shield_damage;
 
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) {
-		damage = xorshift(&xorshift_state) % 100;
+		damage = xorshift(&xorshift_state) % 75;
 		if (damage < 50)
 			continue;
 		mitigation = 0;
 		if (gs.player.shields_up) {
-			mitigation = gs.player.shields * 75 / 255;
+			mitigation = gs.player.shields * 85 / 255;
 			shield_damage = 100 * gs.player.damage[SHIELD_SYSTEM] / 256;
 			mitigation = (mitigation * shield_damage) / 100;
 			damage = damage - mitigation;
@@ -2288,7 +2288,7 @@ static void do_weapon_damage(int target, int power)
 		return;
 
 	scaled_power = (power >> 11) & 0x0ff;
-	damage = 127 + (xorshift(&xorshift_state) & 0x0ff) / 2;
+	damage = 256 + (xorshift(&xorshift_state) & 0x0ff) / 2;
 	damage = (damage * scaled_power) / 256;
 	new_hp = gs.object[target].tsd.ship.hitpoints;
 	new_hp -= damage;
