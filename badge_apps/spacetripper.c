@@ -113,6 +113,8 @@ enum st_program_state_t {
 	ST_SRS_LEGEND,
 	ST_SET_COURSE,
 	ST_AIM_WEAPONS,
+	ST_CHOOSE_ANGLE_INPUT,
+	ST_DRAW_ANGLE_CHOOSER,
 	ST_CHOOSE_WEAPONS,
 	ST_PHOTON_TORPEDOES,
 	ST_PHASER_BEAMS,
@@ -263,6 +265,14 @@ struct weapon_t {
 	char *name;
 };
 
+struct angle_chooser_t {
+	char *cur_angle_name, *new_angle_name, *set_angle_name;
+	int angle, new_angle, *angle_ptr, *new_angle_ptr; /* in degrees */
+	int old_angle, old_new_angle;
+	int finished;
+	void (*show_extra_data)(void);
+};
+
 struct game_state {
 	struct game_object object[NTOTAL];
 	struct player_ship player;
@@ -297,6 +307,7 @@ struct game_state {
 	unsigned char game_over;
 	unsigned char last_capn_menu_item;
 	unsigned char visited_sectors[8];
+	struct angle_chooser_t angle_chooser;
 } gs = { 0 };
 
 static inline int coord_to_sector(int c)
@@ -1026,66 +1037,107 @@ static void show_energy_and_torps(void)
 	print_numeric_item("TORP:", gs.player.torpedoes);
 }
 
-static void st_choose_angle(char *new_head, char *cur_head, char *set_head,
-		int *heading, int *new_heading, int which_screen, void (*show_extra_data)(void))
+static void st_choose_angle_input(void)
 {
-	int i, x, y, finished = 0;
+	int something_changed = 0;
+
+	gs.angle_chooser.old_angle = gs.angle_chooser.angle;
+	gs.angle_chooser.old_new_angle = gs.angle_chooser.new_angle;
+
+	if (BUTTON_PRESSED_AND_CONSUME) {
+		int angle = gs.angle_chooser.new_angle;
+		gs.angle_chooser.angle = angle;
+		gs.angle_chooser.old_angle = angle;
+		gs.angle_chooser.old_new_angle = angle;
+		*gs.angle_chooser.angle_ptr = angle;
+		*gs.angle_chooser.new_angle_ptr = angle;
+		gs.angle_chooser.finished = 1;
+		something_changed = 1;
+	} else if (UP_BTN_AND_CONSUME) {
+		gs.angle_chooser.new_angle += 15;
+		something_changed = 1;
+	} else if (DOWN_BTN_AND_CONSUME) {
+		gs.angle_chooser.new_angle -= 15;
+		something_changed = 1;
+	} else if (LEFT_BTN_AND_CONSUME) {
+		gs.angle_chooser.new_angle++;
+		something_changed = 1;
+	} else if (RIGHT_BTN_AND_CONSUME) {
+		gs.angle_chooser.new_angle--;
+		something_changed = 1;
+	}
+	if (something_changed) {
+		if (gs.angle_chooser.new_angle < 0)
+			gs.angle_chooser.new_angle += 360;
+		if (gs.angle_chooser.new_angle >= 360)
+			gs.angle_chooser.new_angle -= 360;
+		st_program_state = ST_DRAW_ANGLE_CHOOSER;
+	}
+}
+
+static void st_draw_angle_chooser(void)
+{
+	int i, x, y;
 	const int cx = (LCD_XSIZE >> 1);
 	const int cy = (LCD_YSIZE >> 1) + 15;
+	struct angle_chooser_t *a = &gs.angle_chooser;
 
 	/* Erase old stuff */
 	FbMove(2, 20);
-	write_heading(new_head, *new_heading, BLACK);
+	write_heading(a->new_angle_name, a->old_new_angle, BLACK);
 	FbMove(2, 11);
-	write_heading(cur_head, *heading, BLACK);
-	if (show_extra_data)
-		show_extra_data();
-	draw_heading_indicator(cx, cy, *heading, 150, BLACK);
-	draw_heading_indicator(cx, cy, *new_heading, 150, BLACK);
+	write_heading(a->cur_angle_name, a->old_angle, BLACK);
+	if (gs.angle_chooser.show_extra_data)
+		gs.angle_chooser.show_extra_data();
+	draw_heading_indicator(cx, cy, a->old_angle, 150, BLACK);
+	draw_heading_indicator(cx, cy, a->old_new_angle, 150, BLACK);
 
-	if (BUTTON_PRESSED_AND_CONSUME) {
-		*heading = *new_heading;
-		st_program_state = ST_PROCESS_INPUT;
-		finished = 1;
-	} else if (UP_BTN_AND_CONSUME) {
-		*new_heading += 15;
-	} else if (DOWN_BTN_AND_CONSUME) {
-		*new_heading -= 15;
-	} else if (LEFT_BTN_AND_CONSUME) {
-		(*new_heading)++;
-	} else if (RIGHT_BTN_AND_CONSUME) {
-		(*new_heading)--;
-	}
-	if (*new_heading < 0)
-		*new_heading += 360;
-	if (*new_heading >= 360)
-		*new_heading -= 360;
-
-	if (!finished) {
+	/* Draw new stuff */
+	if (!a->finished) {
 		FbColor(WHITE);
 		FbMove(2, 2);
-		FbWriteLine(set_head);
+		FbWriteLine(a->set_angle_name);
 		FbMove(2, 20);
-		write_heading(new_head, *new_heading, WHITE);
+		write_heading(a->new_angle_name, a->new_angle, WHITE);
 	}
 	FbMove(2, 11);
-	write_heading(cur_head, *heading, WHITE);
+	write_heading(a->cur_angle_name, a->angle, WHITE);
 
-	draw_heading_indicator(cx, cy, *heading, 150, RED);
-	draw_heading_indicator(cx, cy, *new_heading, 150, WHITE);
+	draw_heading_indicator(cx, cy, a->angle, 150, RED);
+	draw_heading_indicator(cx, cy, a->new_angle, 150, WHITE);
 	/* Draw a circle of dots. */
 	for (i = 0; i < 128; i += 4) {
 		x = (-cosine(i) * 160) / 1024;
 		y = (sine(i) * 160) / 1024;
 		FbPoint(cx + x, cy + y);
 	}
-	if (show_extra_data)
-		show_extra_data();
+	if (gs.angle_chooser.show_extra_data)
+		gs.angle_chooser.show_extra_data();
 	FbSwapBuffers();
-	gs.last_screen = which_screen;
-	if (finished && which_screen == AIMING_SCREEN) {
-		st_program_state = ST_CHOOSE_WEAPONS;
+	if (gs.angle_chooser.finished) {
+		if (gs.angle_chooser.angle_ptr == &gs.player.weapons_aim)
+			st_program_state = ST_CHOOSE_WEAPONS;
+		else
+			st_program_state = ST_CAPTAIN_MENU; 
+		return;
 	}
+	st_program_state = ST_CHOOSE_ANGLE_INPUT;
+}
+
+static void st_choose_angle(char *new_head, char *cur_head, char *set_head,
+		int *heading, int *new_heading, int which_screen, void (*show_extra_data)(void))
+{
+	gs.angle_chooser.angle = *heading;
+	gs.angle_chooser.new_angle = *new_heading;
+	gs.angle_chooser.angle_ptr = heading;
+	gs.angle_chooser.new_angle_ptr = new_heading;
+	gs.angle_chooser.new_angle_name = new_head;
+	gs.angle_chooser.cur_angle_name = cur_head;
+	gs.angle_chooser.set_angle_name = set_head;
+	gs.angle_chooser.show_extra_data = show_extra_data;
+	
+	gs.last_screen = which_screen;
+	st_program_state = ST_DRAW_ANGLE_CHOOSER;
 }
 
 static void st_set_course(void)
@@ -1093,6 +1145,7 @@ static void st_set_course(void)
 	int old_heading = gs.player.heading;
 	int energy_units, angle, warp_multiplier;
 
+	gs.angle_chooser.finished = 0;
 	st_choose_angle("NEW HEADING: ", "CUR HEADING", "SET HEADING: ",
 			&gs.player.heading, &gs.player.new_heading, HEADING_SCREEN, NULL);
 
@@ -2543,9 +2596,16 @@ int spacetripper_cb(void)
 			alert_player("WEAPONS", "CAPTAIN\n\nWE CANNOT FIRE\nWHILE DOCKED AT\nTHE STARBASE");
 			break;
 		}
+		gs.angle_chooser.finished = 0;
 		st_choose_angle("AIM WEAPONS: ", "CUR AIM", "SET AIM: ",
 				&gs.player.weapons_aim, &gs.player.new_weapons_aim, AIMING_SCREEN,
 				show_energy_and_torps);
+		break;
+	case ST_CHOOSE_ANGLE_INPUT:
+		st_choose_angle_input();
+		break;
+	case ST_DRAW_ANGLE_CHOOSER:
+		st_draw_angle_chooser();
 		break;
 	case ST_CHOOSE_WEAPONS:
 		st_choose_weapons();
