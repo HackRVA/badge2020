@@ -115,7 +115,6 @@ enum st_program_state_t {
 	ST_PHASER_POWER,
 	ST_PHASER_POWER_INPUT,
 	ST_FIRE_PHASER,
-	ST_FIRE_TORPEDO,
 	ST_WARP,
 	ST_WARP_INPUT,
 	ST_SET_WEAPONS_BEARING,
@@ -2547,9 +2546,6 @@ int spacetripper_cb(void)
 		break;
 	case ST_FIRE_PHASER:
 		st_fire_weapon("PHASER", gs.player.phaser_power);
-		break;
-	case ST_FIRE_TORPEDO:
-		st_fire_weapon("TORPEDO", TORPEDO_POWER);
 		break;
 	case ST_HULL_DESTROYED:
 		st_hull_destroyed();
