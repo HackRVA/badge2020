@@ -20,6 +20,7 @@
 #include "username.h"
 #include "badge_monsters.h"
 #include "spacetripper.h"
+#include "smashout.h"
 #include "hacking_simulator.h"
 #ifdef INCLUDE_IRXMIT
 #include "irxmit.h"
@@ -502,6 +503,7 @@ const struct menu_t games_m[] = {
    {"Lunar Rescue",  VERT_ITEM, FUNCTION, {(struct menu_t *)lunarlander_cb} },
    {"Badge Monsters",VERT_ITEM, FUNCTION, {(struct menu_t *)badge_monsters_cb} },
    {"Space Tripper", VERT_ITEM, FUNCTION, {(struct menu_t *)spacetripper_cb} },
+   {"Smashout",      VERT_ITEM, FUNCTION, {(struct menu_t *)smashout_cb} },
    {"Hacking Simulator", VERT_ITEM, FUNCTION, {(struct menu_t *)hacking_simulator_cb} },
 #ifdef INCLUDE_IRXMIT
    {"IR XMIT",       VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb} },
