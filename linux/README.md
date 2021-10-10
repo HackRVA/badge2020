@@ -82,9 +82,10 @@ app does very little calculation and spends most of its time waiting
 for user input on the D-pad or button, then 30 might be a more
 appropriate number.
 
-Step 3: Write your app.  Check `linux/linuxcompat.h` to see what functions
-you may call.  You may need to include some header files to access some
-functions, and you may need to include different header files on the badge
+Step 3: Write your app.  Check [BADGE-APP-HOWTO.md](https://github.com/HackRVA/badge2020/blob/master/BADGE-APP-HOWTO.md)
+and `linux/linuxcompat.h` to see what functions you may call.  You may need
+to include some header files to access some functions, and you may need to
+include different header files on the badge
 than on linux.
 
 Use a pattern like this:
@@ -119,7 +120,10 @@ Then later in your code, you can say:
 and on the badge, this will do nothing and generate no code, while on
 linux, it will call linux_function1.
 
-Look in include/fb.h and linux/linuxcompat.h as well as other badge apps
+See [BADGE-APP-HOWTO.md](https://github.com/HackRVA/badge2020/blob/master/BADGE-APP-HOWTO.md) for
+more information about the functions and variables your badge app might use.
+
+Look also in include/fb.h and linux/linuxcompat.h as well as other badge apps
 to get an idea of what functions you may call from your badge app to draw
 or print messages on the screen, receive user input, etc. Unfortunately,
 the header files and documentation for that type of thing is not currently

@@ -5,7 +5,8 @@ Software for the HackRVA 2020 badge
 Use "make" to build
 
 There is a linux compatibility library that allows you to run badge apps on linux.
-This resides in linux.  See [linux/README.md](https://github.com/HackRVA/badge2020/tree/master/linux) for more details.
+This resides in linux.  See [linux/README.md](https://github.com/HackRVA/badge2020/tree/master/linux)
+for more details.  See also [BADGE-APP-HOWTO.md](https://github.com/HackRVA/badge2020/blob/master/BADGE-APP-HOWTO.md)
 
 
 
