@@ -11,20 +11,28 @@ every little thing. When you are reasonably sure that your code is working,
 then you can flash it to the badge and check if it works as expected in the
 real badge environment.
 
-Step 0: Install the compiler on your linux laptop. (I will assume here
-that you've already done that.  It's not hard, but I don't remember the
-details. Ask in the badge slack channel.)
+Step 0: Install the compilers on your linux laptop. (I will assume here
+that you've already done that. For the badge emulator, you'll need your
+system's native compiler. On an ubuntu-based system,
+`sudo apt-get install build-essentials`. Other systems will differ. You
+will also need some GTK libs, `sudo apt-get install libgtk2.0-dev` at
+least (again, it will differ on systems not based on debian.)
+
+To compile the badge firmware to run on the badge, you will need
+another compiler. The commands to install the Microchip XC32 compiler.
+The commands to install it can be found in the docker file in
+[`docker/badge-compiler/Dockerfile`](https://github.com/HackRVA/badge2020/blob/master/docker/badge-compiler/Dockerfile)
 
 Step 1: Clone the linux badge environment:
 
 ```
-	git clone git@github.com:HackRVA/badge2020.git 
+	git clone git@github.com:HackRVA/badge2020.git
 ```
 
 Step 2: Write your code:
 
 ```
-	cd badge2020 
+	cd badge2020
 
 	(hack on your code.  Add your app under the badge_apps directory)
 
@@ -68,7 +76,11 @@ And at the end:
 ```
 
 Instead of `myapp_callback`, use whatever function name you used
-for your app's callback entry point name.
+for your app's callback entry point name.  The "240" in the above code
+is the frequency in Hz at which your callback will be called. If your
+app does very little calculation and spends most of its time waiting
+for user input on the D-pad or button, then 30 might be a more
+appropriate number.
 
 Step 3: Write your app.  Check `linux/linuxcompat.h` to see what functions
 you may call.  You may need to include some header files to access some
@@ -121,6 +133,14 @@ you@yourmachine ~/github/badge2020/linux $ bin/sample_app
 ````
 
 ![image of sample_app running](https://raw.githubusercontent.com/smcameron/hackrva-badge-boost/master/badgeboost.jpg)
+
+The badge emulator library makes some attempt to detect if you're redrawing
+the screen too frequently, and if it thinks you are, you may see this warning:
+
+```
+	Warning, high SwapBuffers() rate detected.
+	Performance on badge likely to be terrible.
+```
 
 Step 4:  Get your app running on the badge.
 
@@ -183,7 +203,7 @@ index 15d2a89..30f9132 100644
 -#include "maze.h"
 +// #include "maze.h"
  #include "sample_app.h"
- 
+
  #define MAIN_MENU_BKG_COLOR GREY2
 @@ -465,7 +465,7 @@ const struct menu_t games_m[] = {
     {"Blinkenlights", VERT_ITEM|DEFAULT_ITEM, FUNCTION, {(struct menu_t *)blinkenlights_cb}}, // Set other badges LED
@@ -205,7 +225,7 @@ Type `make` in the top level directory of the `badge2020` project...
 Press the button on the badge as you simultaneously plug it into the USB port
 of your computer.  A green LED should be flashing.
 
-Next, run `tools/bootloadit`. This will flash the firmware for the badge.
+Next, run `sudo tools/bootloadit`. This will flash the firmware for the badge.
 
 Then, unplug, and re-plug the badge into the USB port to reboot it.
 At this point your program should be accessible via the main menu.
