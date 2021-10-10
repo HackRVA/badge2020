@@ -68,7 +68,9 @@ Drawing on the Screen
 
 The screen is 132x132 pixels and the interface for drawing on the screen
 is mostly defined in [include/fb.h](https://github.com/HackRVA/badge2020/blob/master/include/fb.h).
-(BTW, use `LCD_XSIZE` and `LCD_YSIZE` rather than hard coding 132.)
+(BTW, use `LCD_XSIZE` and `LCD_YSIZE` rather than hard coding 132.)  Note also that there is
+a 2 pixel border of invisible pixels around the edge of the screen, so the visible pixels are
+between 2 and 129 inclusive.
 
 Here is a (probably incomplete) list of functions you may call for drawing on the screen:
 
