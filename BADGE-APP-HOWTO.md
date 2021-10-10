@@ -3,7 +3,7 @@ BADGE APP HOWTO
 ---------------
 
 This assumes you've got your system set up and are able to compile
-the badge app, and that now you're ready to start working on your
+the badge firmware, and that now you're ready to start working on your
 badge app. For instructions on setting up your linux system for badge
 app development, see [linux/README.md](https://github.com/HackRVA/badge2020/tree/master/linux)
 
