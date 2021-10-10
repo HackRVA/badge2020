@@ -11,15 +11,15 @@ every little thing. When you are reasonably sure that your code is working,
 then you can flash it to the badge and check if it works as expected in the
 real badge environment.
 
-Step 0: Install the compilers on your linux laptop. (I will assume here
-that you've already done that. For the badge emulator, you'll need your
-system's native compiler. On an ubuntu-based system,
-`sudo apt-get install build-essentials`. Other systems will differ. You
+Step 0: Install the compilers on your linux system.
+
+For the badge emulator, you'll need your system's native compiler.
+On an ubuntu-based system, `sudo apt-get install build-essentials`. Other systems will differ. You
 will also need some GTK libs, `sudo apt-get install libgtk2.0-dev` at
 least (again, it will differ on systems not based on debian.)
 
 To compile the badge firmware to run on the badge, you will need
-another compiler. The commands to install the Microchip XC32 compiler.
+another compiler, the Microchip XC32 compiler.
 The commands to install it can be found in the docker file in
 [`docker/badge-compiler/Dockerfile`](https://github.com/HackRVA/badge2020/blob/master/docker/badge-compiler/Dockerfile)
 
@@ -119,6 +119,11 @@ Then later in your code, you can say:
 and on the badge, this will do nothing and generate no code, while on
 linux, it will call linux_function1.
 
+Look in include/fb.h and linux/linuxcompat.h as well as other badge apps
+to get an idea of what functions you may call from your badge app to draw
+or print messages on the screen, receive user input, etc. Unfortunately,
+the header files and documentation for that type of thing is not currently
+very good. Feel free to improve the situation.
 
 Step 4: Build and run your app on linux:
 
