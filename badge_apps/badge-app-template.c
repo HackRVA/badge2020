@@ -66,8 +66,8 @@ To use this file, do the following steps:
 	--- a/src/menu.c
 	+++ b/src/menu.c
 	@@ -16,6 +16,7 @@
+ 	 #include "adc.h"
  	 #include "badge_apps/blinkenlights.h"
- 	 #include "badge_apps/adc.h"
  	 #include "badge_apps/smashout.h"
 	+#include "badge_apps/badge-app-template.h"
  	 #include "badge_apps/QC.h"

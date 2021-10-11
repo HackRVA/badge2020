@@ -10,7 +10,7 @@
 #include "task.h"
 #include "badge_menu.h"
 #include "assetList.h"
-#include "badge_apps/adc.h"
+#include "adc.h"
 
 extern unsigned char QC_IR;
 
