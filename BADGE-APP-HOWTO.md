@@ -114,8 +114,14 @@ Updating the Screen
 Colors
 ------
 
+There are 8 colors.
+
+Actually there are more than 8 colors, but the above colors are those known by the
+linux badge emulator that also work on the actual badge.  If you need more than
+those colors, see
+[include/colors.h](https://github.com/HackRVA/badge2020/blob/master/include/colors.h)
+
 ```
-	There are 8 colors:
 
 	BLUE
 	GREEN
@@ -125,11 +131,6 @@ Colors
 	CYAN
 	YELLOW
 	MAGENTA
-
-	Actually there are more than 8 colors, but the above colors are those known by the
-	linux badge emulator that also work on the actual badge.  If you need more than
-	those colors, see
-	[include/colors.h](https://github.com/HackRVA/badge2020/blob/master/include/colors.h)
 
 	void FbColor(int color);
 		Sets the current foreground color, which subsequent drawing functions will then use.
@@ -167,11 +168,12 @@ Drawing Lines and Points and other things
 		than FbPolygonFromPoints() or FbDrawVectors() in that drawing[] contains signed chars, and the
 		polygons can be constructed via this program: https://github.com/smcameron/vectordraw
 		as well as allowing scaling.
+```
 
+The following are also available, however they are not implemented in
+the linux badge emulator. See [include/fb.h](https://github.com/HackRVA/badge2020/blob/master/include/fb.h).
 
-	The following are also available, however they are not implemented in
-	the linux badge emulator. See [include/fb.h](https://github.com/HackRVA/badge2020/blob/master/include/fb.h).
-
+```
 	void FbSprite(unsigned char picId, unsigned char imageNo);
 	void FbCharacter(unsigned char charin);
 	void FbFilledRectangle(unsigned char width, unsigned char height);
@@ -447,10 +449,10 @@ There is also *another*, different menu system defined in
 [include/badge_menu.h](https://github.com/HackRVA/badge2020/blob/master/include/badge_menu.h),
 which is used for the badge main menu, and it can also be used by badge apps.
 The API for this is a bit more complicated, while at the same time more
-limiting, as it does not (I think) allow for dynamically changing the menu
-elements. That is, if you need to have a menu item like "Take X", where X is
-replaced at runtime with some other word, then include/badge_menu.h won't help
-you (badge_apps/maze.c has menu items like this).
+limiting, at least in some ways, as it does not (I think) allow for dynamically
+changing the menu elements. That is, if you need to have a menu item like "Take X",
+where X is replaced at runtime with some other not known at compile time,
+then include/badge_menu.h won't help you (badge_apps/maze.c has menu items like this).
 
 Achievements
 ------------
