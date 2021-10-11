@@ -156,7 +156,7 @@ Step 4:  Get your app running on the badge.
 3. Modify the Makefile to know about your files by adding them
    to the SRC_APPS_C variable.
 
-4. Add a your header file into include/myapp.h (Substitute your appname for "myapp".)
+4. Add a your header file into include/badge_apps/myapp.h (Substitute your appname for "myapp".)
 In this header, put in a single function that is your app callback.  For instance:
 
 ```c
@@ -176,10 +176,10 @@ index 175d1d4..f0aad9a 100644
 --- a/src/menu.c
 +++ b/src/menu.c
 @@ -15,6 +15,7 @@
- #include "conductor.h"
- #include "blinkenlights.h"
- #include "adc.h"
-+#include "myapp.h"
+ #include "badge_apps/conductor.h"
+ #include "badge_apps/blinkenlights.h"
+ #include "badge_apps/adc.h"
++#include "badge_apps/myapp.h"
 
 
  #define MAIN_MENU_BKG_COLOR GREY2
@@ -206,12 +206,12 @@ index 15d2a89..30f9132 100644
 --- a/src/menu.c
 +++ b/src/menu.c
 @@ -16,7 +16,7 @@
- #include "blinkenlights.h"
  #include "adc.h"
- #include "sample_app.h"
--#include "maze.h"
-+// #include "maze.h"
- #include "sample_app.h"
+ #include "badge_apps/blinkenlights.h"
+ #include "badge_apps/sample_app.h"
+-#include "badge_apps/maze.h"
++// #include "badge_apps/maze.h"
+ #include "badge_apps/sample_app.h"
 
  #define MAIN_MENU_BKG_COLOR GREY2
 @@ -465,7 +465,7 @@ const struct menu_t games_m[] = {

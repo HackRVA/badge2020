@@ -12,18 +12,18 @@
 #include "ir.h"
 #include "assetList.h"
 #include "buttons.h"
-#include "conductor.h"
-#include "blinkenlights.h"
 #include "adc.h"
-#include "lunarlander.h"
-#include "QC.h"
-#include "username.h"
-#include "badge_monsters.h"
-#include "spacetripper.h"
-#include "smashout.h"
-#include "hacking_simulator.h"
+#include "badge_apps/conductor.h"
+#include "badge_apps/blinkenlights.h"
+#include "badge_apps/lunarlander.h"
+#include "badge_apps/QC.h"
+#include "badge_apps/username.h"
+#include "badge_apps/badge_monsters.h"
+#include "badge_apps/spacetripper.h"
+#include "badge_apps/smashout.h"
+#include "badge_apps/hacking_simulator.h"
 #ifdef INCLUDE_IRXMIT
-#include "irxmit.h"
+#include "badge_apps/irxmit.h"
 #endif
 
 

@@ -33,7 +33,7 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 
 #endif
 
-#include "badge_monsters.h"
+#include "badge_apps/badge_monsters.h"
 
 #define INIT_APP_STATE 0
 #define GAME_MENU 1

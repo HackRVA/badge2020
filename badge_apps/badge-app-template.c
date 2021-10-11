@@ -9,7 +9,7 @@ To use this file, do the following steps:
 
    (Don't call it "myapp" please.)
 
-2. Copy include/badge-app-template.h to include/myapp.h
+2. Copy include/badge_apps/badge-app-template.h to include/badge_apps/myapp.h
 
    (Don't call it "myapp" please.)
 
@@ -66,13 +66,13 @@ To use this file, do the following steps:
 	--- a/src/menu.c
 	+++ b/src/menu.c
 	@@ -16,6 +16,7 @@
- 	 #include "blinkenlights.h"
- 	 #include "adc.h"
- 	 #include "smashout.h"
-	+#include "badge-app-template.h"
- 	 #include "QC.h"
- 	 #include "lasertag.h"
- 	 #include "username.h"
+ 	 #include "badge_apps/blinkenlights.h"
+ 	 #include "badge_apps/adc.h"
+ 	 #include "badge_apps/smashout.h"
+	+#include "badge_apps/badge-app-template.h"
+ 	 #include "badge_apps/QC.h"
+ 	 #include "badge_apps/lasertag.h"
+ 	 #include "badge_apps/username.h"
 	@@ -499,6 +500,7 @@ const struct menu_t games_m[] = {
     	 {"Conductor",     VERT_ITEM, FUNCTION, {(struct menu_t *)conductor_cb}}, // Tell other badges to play notes
     	 {"Sensors",       VERT_ITEM, FUNCTION, {(struct menu_t *)adc_cb} },

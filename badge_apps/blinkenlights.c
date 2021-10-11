@@ -1,7 +1,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "ir.h"
-#include "blinkenlights.h"
+#include "badge_apps/blinkenlights.h"
 #include "buttons.h"
 
 // If ordering changed, make sure indices still work
