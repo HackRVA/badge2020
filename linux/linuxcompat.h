@@ -20,6 +20,10 @@ void FbHorizontalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsi
 /* Draw a vertical line (faster than FbLine) */
 void FbVerticalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2);
 
+/* Draw filled and unfilled rectangles */
+void FbFilledRectangle(unsigned char width, unsigned char height);
+void FbRectangle(unsigned char width, unsigned char height);
+
 /* Clear the frame buffer */
 void FbClear(void);
 
@@ -31,8 +35,7 @@ void FbMoveY(unsigned char y);
 
 /* Write a string to the frame buffer */
 void FbWriteLine(char *s);
-void FbWriteString(char *s, unsigned char length);
-void FbWriteZString(char *s);
+void FbWriteString(char *s);
 
 /* Convert integer to ascii string */
 void itoa(char *string, int value, int base);

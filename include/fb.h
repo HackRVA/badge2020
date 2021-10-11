@@ -64,8 +64,7 @@ void FbHorizontalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsi
 void FbVerticalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2);
 void FbLine(unsigned char x0, unsigned char y0, unsigned char x1, unsigned char y1);
 void FbWriteLine(unsigned char *string);
-void FbWriteString(unsigned char *string, unsigned char length);
-void FbWriteZString(unsigned char *string); /* same as FbWriteString, but no length need, and lines are 8 pixels high instead of 10 */
+void FbWriteString(unsigned char *string);
 void FbRectangle(unsigned char width, unsigned char height);
 
 void FbImage(unsigned char assetId, unsigned char seqNum);

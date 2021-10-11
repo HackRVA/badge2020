@@ -1,6 +1,6 @@
 #include "menu.h"
 #include "ir.h"
-#include "conductor.h"
+#include "badge_apps/conductor.h"
 #include "buttons.h"
 
 struct menu_t conductor_config_m[] = {

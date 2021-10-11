@@ -13,25 +13,15 @@
 #include "../linux/linuxcompat.h"
 #include "../linux/bline.h"
 #else
+#include <string.h>
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
 #include "fb.h"
 #include "timer1_int.h"
-
-/* TODO: I shouldn't have to declare these myself. */
-#define size_t int
-extern char *strcpy(char *dest, const char *src);
-extern char *strncpy(char *dest, const char *src, size_t n);
-extern void *memset(void *s, int c, size_t n);
-extern char *strcat(char *dest, const char *src);
-
 #endif
 
-#ifndef NULL
-#define NULL 0
-#endif
-
+#include "dynmenu.h"
 #include "build_bug_on.h"
 #include "xorshift.h"
 
@@ -93,6 +83,8 @@ enum hacking_simulator_state_t
 	HACKINGSIMULATOR_RUN,
 	HACKINGSIMULATOR_WIN_SCREEN,
 	HACKINGSIMULATOR_FAIL_SCREEN,
+	HACKINGSIM_QUIT_CONFIRM,
+	HACKINGSIM_QUIT_INPUT,
 	HACKINGSIMULATOR_EXIT,
 };
 
@@ -109,10 +101,10 @@ enum difficulty_level
 static char difficulty_descriptor[4][10] = { "EASY", "MEDIUM", "HARD", "VERY HARD" };
 static char splash_screen_messages[4][60] = 
 { 
-	"Welcome to HackingSim",
-	"Nice Work, It gets harder now",
-	"Whoa, you really know your stuff. Let's make it harder",
-	"There's no way you'll beat this one",
+	"Welcome to\nHackingSim\n\nPress button 4\ntimes to quit",
+	"Nice Work, It\ngets harder\nnow",
+	"Whoa, you\nreally know\nyour stuff.\nLet's make\nit harder",
+	"There's no\nway you'll\nbeat this\none",
 };
 
 static enum difficulty_level difficulty_level_state = CONFIG_DIFFICULTY_INITIAL;
@@ -722,8 +714,12 @@ static void reset_flow_connections()
 static void render_screen();
 static void check_buttons()
 {
+	static int button_presses = 0;
+
 	if (BUTTON_PRESSED_AND_CONSUME)
 	{
+		button_presses++;
+
 		if (grid[cursor_x_index][cursor_y_index].hidden)
 		{
 			grid[cursor_x_index][cursor_y_index].hidden = FALSE;
@@ -742,21 +738,25 @@ static void check_buttons()
 	}
 	else if (LEFT_BTN_AND_CONSUME)
 	{
+		button_presses = 0;
 		cursor_x_index--;
 		screen_changed = 1;
 	}
 	else if (RIGHT_BTN_AND_CONSUME)
 	{
+		button_presses = 0;
 		cursor_x_index++;
 		screen_changed = 1;
 	}
 	else if (UP_BTN_AND_CONSUME)
 	{
+		button_presses = 0;
 		cursor_y_index--;
 		screen_changed = 1;
 	}
 	else if (DOWN_BTN_AND_CONSUME)
 	{
+		button_presses = 0;
 		cursor_y_index++;
 		screen_changed = 1;
 	}
@@ -771,6 +771,11 @@ static void check_buttons()
 		cursor_y_index = GRID_SIZE - 1;
 
 	render_screen();
+
+	if (button_presses == 4) { /* Trying to quit? */
+		button_presses = 0;
+		hacking_simulator_state = HACKINGSIM_QUIT_CONFIRM;
+	}
 }
 
 static void handle_splash_screen_btn()
@@ -796,7 +801,7 @@ static void render_splash_screen()
 {
 	FbColor(WHITE);
 	FbMove(0, 20);
-	FbWriteLine(splash_screen_messages[difficulty_level_state]);
+	FbWriteString(splash_screen_messages[difficulty_level_state]);
 	FbPaintNewRows();
 }
 
@@ -813,7 +818,7 @@ static void render_hackingsimulator_fail_screen()
 	FbClear();
 	FbColor(WHITE);
 	FbMove(0, 20);
-	FbWriteLine("You FAILED!");
+	FbWriteString("You FAILED to\ncomplete the\npuzzle in\nthe allotted\ntime.");
 	FbPaintNewRows();
 
 	if (BUTTON_PRESSED_AND_CONSUME)
@@ -1042,6 +1047,38 @@ static void hackingsimulator_exit()
 	returnToMenus();
 }
 
+static struct dynmenu quitmenu;
+
+static void hackingsimulator_quit_confirm(void)
+{
+	dynmenu_clear(&quitmenu);
+	strcpy(quitmenu.title, "HACKING SIM");
+	strcpy(quitmenu.title2, "REALLY QUIT?");
+	dynmenu_add_item(&quitmenu, "NO", HACKINGSIMULATOR_RUN, 0);
+	dynmenu_add_item(&quitmenu, "YES", HACKINGSIMULATOR_EXIT, 0);
+	quitmenu.menu_active = 1;
+	dynmenu_draw(&quitmenu);
+	FbSwapBuffers();
+	hacking_simulator_state = HACKINGSIM_QUIT_INPUT;
+}
+
+static void hackingsimulator_quit_input(void)
+{
+	if (BUTTON_PRESSED_AND_CONSUME) {
+		hacking_simulator_state =
+			(enum hacking_simulator_state_t) quitmenu.item[quitmenu.current_item].next_state;
+		return;
+	} else if (UP_BTN_AND_CONSUME) {
+		dynmenu_change_current_selection(&quitmenu, -1);
+		dynmenu_draw(&quitmenu);
+		FbSwapBuffers();
+	} else if (DOWN_BTN_AND_CONSUME) {
+		dynmenu_change_current_selection(&quitmenu, 1);
+		dynmenu_draw(&quitmenu);
+		FbSwapBuffers();
+	}
+}
+
 int hacking_simulator_cb(void)
 {
 	switch (hacking_simulator_state)
@@ -1063,6 +1100,12 @@ int hacking_simulator_cb(void)
 		break;
 	case HACKINGSIMULATOR_EXIT:
 		hackingsimulator_exit();
+		break;
+	case HACKINGSIM_QUIT_CONFIRM:
+		hackingsimulator_quit_confirm();
+		break;
+	case HACKINGSIM_QUIT_INPUT:
+		hackingsimulator_quit_input();
 		break;
 	default:
 		break;

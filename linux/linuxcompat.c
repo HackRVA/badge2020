@@ -237,7 +237,6 @@ static void detect_high_swapbuffers_rate(void)
 	swapbuf_index = (swapbuf_index + 1) % SWAPBUF_PERF_TICKS;
 	start_time = 0;
 	end_time = 0;
-	total_time = 0;
 	frames = 0;
 	for (i = 0; i < 30; i++) {
 		if (swapbuf_timestamp[i] == 0)
@@ -305,6 +304,37 @@ void FbVerticalLine(unsigned char x1, unsigned char y1, UNUSED unsigned char x2,
 
     for (y = y1; y <= y2; y++)
         plot_point(x1, y, screen_color);
+}
+
+static unsigned char write_x = 0;
+static unsigned char write_y = 0;
+
+void FbFilledRectangle(unsigned char width, unsigned char height)
+{
+	int i, x, y;
+
+	x = write_x;
+	y = write_y;
+	for (i = 0; i < height; i++) {
+		FbHorizontalLine(x, y, x + width - 1, write_y);
+		y++;
+	}
+	write_x += width;
+	write_y += height;
+}
+
+void FbRectangle(unsigned char width, unsigned char height)
+{
+	int x, y;
+
+	x = write_x;
+	y = write_y;
+	FbHorizontalLine(x, y, x + width - 1, y);
+	FbHorizontalLine(x, y + height - 1, x + width - 1, y + height - 1);
+	FbVerticalLine(x, y, x, y + height - 1);
+	FbVerticalLine(x + width - 1, y, x + width - 1, y + height - 1);
+	write_x += width;
+	write_y += height;
 }
 
 void FbClear(void)
@@ -388,9 +418,6 @@ static void draw_character(unsigned char x, unsigned char y, unsigned char c)
 	}
 }
 
-static unsigned char write_x = 0;
-static unsigned char write_y = 0;
-
 void FbMove(unsigned char x, unsigned char y)
 {
 	write_x = x;
@@ -433,29 +460,7 @@ void FbWriteLine(char *s)
 	}
 }
 
-void FbWriteString(char *s, unsigned char length)
-{
-	int i, ix;
-
-	ix = write_x;
-	for (i = 0; i < length; i++) {
-		if (s[i] == '\n') {
-			write_x = ix;
-			write_y += 8;
-			continue;
-		}
-		draw_character(write_x, write_y, s[i]);
-		write_x += 8;
-		if (write_x > LCD_XSIZE - 8) {
-			write_x = 0;
-			write_y += 10;
-			if (write_y > LCD_YSIZE - 8)
-				write_y = 0;
-		}
-	}
-}
-
-void FbWriteZString(char *s)
+void FbWriteString(char *s)
 {
 	int i, ix;
 

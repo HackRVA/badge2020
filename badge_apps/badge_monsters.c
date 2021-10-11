@@ -20,7 +20,7 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 #define ENABLE_INTERRUPTS do { enable_interrupts(); } while (0)
 
 #else
-#include <plib.h> /* for strlen() */
+#include <string.h>
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
@@ -28,20 +28,12 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 #include "ir.h"
 #include "fb.h"
 
-/* TODO: I shouldn't have to declare these myself. */
-#define size_t int
-extern char *strcpy(char *dest, const char *src);
-extern char *strcat(char *dest, const char *src);
-#ifndef NULL
-#define NULL 0
-#endif
-
 #define DISABLE_INTERRUPTS
 #define ENABLE_INTERRUPTS
 
 #endif
 
-#include "badge_monsters.h"
+#include "badge_apps/badge_monsters.h"
 
 #define INIT_APP_STATE 0
 #define GAME_MENU 1
@@ -552,7 +544,6 @@ static void check_the_buttons(void)
 			BUTTON_PRESSED_AND_CONSUME) {
 			trading_monsters_enabled = 0;
 			app_state = GAME_MENU;
-			something_changed = 1;
 			return;
 		}
     }
