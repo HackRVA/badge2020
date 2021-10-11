@@ -62,6 +62,16 @@ int my_badge_app_cb(void)
 }
 ```
 
+Badge App Template
+------------------
+
+To get started quickly, a badge app template file is provided which you can copy
+and modify to get started making your badge app quickly without having to type in
+a bunch of boilerplate code before anything even begins to work.
+
+* [badge_apps/badge-app-template.c](https://github.com/HackRVA/badge2020/blob/master/badge_apps/badge-app-template.c)
+
+It is extensively commented to help you know how it's meant to be used.
 
 Drawing on the Screen
 ---------------------
