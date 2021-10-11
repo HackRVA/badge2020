@@ -166,6 +166,11 @@ Drawing Lines and Points and other things
 	void FbVerticalLine(unsigned char x1, unsigned char y1, unsigned char x2, unsigned char y2);
 		draws a line from (x1, y1) to (x1, y2) (x2 is unused)  Faster than FbLine().
 
+	void FbFilledRectangle(unsigned char width, unsigned char height);
+	void FbRectangle(unsigned char width, unsigned char height);
+		draws filled or unfilled rectangles at the current cursor postion.
+		The cursor is moved to (x + width, y + height).
+
 	struct point
 	{
 		signed char x, y;
@@ -186,9 +191,7 @@ the linux badge emulator. See [include/fb.h](https://github.com/HackRVA/badge202
 ```
 	void FbSprite(unsigned char picId, unsigned char imageNo);
 	void FbCharacter(unsigned char charin);
-	void FbFilledRectangle(unsigned char width, unsigned char height);
 	void FbPrintChar(unsigned char charin, unsigned char x, unsigned char y);
-	void FbRectangle(unsigned char width, unsigned char height);
 	void FbImage(unsigned char assetId, unsigned char seqNum);
 	void FbImage8bit(unsigned char assetId, unsigned char seqNum);
 	void FbImage4bit(unsigned char assetId, unsigned char seqNum);

@@ -91,10 +91,8 @@ void dynmenu_draw(struct dynmenu *dm)
 	}
 
 	FbColor(GREEN);
-	FbHorizontalLine(5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 - 2);
-	FbHorizontalLine(5, LCD_YSIZE / 2 + 10, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
-	FbVerticalLine(5, LCD_YSIZE / 2 - 2, 5, LCD_YSIZE / 2 + 10);
-	FbVerticalLine(LCD_XSIZE - 5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
+	FbMove(5, LCD_YSIZE / 2 - 2);
+	FbRectangle(LCD_XSIZE - 7, 12);
 }
 
 void dynmenu_change_current_selection(struct dynmenu *dm, int direction)

@@ -307,6 +307,37 @@ void FbVerticalLine(unsigned char x1, unsigned char y1, UNUSED unsigned char x2,
         plot_point(x1, y, screen_color);
 }
 
+static unsigned char write_x = 0;
+static unsigned char write_y = 0;
+
+void FbFilledRectangle(unsigned char width, unsigned char height)
+{
+	int i, x, y;
+
+	x = write_x;
+	y = write_y;
+	for (i = 0; i < height; i++) {
+		FbHorizontalLine(x, y, x + width - 1, write_y);
+		y++;
+	}
+	write_x += width;
+	write_y += height;
+}
+
+void FbRectangle(unsigned char width, unsigned char height)
+{
+	int x, y;
+
+	x = write_x;
+	y = write_y;
+	FbHorizontalLine(x, y, x + width - 1, y);
+	FbHorizontalLine(x, y + height - 1, x + width - 1, y + height - 1);
+	FbVerticalLine(x, y, x, y + height - 1);
+	FbVerticalLine(x + width - 1, y, x + width - 1, y + height - 1);
+	write_x += width;
+	write_y += height;
+}
+
 void FbClear(void)
 {
     memset(screen_color, current_background_color, LCD_XSIZE * LCD_YSIZE);
@@ -387,9 +418,6 @@ static void draw_character(unsigned char x, unsigned char y, unsigned char c)
 		sy++;
 	}
 }
-
-static unsigned char write_x = 0;
-static unsigned char write_y = 0;
 
 void FbMove(unsigned char x, unsigned char y)
 {
