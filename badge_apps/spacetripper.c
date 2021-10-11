@@ -1893,7 +1893,6 @@ static void fire_on_player(void)
 		damage = xorshift(&xorshift_state) % 75;
 		if (damage < 50)
 			continue;
-		mitigation = 0;
 		if (gs.player.shields_up) {
 			mitigation = gs.player.shields * 85 / 255;
 			shield_damage = 100 * gs.player.damage[SHIELD_SYSTEM] / 256;
@@ -2339,7 +2338,6 @@ static void do_weapon_damage(int target, int power)
 	new_hp = gs.object[target].tsd.ship.hitpoints;
 	new_hp -= damage;
 	if (new_hp <= 0) {
-		new_hp = 0;
 		adjust_score_on_kill(target);
 		delete_object(target);
 		alert_player("WEAPONS", "ENEMY SHIP\nDESTROYED!");
