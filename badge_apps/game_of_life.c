@@ -26,6 +26,24 @@ extern char *strcat(char *dest, const char *src);
 #endif
 
 #include "build_bug_on.h"
+#include "xorshift.h"
+
+#define GRID_SIZE 100
+#define ROW_SIZE 10
+#define COL_SIZE 10
+
+static struct Grid
+{
+	struct Cell
+	{
+		unsigned char alive;
+		struct Coordinate
+		{
+			unsigned int x;
+			unsigned int y;
+		} coordinate;
+	} cells[GRID_SIZE];
+} grid;
 
 /* Program states.  Initial state is GAME_OF_LIFE_INIT */
 enum game_of_life_state_t
@@ -37,8 +55,51 @@ enum game_of_life_state_t
 
 static enum game_of_life_state_t game_of_life_state = GAME_OF_LIFE_INIT;
 
+static int is_next_row(int current_cell_index)
+{
+	return (current_cell_index + 1) % ROW_SIZE == 0;
+}
+
+static void init_grid()
+{
+	unsigned int x = 0;
+	unsigned int y = 0;
+
+	for (int i = 0; i < GRID_SIZE; i++)
+	{
+		grid.cells[i].alive = xorshift((unsigned int *)&timestamp) % 2;
+
+		if (!is_next_row(i))
+		{
+			grid.cells[i].coordinate.x = x;
+			grid.cells[i].coordinate.y = y;
+			y++;
+		}
+
+		if (is_next_row(i))
+		{
+			grid.cells[i].coordinate.x = x;
+			grid.cells[i].coordinate.y = y;
+			x++;
+			// reset before going to the next row
+			y = 0;
+		}
+	}
+}
+
+static void debug_print()
+{
+	for (int i = 0; i < GRID_SIZE; i++)
+	{
+		printf("coordinate %d %d", grid.cells[i].coordinate.x, grid.cells[i].coordinate.y);
+	}
+}
+
 static void game_of_life_init(void)
 {
+#ifdef __linux__
+	printf("grid size %d\nrow size: %d\n\n", GRID_SIZE, ROW_SIZE);
+#endif
 	FbInit();
 	FbClear();
 	game_of_life_state = GAME_OF_LIFE_RUN;
@@ -48,6 +109,7 @@ static void check_buttons()
 {
 	if (BUTTON_PRESSED_AND_CONSUME)
 	{
+		init_grid();
 		/* Pressing the button exits the program. You probably want to change this. */
 		game_of_life_state = GAME_OF_LIFE_EXIT;
 	}
@@ -82,10 +144,14 @@ static void game_of_life_run()
 static void game_of_life_exit()
 {
 	game_of_life_state = GAME_OF_LIFE_INIT; /* So that when we start again, we do not immediately exit */
+	debug_print();
 	returnToMenus();
 }
 
-int game_of_life_cb(void)
+static
+
+	int
+	game_of_life_cb(void)
 {
 	switch (game_of_life_state)
 	{
