@@ -544,7 +544,6 @@ static void check_the_buttons(void)
 			BUTTON_PRESSED_AND_CONSUME) {
 			trading_monsters_enabled = 0;
 			app_state = GAME_MENU;
-			something_changed = 1;
 			return;
 		}
     }
