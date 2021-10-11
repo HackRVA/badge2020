@@ -144,10 +144,8 @@ static void smashout_draw_brick(int row, int col)
 		FbColor(brick_color[row]);
 	else
 		FbColor(BLACK);
-	FbHorizontalLine(b->x, b->y, b->x + BRICK_WIDTH - 1, b->y);
-	FbHorizontalLine(b->x, b->y + BRICK_HEIGHT - 1, b->x + BRICK_WIDTH - 1, b->y + BRICK_HEIGHT - 1);
-	FbVerticalLine(b->x, b->y + 1, b->x, b->y + BRICK_HEIGHT - 1);
-	FbVerticalLine(b->x + BRICK_WIDTH - 1, b->y + 1, b->x + BRICK_WIDTH - 1, b->y + BRICK_HEIGHT - 1);
+	FbMove(b->x, b->y);
+	FbRectangle(BRICK_WIDTH, BRICK_HEIGHT);
 }
 
 static void smashout_draw_bricks()
