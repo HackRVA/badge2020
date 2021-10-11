@@ -126,6 +126,11 @@ Colors
 	YELLOW
 	MAGENTA
 
+	Actually there are more than 8 colors, but the above colors are those known by the
+	linux badge emulator that also work on the actual badge.  If you need more than
+	those colors, see
+	[include/colors.h](https://github.com/HackRVA/badge2020/blob/master/include/colors.h)
+
 	void FbColor(int color);
 		Sets the current foreground color, which subsequent drawing functions will then use.
 
@@ -134,8 +139,8 @@ Colors
 		will then use.
 ```
 
-Drawing Lines and Points
-------------------------
+Drawing Lines and Points and other things
+-----------------------------------------
 
 ```
 	void plot_point(int x, int y, void *context);
@@ -162,6 +167,22 @@ Drawing Lines and Points
 		than FbPolygonFromPoints() or FbDrawVectors() in that drawing[] contains signed chars, and the
 		polygons can be constructed via this program: https://github.com/smcameron/vectordraw
 		as well as allowing scaling.
+
+
+	The following are also available, however they are not implemented in
+	the linux badge emulator. See [include/fb.h](https://github.com/HackRVA/badge2020/blob/master/include/fb.h).
+
+	void FbSprite(unsigned char picId, unsigned char imageNo);
+	void FbCharacter(unsigned char charin);
+	void FbFilledRectangle(unsigned char width, unsigned char height);
+	void FbPrintChar(unsigned char charin, unsigned char x, unsigned char y);
+	void FbRectangle(unsigned char width, unsigned char height);
+	void FbImage(unsigned char assetId, unsigned char seqNum);
+	void FbImage8bit(unsigned char assetId, unsigned char seqNum);
+	void FbImage4bit(unsigned char assetId, unsigned char seqNum);
+	void FbImage2bit(unsigned char assetId, unsigned char seqNum);
+	void FbImage1bit(unsigned char assetId, unsigned char seqNum
+
 ```
 
 Moving the "Cursor"
@@ -176,7 +197,7 @@ Moving the "Cursor"
 
 			cursor.x += x;
 			cursor.y += y;
-		
+
 	void FbMoveX(unsigned char x);
 		Sets the x position of the cursor
 
@@ -342,7 +363,6 @@ Exiting the Badge App:
 ----------------------
 
 ```
-
 	void returnToMenus(void);
 		"Exits" the badge app and returns to the main menu. (In the linux
 		badge emulator, this actually calls exit(3).)
@@ -357,7 +377,7 @@ Miscellaneous Functions:
 		Converts the integer value into an ascii string in the given base. The string
 		must have enough memory to hold the converted value.  (Note: the linux badge
 		emulator currently ignores base, and assumes you meant base 10.)
-	
+
 	char *strcpy(char *dest, const char *src);
 		Copies NULL terminated string src to dest. There must be enough room in dest.
 
@@ -413,5 +433,33 @@ you'll find xorshift.h and xorshift.c which you can use.
 
 For more information about how this pseudorandom number generator is implemented,
 see https://en.wikipedia.org/wiki/Xorshift#Example_implementation.
+
+Menus
+-----
+
+There is a library for badge app menus. The interface for this library is defined in
+[include/dynmenu.h](https://github.com/HackRVA/badge2020/blob/master/include/dynmenu.h)
+and the implementation is in [src/dynmenu.c](https://github.com/HackRVA/badge2020/blob/master/src/dynmenu.c).
+The types and functions declared in dynmenu.h and the way they are meant to be used are are
+fairly well documented within [the header file](https://github.com/HackRVA/badge2020/blob/master/include/dynmenu.h).
+
+There is also *another*, different menu system defined in
+[include/badge_menu.h](https://github.com/HackRVA/badge2020/blob/master/include/badge_menu.h),
+which is used for the badge main menu, and it can also be used by badge apps.
+The API for this is a bit more complicated, while at the same time more
+limiting, as it does not (I think) allow for dynamically changing the menu
+elements. That is, if you need to have a menu item like "Take X", where X is
+replaced at runtime with some other word, then include/badge_menu.h won't help
+you (badge_apps/maze.c has menu items like this).
+
+Achievements
+------------
+
+If you want to add "achievements" to a badge app (i.e. a game) which are persistently stored in
+flash memory, a library is provided to help with this. This simple interface is documented in
+[include/achievements.h](https://github.com/HackRVA/badge2020/blob/master/include/achievements.h).
+
+You'll need to add any achievements specific to your badge app to the enumerated type defined
+there.
 
 
