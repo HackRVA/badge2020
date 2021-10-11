@@ -237,7 +237,6 @@ static void detect_high_swapbuffers_rate(void)
 	swapbuf_index = (swapbuf_index + 1) % SWAPBUF_PERF_TICKS;
 	start_time = 0;
 	end_time = 0;
-	total_time = 0;
 	frames = 0;
 	for (i = 0; i < 30; i++) {
 		if (swapbuf_timestamp[i] == 0)
