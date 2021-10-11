@@ -200,6 +200,12 @@ the linux badge emulator. See [include/fb.h](https://github.com/HackRVA/badge202
 Moving the "Cursor"
 -------------------
 
+A "graphics cursor" is maintained for the framebuffer.  This amounts
+to a "current (x,y) position" within the framebuffer that is implicitly
+used by various graphics drawing functions to indicate where on the
+framebuffer things should be drawn. There are a number of functions to
+adjust the position indicated by the cursor, described below.
+
 ```
 	void FbMove(unsigned char x, unsigned char y);
 		Move the cursor to (x, y)
