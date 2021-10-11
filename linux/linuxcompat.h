@@ -31,8 +31,7 @@ void FbMoveY(unsigned char y);
 
 /* Write a string to the frame buffer */
 void FbWriteLine(char *s);
-void FbWriteString(char *s, unsigned char length);
-void FbWriteZString(char *s);
+void FbWriteString(char *s);
 
 /* Convert integer to ascii string */
 void itoa(char *string, int value, int base);

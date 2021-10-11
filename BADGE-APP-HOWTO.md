@@ -234,14 +234,9 @@ Writing Strings to the Framebuffer
 		just to the right of the last character of the string. Newlines are
 		not handled specially.
 
-	void FbWriteString(char *s, unsigned char length);
+	void FbWriteString(char *s);
 		Writes a string with the specified length to the framebuffer.
 		Newlines are handled.
-
-	void FbWriteZString(char *s);
-		Writes a string with the specified length to the framebuffer.
-		Newlines are handled. Same as FbWriteString(), but a length
-		parameter is not required.
 ```
 
 Buttons and Directional-Pad Inputs

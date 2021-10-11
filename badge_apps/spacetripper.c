@@ -387,7 +387,7 @@ static void alert_player(char *title, char *msg)
 	FbWriteLine(title);
 	FbColor(GREEN);
 	FbMove(2, 20);
-	FbWriteZString(msg);
+	FbWriteString(msg);
 	FbSwapBuffers();
 	gs.last_screen = ALERT_SCREEN;
 	st_program_state = ST_ALERT;
@@ -968,21 +968,21 @@ static void st_srs_legend(void)
 	FbClear();
 	FbColor(WHITE);
 	FbMove(2, 2);
-	FbWriteZString("SRS LEGEND\n\n");
+	FbWriteString("SRS LEGEND\n\n");
 	FbColor(MAGENTA);
-	FbWriteZString("E ENTERPRISE\n");
+	FbWriteString("E ENTERPRISE\n");
 	FbColor(WHITE);
-	FbWriteZString("K KLINGON\n");
-	FbWriteZString("C KLINGON CMDR\n");
-	FbWriteZString("R ROMULAN\n");
+	FbWriteString("K KLINGON\n");
+	FbWriteString("C KLINGON CMDR\n");
+	FbWriteString("R ROMULAN\n");
 	FbColor(GREEN);
-	FbWriteZString("S STAR BASE\n");
+	FbWriteString("S STAR BASE\n");
 	FbColor(RED);
-	FbWriteZString("B BLACK HOLE\n");
+	FbWriteString("B BLACK HOLE\n");
 	FbColor(YELLOW);
-	FbWriteZString("* STAR\n");
+	FbWriteString("* STAR\n");
 	FbColor(CYAN);
-	FbWriteZString("O PLANET\n");
+	FbWriteString("O PLANET\n");
 	FbSwapBuffers();
 	gs.last_screen = SRS_LEGEND_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
@@ -992,12 +992,12 @@ static void print_numeric_item_with_frac(char *item, int value, int frac)
 {
 	char num[10];
 
-	FbWriteZString(item);
+	FbWriteString(item);
 	itoa(num, value, 10);
-	FbWriteZString(num);
-	FbWriteZString(".");
+	FbWriteString(num);
+	FbWriteString(".");
 	itoa(num, frac, 10);
-	FbWriteZString(num);
+	FbWriteString(num);
 	FbMoveX(2);
 	FbMoveRelative(0, 9);
 }
@@ -1006,9 +1006,9 @@ static void print_numeric_item(char *item, int value)
 {
 	char num[10];
 
-	FbWriteZString(item);
+	FbWriteString(item);
 	itoa(num, value, 10);
-	FbWriteZString(num);
+	FbWriteString(num);
 	FbMoveX(2);
 	FbMoveRelative(0, 9);
 }
@@ -1630,11 +1630,11 @@ static void st_damage_report(void)
 	show_torps_energy_and_dilith();
 	FbColor(WHITE);
 	if (gs.player.docked)
-		FbWriteZString("CURRENTLY\nDOCKED AT\nSTARBASE");
+		FbWriteString("CURRENTLY\nDOCKED AT\nSTARBASE");
 	if (gs.player.standard_orbit)
-		FbWriteZString("CURRENTLY\nIN STANDARD\nORBIT\n");
+		FbWriteString("CURRENTLY\nIN STANDARD\nORBIT\n");
 	if (gs.player.away_team != ABOARD_SHIP)
-		FbWriteZString("AWAY TEAM OUT");
+		FbWriteString("AWAY TEAM OUT");
 	FbSwapBuffers();
 	gs.last_screen = DAMAGE_SCREEN;
 	st_program_state = ST_PROCESS_INPUT;
@@ -1680,11 +1680,11 @@ static void st_status_report(void)
 	print_numeric_item("SCORE:", gs.score);
 	FbColor(WHITE);
 	if (gs.player.docked)
-		FbWriteZString("CURRENTLY\nDOCKED AT\nSTARBASE");
+		FbWriteString("CURRENTLY\nDOCKED AT\nSTARBASE");
 	if (gs.player.standard_orbit)
-		FbWriteZString("CURRENTLY\nIN STANDARD\nORBIT\n");
+		FbWriteString("CURRENTLY\nIN STANDARD\nORBIT\n");
 	if (gs.player.away_team != ABOARD_SHIP)
-		FbWriteZString("AWAY TEAM OUT");
+		FbWriteString("AWAY TEAM OUT");
 
 	FbSwapBuffers();
 	gs.last_screen = STATUS_SCREEN;
@@ -2076,7 +2076,7 @@ static void st_warp()
 
 	if (gs.player.damage[WARP_SYSTEM] > 0) {
 		FbMove(2, 110);
-		FbWriteZString("WARP SYS DAMAGED");
+		FbWriteString("WARP SYS DAMAGED");
 	}
 
 	FbSwapBuffers();
@@ -2190,27 +2190,27 @@ static void st_shield_energy(void)
 	FbClear();
 	FbMove(2, 2);
 	FbColor(WHITE);
-	FbWriteZString("SHIELD ENERGY\n");
+	FbWriteString("SHIELD ENERGY\n");
 	FbColor(GREEN);
 	print_numeric_item("SHLD ENRG: ", shield_energy);
 	print_numeric_item("SHIP ENRG: ", gs.player.energy);
 	print_numeric_item("MIN XFER: ", min);
 	print_numeric_item("MAX XFER: ", max);
 	FbColor(WHITE);
-	FbWriteZString("\n");
+	FbWriteString("\n");
 	print_numeric_item("XFER?  ", gs.player.new_shield_xfer);
 	FbColor(GREEN);
-	FbWriteZString("\nL/R - 100 UNITS\n");
-	FbWriteZString("U/D - 500 UNITS\n");
+	FbWriteString("\nL/R - 100 UNITS\n");
+	FbWriteString("U/D - 500 UNITS\n");
 	FbColor(WHITE);
 	if (gs.player.new_shield_xfer < 0)
-		FbWriteZString("XFER TO SHIP\n");
+		FbWriteString("XFER TO SHIP\n");
 	else if (gs.player.new_shield_xfer > 0)
-		FbWriteZString("XFER TO SHIELDS\n");
+		FbWriteString("XFER TO SHIELDS\n");
 	else
-		FbWriteZString("0 ENERGY XFER\n");
+		FbWriteString("0 ENERGY XFER\n");
 	FbColor(GREEN);
-	FbWriteZString("2% ENERGY LOSS\nINCURRED ON\nXFER");
+	FbWriteString("2% ENERGY LOSS\nINCURRED ON\nXFER");
 	FbSwapBuffers();
 	st_program_state = ST_SHIELD_ENERGY_INPUT;
 }
@@ -2441,7 +2441,7 @@ static void st_player_died(char *msg, char *first_menu_item, enum st_program_sta
 	dynmenu_draw(&menu);
 	FbMove(2, 21);
 	FbColor(CYAN);
-	FbWriteZString(msg);
+	FbWriteString(msg);
 	FbSwapBuffers();
 	st_program_state = ST_PROCESS_INPUT;
 }
@@ -2530,11 +2530,11 @@ static void report_damage(void)
 	FbClear();
 	FbColor(WHITE);
 	FbMove(2, 2);
-	FbWriteZString("CAPTAIN\n\nWE HAVE BEEN\nHIT BY ENEMY\nFIRE\n\nDAMAGE TO:\n");
+	FbWriteString("CAPTAIN\n\nWE HAVE BEEN\nHIT BY ENEMY\nFIRE\n\nDAMAGE TO:\n");
 	FbColor(CYAN);
 	for (i = 0; (size_t) i < NSHIP_SYSTEMS; i++) {
 		if (gs.player.damage_flags & (1 << i)) {
-			FbWriteZString((char *) ship_system[i]);
+			FbWriteString((char *) ship_system[i]);
 			FbMoveX(2);
 			FbMoveRelative(0, 8);
 		}
