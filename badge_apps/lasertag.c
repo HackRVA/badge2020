@@ -20,6 +20,7 @@ code must run in.
 
 #else
 
+#include <string.h>
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
@@ -27,17 +28,6 @@ code must run in.
 #include "flash.h" /* for G_sysData */
 #include "timer1_int.h"
 #include "fb.h"
-
-/* TODO: I shouldn't have to declare these myself. */
-#define size_t int
-extern char *strcpy(char *dest, const char *src);
-extern char *strncpy(char *dest, const char *src, size_t n);
-extern void *memset(void *s, int c, size_t n);
-extern void *memcpy(void *dest, const void *src, size_t n);
-extern char *strcat(char *dest, const char *src);
-#ifndef NULL
-#define NULL 0
-#endif
 
 #define DISABLE_INTERRUPTS
 #define ENABLE_INTERRUPTS

@@ -13,18 +13,11 @@ Author: Stephen M. Cameron <stephenmcameron@gmail.com>
 #include "../linux/linuxcompat.h"
 #include "../linux/bline.h"
 #else
+#include <string.h>
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
 #include "fb.h"
-
-/* TODO: I shouldn't have to declare these myself. */
-#define size_t int
-extern char *strcpy(char *dest, const char *src);
-extern char *strncpy(char *dest, const char *src, size_t n);
-extern void *memset(void *s, int c, size_t n);
-extern char *strcat(char *dest, const char *src);
-
 #endif
 
 #include "xorshift.h"

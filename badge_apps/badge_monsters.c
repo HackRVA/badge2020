@@ -20,21 +20,13 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 #define ENABLE_INTERRUPTS do { enable_interrupts(); } while (0)
 
 #else
-#include <plib.h> /* for strlen() */
+#include <string.h>
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
 #include "flash.h"
 #include "ir.h"
 #include "fb.h"
-
-/* TODO: I shouldn't have to declare these myself. */
-#define size_t int
-extern char *strcpy(char *dest, const char *src);
-extern char *strcat(char *dest, const char *src);
-#ifndef NULL
-#define NULL 0
-#endif
 
 #define DISABLE_INTERRUPTS
 #define ENABLE_INTERRUPTS
