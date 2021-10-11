@@ -60,7 +60,6 @@ static int balls_inc = 0;
 enum smashout_program_state_t {
 	SMASHOUT_GAME_INIT,
 	SMASHOUT_GAME_PLAY,
-	SMASHOUT_GAME_,
 	SMASHOUT_GAME_EXIT,
 };
 
