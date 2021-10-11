@@ -51,6 +51,23 @@ static struct smashout_brick {
 	unsigned char x, y, alive; /* upper left corner of brick */
 } brick[4 * 16];
 
+/* When a brick is destroyed, it emits sparks.  On linux, it looks good
+ * if the sparks are the same color as the destroyed brick.  On the badge
+ * you really can't see the sparks unless they're white
+ */
+#define USE_COLORED_SPARKS 0
+#define SPARKS_PER_BRICK 8
+#define MAXSPARKS 25
+static struct spark_data {
+	int x, y, vx, vy, alive;
+#if USE_COLORED_SPARKS
+#define SPARK_COLOR spark[i].color
+	int color;
+#else
+#define SPARK_COLOR WHITE
+#endif
+} spark[MAXSPARKS] = { 0 };
+
 static int score = 0;
 static int balls = 0;
 static int score_inc = 0;
@@ -167,6 +184,90 @@ static int ylim(int y)
 	return y;
 }
 
+#if USE_COLORED_SPARKS
+static void add_spark(int x, int y, int color)
+#else
+static void add_spark(int x, int y, __attribute__((unused)) int color)
+#endif
+{
+	int i;
+
+	for (i = 0; i < MAXSPARKS; i++) {
+		if (!spark[i].alive) {
+			spark[i].x = x;
+			spark[i].y = y;
+			spark[i].vx = (((xorshift(&xorshift_state) >> 16) & 0x0ff) - 128);
+			spark[i].vy = (((xorshift(&xorshift_state) >> 16) & 0x0ff) - 128);
+			spark[i].alive = 4 + ((xorshift(&xorshift_state) >> 16) & 0x7);
+#if USE_COLORED_SPARKS
+			spark[i].color = color;
+#endif
+			return;
+		}
+	}
+}
+
+static void add_sparks(int x, int y, int n, int color)
+{
+	int i;
+
+	for (i = 0; i < n; i++)
+		add_spark(x, y, color);
+}
+
+static void smashout_move_sparks(void)
+{
+	int i;
+
+	for (i = 0; i < MAXSPARKS; i++) {
+		if (!spark[i].alive)
+			continue;
+		spark[i].x += spark[i].vx;
+		spark[i].y += spark[i].vy;
+		if (spark[i].alive > 0) {
+			spark[i].alive--;
+			if (!spark[i].alive) {
+				/* Erase dead sparks */
+				int x0, y0, x1, y1;
+				x0 = ((spark[i].x - 2 * spark[i].vx) >> 3);
+				y0 = ((spark[i].y - 2 * spark[i].vy) >> 3);
+				x1 = ((spark[i].x - spark[i].vx) >> 3);
+				y1 = ((spark[i].y - spark[i].vy) >> 3);
+				if (x0 >= 0 && x0 <= 127 && y0 >= 0 && y0 <= 127 &&
+					x1 >= 0 && x1 <= 127 && y1 >= 0 && y1 <= 127) {
+					FbColor(BLACK);
+					FbLine(x0, y0, x1, y1);
+				}
+			}
+		}
+	}
+}
+
+static void smashout_draw_sparks(void)
+{
+	int i, x0, y0, x1, y1, x2, y2;
+
+	for (i = 0; i < MAXSPARKS; i++) {
+		if (!spark[i].alive)
+			continue;
+		x0 = ((spark[i].x - 2 * spark[i].vx) >> 3);
+		y0 = ((spark[i].y - 2 * spark[i].vy) >> 3);
+		x1 = ((spark[i].x - spark[i].vx) >> 3);
+		y1 = ((spark[i].y - spark[i].vy) >> 3);
+		x2 = ((spark[i].x) >> 3);
+		y2 = ((spark[i].y) >> 3);
+		if (x0 >= 0 && x0 <= 127 && y0 >= 0 && y0 <= 127 &&
+			x1 >= 0 && x1 <= 127 && y1 >= 0 && y1 <= 127) {
+			FbColor(BLACK);
+			FbLine(x0, y0, x1, y1);
+		}
+		if (x1 >= 0 && x1 <= 127 && y1 >= 0 && y1 <= 127 &&
+			x2 >= 0 && x2 <= 127 && y2 >= 0 && y2 <= 127) {
+			FbColor(SPARK_COLOR);
+			FbLine(x1, y1, x2, y2);
+		}
+	}
+}
 
 static void smashout_draw_ball()
 {
@@ -263,6 +364,11 @@ static void smashout_move_ball()
 				b->alive = 0;
 				score_inc++;
 				ball.vy = -ball.vy;
+#if USE_COLORED_SPARKS
+				add_sparks(ball.x, ball.y, SPARKS_PER_BRICK, brick_color[row]);
+#else
+				add_sparks(ball.x, ball.y, SPARKS_PER_BRICK, WHITE);
+#endif
 			}
 		}
 	}
@@ -284,6 +390,7 @@ static void smashout_draw_screen()
 {
 	smashout_draw_paddle();
 	smashout_draw_ball();
+	smashout_draw_sparks();
 	smashout_draw_bricks();
 	draw_score_and_balls(BLACK);
 	score += score_inc;
@@ -299,6 +406,7 @@ static void smashout_game_play()
 	smashout_check_buttons();
 	smashout_move_paddle();
 	smashout_move_ball();
+	smashout_move_sparks();
 	smashout_draw_screen();
 }
 
