@@ -26,12 +26,12 @@
 #include "achievements.h"
 
 /* TODO figure out where these should really come from */
-#define PADDLE_HEIGHT 25
+#define PADDLE_HEIGHT 12
 #define PADDLE_WIDTH 30
 #define PADDLE_SPEED 7
 #define BALL_STARTX (8 * LCD_XSIZE / 2)
-#define BALL_STARTY (8 * LCD_YSIZE / 2)
-#define BALL_START_VX (1 * 8)
+#define BALL_STARTY (8 * LCD_YSIZE / 3)
+#define BALL_START_VX (5 * ((xorshift(&xorshift_state) % 11) - 5))
 #define BALL_START_VY (2 * 8)
 #define BRICK_WIDTH 8
 #define BRICK_HEIGHT 4
@@ -55,6 +55,7 @@ static int score = 0;
 static int balls = 0;
 static int score_inc = 0;
 static int balls_inc = 0;
+static unsigned int xorshift_state;
 
 /* Program states.  Initial state is SMASHOUT_GAME_INIT */
 enum smashout_program_state_t {
@@ -82,6 +83,7 @@ static void init_bricks(void)
 
 static void smashout_game_init(void)
 {
+	xorshift_state = 0xa5a5a5a5 ^ timestamp;
 	FbInit();
 	FbClear();
 	init_bricks();
