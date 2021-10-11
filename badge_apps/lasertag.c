@@ -293,7 +293,6 @@ static void draw_menu(void)
 	if (all_game_data_received()) {
 		title[0] = '\0';
 		timecode[0] = '\0';
-		color = WHITE;
 		if (seconds_until_game_starts == NO_GAME_START_TIME) {
 			suppress_further_hits_until = -1;
 			strcpy(title, "GAME OVER");
