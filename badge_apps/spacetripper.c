@@ -354,14 +354,14 @@ static void reduce_player_energy(int amount)
 	if (gs.player.energy == 0)
 		return;
 
-	gs.player.energy -= amount;
 	if (gs.player.dilithium_crystals < 10)
 		amount *= 2;
 	else if (gs.player.dilithium_crystals < 5)
 		amount *= 4;
 	else if (gs.player.dilithium_crystals == 0)
 		amount *= 10;
-	if (gs.player.energy < 0) {
+	gs.player.energy -= amount;
+	if (gs.player.energy <= 0) {
 		gs.player.energy = 0;
 		gs.player.warp_factor = 0;
 	}
