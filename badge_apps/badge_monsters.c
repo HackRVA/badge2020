@@ -98,6 +98,8 @@ static const struct point freshmon_points[] =
 #include "badge_monster_drawings/freshmon.h"
 // static const struct point mcturtle_points[] =
 // #include "badge_monster_drawings/mcturtle.h"
+static const struct point boothole_points[] =
+#include "badge_monster_drawings/boothole.h"
 static const struct point ghostcat_points[] =
 #include "badge_monster_drawings/ghostcat.h"
 static const struct point bluekeep_points[] =
@@ -153,6 +155,7 @@ struct monster monsters[] = {
     {"hrvamon", ARRAYSIZE(hrvamon_points), 0, WHITE, hrvamon_points, "come check out hackrva maker space Thursday nights at 7. 1600 Roseneath Road Suite E Richmond, VA 23230"},
     // {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "Turtles are reptiles with hard shells that protect them from predators"},
     {"GHOSTCAT", ARRAYSIZE(ghostcat_points), 0, YELLOW, ghostcat_points, "GHOSTCAT Ghostcat is a high-risk file read / include vulnerability in Tomcat"},
+    {"BOOTHOLE", ARRAYSIZE(boothole_points), 0, GREEN, boothole_points, "BOOTHOLE is a vulnerability in GRUB2 allowing arbitrary code execution during secure boot"},
     {"BLUEKEEP", ARRAYSIZE(bluekeep_points), 0, BLUE, bluekeep_points, "BLUEKEEP is a remote code execution vulnerability in Microsoft's Remote Desktop Protocol implementation"},
     {"SMBGhost", ARRAYSIZE(smbghost_points), 0, WHITE, smbghost_points, "SMBGhost is a remote code execution vulnerability in Microsoft's SMBv3"},
     {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "this goat is scared because they are alone in the world"},
