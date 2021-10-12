@@ -42,6 +42,7 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 #define TRADE_MONSTERS 4
 #define CHECK_THE_BUTTONS 5
 #define EXIT_APP 6
+#define ENABLE_ALL_MONSTERS 7
 
 static void app_init(void);
 static void game_menu(void);
@@ -53,6 +54,9 @@ static void check_the_buttons(void);
 static void setup_main_menu(void);
 static void setup_monster_menu(void);
 static void exit_app(void);
+#ifdef __linux__
+static void enable_all_monsters(void);
+#endif
 
 typedef void (*state_to_function_map_fn_type)(void);
 
@@ -64,6 +68,9 @@ static state_to_function_map_fn_type state_to_function_map[] = {
     trade_monsters,
     check_the_buttons,
     exit_app,
+#ifdef __linux__
+    enable_all_monsters,
+#endif
 };
 
 #define TOTAL_BADGES 300
@@ -212,6 +219,20 @@ static void enable_monster(int monster_id)
         printf("enabling monster: %d\n", monster_id);
     #endif
 }
+
+#ifdef __linux__
+static void enable_all_monsters(void)
+{
+	int i;
+
+	for (i = 0; i < nmonsters; i++)
+		enable_monster(i);
+	FbClear();
+	FbMove(2, 2);
+	FbWriteString("ALL MONSTERS\nENABLED!");
+	app_state = RENDER_SCREEN;
+}
+#endif
 
 static unsigned int build_packet(unsigned char cmd, unsigned char start,
             unsigned char address, unsigned short badge_id, unsigned short payload)
@@ -579,6 +600,11 @@ static void check_the_buttons(void)
                     case 2:
                         app_state = EXIT_APP;
                         break;
+#ifdef __linux__
+		    case 3:
+			app_state = ENABLE_ALL_MONSTERS;
+			break;
+#endif
                 }
             }
 
@@ -693,6 +719,10 @@ static void setup_main_menu(void)
     menu_add_item("Monsters", RENDER_SCREEN, 0);
     menu_add_item("Trade Monsters", TRADE_MONSTERS, 1);
     menu_add_item("EXIT", EXIT_APP, 2);
+#ifdef __linux__
+    /* For testing purposes allow enabling all monsters on linux */
+    menu_add_item("Test Monsters", ENABLE_ALL_MONSTERS, 3);
+#endif
     screen_changed = 1;
 }
 
