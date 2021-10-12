@@ -30,13 +30,13 @@ extern char *strcat(char *dest, const char *src);
 
 static int screen_changed = 0;
 
-#define GRID_SIZE 100
 #define ROW_SIZE 10
 #define COL_SIZE 10
+#define GRID_SIZE (ROW_SIZE * COL_SIZE)
 
-#define GRID_PADDING 3
-#define CELL_SIZE 20
-#define CELL_PADDING 0
+#define GRID_PADDING 8
+#define CELL_SIZE 12
+#define CELL_PADDING 3
 
 #define STARTX(x) (GRID_PADDING + CELL_PADDING + ((x)*CELL_SIZE))
 #define ENDX(x) (GRID_PADDING + CELL_SIZE + ((x)*CELL_SIZE))
@@ -72,7 +72,7 @@ static int is_next_row(int current_cell_index)
 	return (current_cell_index + 1) % ROW_SIZE == 0;
 }
 
-static void init_grid()
+static void init_cells()
 {
 	unsigned int x = 0;
 	unsigned int y = 0;
@@ -108,21 +108,18 @@ static void render_box(int grid_x, int grid_y, int color)
 	FbVerticalLine(ENDX(grid_x), STARTY(grid_y), ENDX(grid_x), ENDY(grid_y));
 }
 
-static void render_cell(int grid_x, int grid_y)
+static void render_cell(int grid_x, int grid_y, int alive)
 {
-	render_box(grid_x, grid_y, WHITE);
+	int cell_color_state = alive ? BLUE : WHITE;
+	render_box(grid_x, grid_y, cell_color_state);
 }
 
-static void render_grid()
+static void render_cells()
 {
 
-	for (int row = 0; row <= 6 - 1; row++)
+	for (int i = 0; i <= GRID_SIZE - 1; i++)
 	{
-
-		for (int col = 0; col < 6 - 1; col++)
-		{
-			render_cell(row, col);
-		}
+		render_cell(grid.cells[i].coordinate.x, grid.cells[i].coordinate.y, grid.cells[i].alive);
 	}
 }
 
@@ -136,42 +133,34 @@ static void debug_print()
 
 static void render_game()
 {
-	// if (!screen_changed)
-	// {
-	// 	return;
-	// }
 
-	// FbClear();
+	FbClear();
 
-	render_grid();
+	render_cells();
+	FbSwapBuffers();
 
 	screen_changed = 0;
 }
 
 static void check_buttons()
 {
-	// if (BUTTON_PRESSED_AND_CONSUME)
-	// {
-	// 	screen_changed = 1;
-	// }
-	// else if (LEFT_BTN_AND_CONSUME)
-	// {
-	// 	screen_changed = 1;
-	// }
-	// else if (RIGHT_BTN_AND_CONSUME)
-	// {
-	// 	screen_changed = 1;
-	// }
-	// else if (UP_BTN_AND_CONSUME)
-	// {
-	// 	screen_changed = 1;
-	// }
-	// else if (DOWN_BTN_AND_CONSUME)
-	// {
-	// 	screen_changed = 1;
-	// }
-	FbColor(WHITE);
-	FbClear();
+	if (BUTTON_PRESSED_AND_CONSUME)
+	{
+	}
+	else if (LEFT_BTN_AND_CONSUME)
+	{
+		game_of_life_state = GAME_OF_LIFE_EXIT;
+	}
+	else if (RIGHT_BTN_AND_CONSUME)
+	{
+		game_of_life_state = GAME_OF_LIFE_EXIT;
+	}
+	else if (UP_BTN_AND_CONSUME)
+	{
+	}
+	else if (DOWN_BTN_AND_CONSUME)
+	{
+	}
 	render_game();
 }
 
@@ -200,7 +189,7 @@ static void game_of_life_splash_screen()
 
 	if (BUTTON_PRESSED_AND_CONSUME)
 	{
-		init_grid();
+		init_cells();
 		game_of_life_state = GAME_OF_LIFE_RUN;
 	}
 }
