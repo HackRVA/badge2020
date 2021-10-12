@@ -22,7 +22,6 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 #else
 #include <string.h>
 #include "colors.h"
-#include "menu.h"
 #include "buttons.h"
 #include "flash.h"
 #include "ir.h"
@@ -33,6 +32,7 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 
 #endif
 
+#include "dynmenu.h"
 #include "badge_apps/badge_monsters.h"
 
 #define INIT_APP_STATE 0
@@ -46,7 +46,6 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 
 static void app_init(void);
 static void game_menu(void);
-static void menu_clear(void);
 static void render_screen(void);
 static void render_monster(void);
 static void trade_monsters(void);
@@ -72,6 +71,8 @@ static state_to_function_map_fn_type state_to_function_map[] = {
     enable_all_monsters,
 #endif
 };
+
+struct dynmenu menu;
 
 #define TOTAL_BADGES 300
 #define BADGE_ID G_sysData.badgeId
@@ -203,22 +204,6 @@ enum menu_level_t {
     DESCRIPTION
 } menu_level;
 
-struct menu_item
-{
-    char text[15];
-    state_to_function_map_fn_type next_state;
-    unsigned char cookie;
-};
-
-static struct menu
-{
-    char title[15];
-    struct menu_item item[20];
-    unsigned char nitems;
-    unsigned char current_item;
-    unsigned char menu_active;
-    unsigned char chosen_cookie;
-} menu;
 
 static void enable_monster(int monster_id)
 {
@@ -303,43 +288,11 @@ static void check_for_incoming_packets(void)
     ENABLE_INTERRUPTS;
 }
 
-static void menu_clear(void)
-{
-    strncpy(menu.title, "", sizeof(menu.title) - 1);
-    menu.nitems = 0;
-    menu.current_item = 0;
-    menu.chosen_cookie = 0;
-}
-
-static void menu_add_item(char *text, int next_state, unsigned char cookie)
+static void draw_menu(void)
 {
     int i;
 
-    if (menu.nitems >= ARRAYSIZE(menu.item))
-        return;
-
-    i = menu.nitems;
-    strncpy(menu.item[i].text, text, sizeof(menu.item[i].text) - 1);
-    menu.item[i].next_state = state_to_function_map[next_state];
-    menu.item[i].cookie = cookie;
-    menu.nitems++;
-}
-
-static void draw_menu(void)
-{
-    int i, y, first_item, last_item;
-
-    first_item = menu.current_item - 4;
-    if (first_item < 0)
-        first_item = 0;
-    last_item = menu.current_item + 4;
-    if (last_item > menu.nitems - 1)
-        last_item = menu.nitems - 1;
-
-    FbClear();
-    FbColor(WHITE);
-    FbMove(8, 5);
-    FbWriteLine(menu.title);
+    dynmenu_draw(&menu);
     if(menu_level != MONSTER_MENU){
         int nunlocked = 0;
         char available_monsters[3];
@@ -368,45 +321,13 @@ static void draw_menu(void)
         FbWriteLine("/");
         FbWriteLine(available_monsters);
     }
-
-    y = LCD_YSIZE / 2 - 12 * (menu.current_item - first_item);
-    for (i = first_item; i <= last_item; i++)
-    {
-        if (i == menu.current_item)
-            FbColor(GREEN);
-        else
-            FbColor(WHITE);
-        FbMove(10, y);
-        FbWriteLine(menu.item[i].text);
-        y += 12;
-    }
-
-    FbColor(GREEN);
-    FbHorizontalLine(5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 - 2);
-    FbHorizontalLine(5, LCD_YSIZE / 2 + 10, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
-    FbVerticalLine(5, LCD_YSIZE / 2 - 2, 5, LCD_YSIZE / 2 + 10);
-    FbVerticalLine(LCD_XSIZE - 5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
-
-
     app_state = RENDER_SCREEN;
-}
-
-static void menu_change_current_selection(int direction)
-{
-    int old = menu.current_item;
-    int new = old + direction;
-    if (new < 0)
-        new = menu.nitems - 1;
-    else if (new >= menu.nitems)
-        new = 0;
-    menu.current_item = new;
-    screen_changed |= (menu.current_item != old);
 }
 
 static void change_menu_level(enum menu_level_t level)
 {
     menu_level = level;
-    menu_clear();
+    dynmenu_clear(&menu);
     switch(level){
         case MAIN_MENU:
             setup_main_menu();
@@ -585,12 +506,14 @@ static void check_the_buttons(void)
         case MAIN_MENU:
             if (UP_BTN_AND_CONSUME)
             {
-                menu_change_current_selection(-1);
+                dynmenu_change_current_selection(&menu, -1);
+		screen_changed = 1;
                 something_changed = 1;
             }
             else if (DOWN_BTN_AND_CONSUME)
             {
-                menu_change_current_selection(1);
+                dynmenu_change_current_selection(&menu, 1);
+		screen_changed = 1;
                 something_changed = 1;
             }
             else if (LEFT_BTN_AND_CONSUME)
@@ -624,13 +547,15 @@ static void check_the_buttons(void)
         case MONSTER_MENU:
             if (UP_BTN_AND_CONSUME)
             {
-                menu_change_current_selection(-1);
+                dynmenu_change_current_selection(&menu, -1);
+		screen_changed = 1;
                 current_monster = menu.item[menu.current_item].cookie;
                 render_monster();
             }
             else if (DOWN_BTN_AND_CONSUME)
             {
-                menu_change_current_selection(1);
+                dynmenu_change_current_selection(&menu, 1);
+		screen_changed = 1;
                 current_monster = menu.item[menu.current_item].cookie;
                 render_monster();
             }
@@ -704,13 +629,13 @@ static void check_the_buttons(void)
 static void setup_monster_menu(void)
 {
     int i;
-    menu_clear();
+    dynmenu_clear(&menu);
     menu.menu_active = 0;
     strcpy(menu.title, "Monsters");
 
     for(i = 0; i < nmonsters; i++){
         if(monsters[i].status)
-            menu_add_item(monsters[i].name, RENDER_MONSTER, i);
+            dynmenu_add_item(&menu, monsters[i].name, RENDER_MONSTER, i);
     }
 
     #if 0
@@ -726,14 +651,14 @@ static void setup_monster_menu(void)
 
 static void setup_main_menu(void)
 {
-    menu_clear();
+    dynmenu_clear(&menu);
     strcpy(menu.title, "Badge Monsters");
-    menu_add_item("Monsters", RENDER_SCREEN, 0);
-    menu_add_item("Trade Monsters", TRADE_MONSTERS, 1);
-    menu_add_item("EXIT", EXIT_APP, 2);
+    dynmenu_add_item(&menu, "Monsters", RENDER_SCREEN, 0);
+    dynmenu_add_item(&menu, "Trade Monsters", TRADE_MONSTERS, 1);
+    dynmenu_add_item(&menu, "EXIT", EXIT_APP, 2);
 #ifdef __linux__
     /* For testing purposes allow enabling all monsters on linux */
-    menu_add_item("Test Monsters", ENABLE_ALL_MONSTERS, 3);
+    dynmenu_add_item(&menu, "Test Monsters", ENABLE_ALL_MONSTERS, 3);
 #endif
     screen_changed = 1;
 }

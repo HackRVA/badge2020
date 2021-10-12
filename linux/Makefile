@@ -34,7 +34,7 @@ ${BIN}:
 		touch ${BIN}  ; \
 	fi
 
-bin/badge_monsters:	${BIN} ${APPDIR}/badge_monsters.c linuxcompat.o bline.o ${LINUX_OBJS} \
+bin/badge_monsters:	${BIN} ${APPDIR}/badge_monsters.c linuxcompat.o bline.o dynmenu.o ${LINUX_OBJS} \
 			${MONSTERS}/eddie.h \
 			${MONSTERS}/freshmon.h \
 			${MONSTERS}/goat_mon.h \
@@ -52,7 +52,7 @@ bin/badge_monsters:	${BIN} ${APPDIR}/badge_monsters.c linuxcompat.o bline.o ${LI
 			${MONSTERS}/tuxmon.h \
 			${MONSTERS}/worm.h \
 			${MONSTERS}/zombieload.h
-	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/badge_monsters -I . -I ${BADGE_INC} ${APPDIR}/badge_monsters.c ${GTKLDFLAGS}
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/badge_monsters -I . -I ${BADGE_INC} dynmenu.o ${APPDIR}/badge_monsters.c ${GTKLDFLAGS}
 
 bin/sample_app:	${BIN} ${APPDIR}/sample_app.c linuxcompat.o bline.o ${LINUX_OBJS} \
 			${MONSTERS}/smileymon.h
