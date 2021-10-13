@@ -22,6 +22,7 @@
 #include "badge_apps/spacetripper.h"
 #include "badge_apps/smashout.h"
 #include "badge_apps/hacking_simulator.h"
+#include "badge_apps/cube.h"
 #ifdef INCLUDE_IRXMIT
 #include "badge_apps/irxmit.h"
 #endif
@@ -505,6 +506,7 @@ const struct menu_t games_m[] = {
    {"Space Tripper", VERT_ITEM, FUNCTION, {(struct menu_t *)spacetripper_cb} },
    {"Smashout",      VERT_ITEM, FUNCTION, {(struct menu_t *)smashout_cb} },
    {"Hacking Simulator", VERT_ITEM, FUNCTION, {(struct menu_t *)hacking_simulator_cb} },
+   {"Spinning Cube", VERT_ITEM, FUNCTION, {(struct menu_t *)cube_cb} },
 #ifdef INCLUDE_IRXMIT
    {"IR XMIT",       VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb} },
 #endif
