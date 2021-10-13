@@ -212,6 +212,7 @@ int cube_cb(void)
 		cube_run();
 		break;
 	case CUBE_EXIT:
+		cube_state = CUBE_INIT;
 		returnToMenus();
 		break;
 	default:
