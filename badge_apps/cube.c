@@ -56,15 +56,20 @@ char cube[] = { 0, 1, 2, 3, 0, 4, 5, 6, 7, 4,
 static void cube_init(void)
 {
 	int i;
+	static int already_scaled_cube = 0;
+
 	FbInit();
 	FbClear();
 	FbSwapBuffers();
 	cube_state = CUBE_RUN;
+	if (already_scaled_cube)
+		return;
 	for (i = 0; (size_t) i < ARRAYSIZE(cubept2); i++) {
 		cubept2[i].x = cubept2[i].x << SHIFT;
 		cubept2[i].y = cubept2[i].y << SHIFT;
 		cubept2[i].z = cubept2[i].z << SHIFT;
 	}
+	already_scaled_cube = 1;
 }
 
 static void yrotate(struct fixed_vec3 *p1, struct fixed_vec3 *p2, int npoints, int angle)
