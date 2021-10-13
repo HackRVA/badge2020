@@ -113,27 +113,6 @@ static void xrotate(struct fixed_vec3 *p1, struct fixed_vec3 *p2, int npoints, i
 	}
 }
 
-float to_float(int x)
-{
-	int m, f;
-
-	m = (float) (x >> SHIFT);
-	f = ((1.0 * (x & 0x000000ff)) / (float) 0x000000ff);
-	return m + f;
-}
-
-void orthographic(int x, int y, int z, int *dx, int *dy)
-{
-	const int centerx = (LCD_XSIZE << SHIFT) / 2;
-	const int centery = (LCD_YSIZE << SHIFT) / 2;
-
-	*dx = x + z / 2;
-	*dy = y + z / 2;
-
-	*dx += centerx;
-	*dy += centery;
-}
-
 static void perspective(int x, int y, int z, int *dx, int *dy)
 {
 	const int centerx = (LCD_XSIZE << SHIFT) / 2;
