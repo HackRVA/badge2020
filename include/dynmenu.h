@@ -16,13 +16,27 @@ struct dynmenu {
 	char title[15]; /* Up to three lines of text to be used as a menu title. */
 	char title2[15];
 	char title3[15];
-	struct dynmenu_item item[20];	/* Up to items on the menu */
-	unsigned char nitems;		/* Actual number of items on the menu */
+	struct dynmenu_item *item;	/* Up to max_items on the menu */
+	unsigned char nitems;		/* Current actual number of items on the menu */
+	unsigned char max_items;	/* Maximum possible number of items on the menu. */
 	unsigned char current_item;	/* Position within the menu of the selection box. */
 	unsigned char menu_active;	/* Is this menu active? currently on screen? */
 	unsigned char chosen_cookie;	/* Contains the cookie of the most recently selected item. */
 	int color, selected_color;	/* Color of menu text and color of currently selected item. */
 };
+
+/* dynmenu_init(): Initialize a dynamic menu, dm.
+ * @item is an array of struct dynmenu_item that you provide.
+ * @max_item_count is the the number of elements @item provides.
+ *
+ * Typical usage:
+ *
+ * struct dynmenu menu;
+ * struct dynmenu_item item[5];
+ * ...
+ * dynmenu_init(&menu, item, ARRAYSIZE(item));
+ */
+void dynmenu_init(struct dynmenu *dm, struct dynmenu_item *item, unsigned char max_item_count);
 
 /* Set the color of the menu text and the color of the selected item */
 void dynmenu_set_colors(struct dynmenu *dm, int color, int selected_color);
@@ -55,7 +69,19 @@ enum my_program_state {
 	...
 };
 
+#define MAX_MENU_ITEMS 5 // or however many you need
 static struct dynmenu my_app_menu;
+static struct dynmenu_item item[MAX_MENU_ITEMS];
+
+static void do_app_init(void)
+{
+	dynmenu_init(&my_app_menu, item, ARRAYSIZE(item));
+	dynmenu_clear(&my_app_menu);
+	dynmenu_add_item(&my_app_menu, "Whatever", WHATEVER, 0);
+	dynmenu_add_item(&my_app_menu, "Blah", BLAH, 0);
+	dynmenu_add_item(&my_app_menu, "Etc", ETC, 0);
+	// and whatever other app init stuff you might need
+}
 
 int badge_app_cb(void)
 {

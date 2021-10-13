@@ -72,12 +72,9 @@ static state_to_function_map_fn_type state_to_function_map[] = {
 #endif
 };
 
-struct dynmenu menu;
-
 #define TOTAL_BADGES 300
 #define BADGE_ID G_sysData.badgeId
 #define ARRAYSIZE(x) (sizeof((x)) / sizeof((x)[0]))
-
 
 /* These need to be protected from interrupts. */
 #define QUEUE_SIZE 5
@@ -173,6 +170,9 @@ struct monster vendor_monsters[] = {
     {"vsmileymon", ARRAYSIZE(smiley_points), 0, CYAN, smiley_points, "some nice words here"},
     {"vgoatmon", ARRAYSIZE(smiley_points), 0, CYAN, goat_mon_points, "some nice words here"}
 };
+
+struct dynmenu menu;
+struct dynmenu_item menu_item[ARRAYSIZE(monsters) + ARRAYSIZE(vendor_monsters)];
 
 int initial_mon;
 
@@ -713,6 +713,7 @@ static void app_init(void)
     FbInit();
     app_state = INIT_APP_STATE;
     register_ir_packet_callback(ir_packet_callback);
+    dynmenu_init(&menu, menu_item, ARRAYSIZE(menu_item));
 
     change_menu_level(MAIN_MENU);
     app_state = GAME_MENU;

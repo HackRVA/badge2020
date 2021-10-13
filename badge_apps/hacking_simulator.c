@@ -1048,9 +1048,11 @@ static void hackingsimulator_exit()
 }
 
 static struct dynmenu quitmenu;
+static struct dynmenu_item quitmenu_item[2];
 
 static void hackingsimulator_quit_confirm(void)
 {
+	dynmenu_init(&quitmenu, quitmenu_item, ARRAYSIZE(quitmenu_item));
 	dynmenu_clear(&quitmenu);
 	strcpy(quitmenu.title, "HACKING SIM");
 	strcpy(quitmenu.title2, "REALLY QUIT?");

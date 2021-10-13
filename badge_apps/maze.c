@@ -364,6 +364,7 @@ static struct maze_object_template maze_object_template[] = {
 };
 
 struct dynmenu maze_menu;
+struct dynmenu_item maze_menu_item[20];
 
 static struct maze_object maze_object[MAX_MAZE_OBJECTS];
 static int nmaze_objects = 0;
@@ -1689,6 +1690,7 @@ static void maze_game_init(void)
     if (xorshift_state == 0)
         xorshift_state = 0xa5a5a5a5;
 
+    dynmenu_init(&maze_menu, maze_menu_item, ARRAYSIZE(maze_menu_item));
     maybe_load_achievements_from_flash();
     init_seeds();
     player_init();
