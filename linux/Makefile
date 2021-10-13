@@ -19,9 +19,11 @@ USERNAME=username
 LUNARLANDER=lunarlander
 HACKING_SIMULATOR=hacking_simulator
 SPACETRIPPER=spacetripper
+CUBE=cube
 
 all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/badge_monsters bin/fixup_monster bin/username \
-	bin/sample_app bin/smashout bin/ghost-detector bin/lunarlander bin/${HACKING_SIMULATOR} bin/${SPACETRIPPER}
+	bin/sample_app bin/smashout bin/ghost-detector bin/lunarlander bin/${HACKING_SIMULATOR} bin/${SPACETRIPPER} \
+	bin/${CUBE}
 
 # we need to depend on ${BIN}/.t not on ${BIN} because BIN is a directory and the
 # timestamp changes whenever the directory contents change, and we need to depend
@@ -75,6 +77,9 @@ bin/${GHOSTDETECTOR}:	${BIN} ${APPDIR}/${GHOSTDETECTOR}.c linuxcompat.o
 
 bin/${LUNARLANDER}:	${BIN} ${APPDIR}/${LUNARLANDER}.c linuxcompat.o ${LINUX_OBJS}
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${LUNARLANDER} -I . -I ${BADGE_INC} ${APPDIR}/${LUNARLANDER}.c ${GTKLDFLAGS}
+
+bin/${CUBE}:	${BIN} ${APPDIR}/${CUBE}.c linuxcompat.o ${LINUX_OBJS}
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${CUBE} -I . -I ${BADGE_INC} ${APPDIR}/${CUBE}.c ${GTKLDFLAGS}
 
 bin/hacking_simulator:	${BIN} ${APPDIR}/${HACKING_SIMULATOR}.c linuxcompat.o bline.o ${LINUX_OBJS} dynmenu.o
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} dynmenu.o -o bin/${HACKING_SIMULATOR} -I . -I ${BADGE_INC} ${APPDIR}/${HACKING_SIMULATOR}.c ${GTKLDFLAGS}
