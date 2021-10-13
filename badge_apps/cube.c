@@ -163,35 +163,23 @@ static void draw_cube(void)
 
 static void docube(void)
 {
-	static int m = 0;
-
 	memcpy(&cubept, &cubept2, sizeof(cubept2));
 	FbColor(WHITE);
-	m++;
-#if 0
-		cubetransz = sine(angle3) * 15 + 35;
-		cubetransx = sine(angle) * 0.35 * xdim;
-		cubetransy = cos(angle) * 0.35 * ydim;
-#endif
 	yrotate(cubept2, cubept, ARRAYSIZE(cubept), angle);
 	zrotate(cubept, cubept3, ARRAYSIZE(cubept), angle2);
 	xrotate(cubept3, cubept, ARRAYSIZE(cubept), angle2);
-	if ((m % 3) == 0) {
-		angle2 += 1;
-		if (angle2 > 127)
-			angle2 = 0;
-	}
+	angle2 += 1;
+	if (angle2 > 127)
+		angle2 = 0;
 	angle += 1;
 	if (angle > 127)
 		angle = 0;
-	if ((m % 5) == 0) {
-		angle3 += 1;
-		if (angle3 > 127)
-			angle3 = 0;
-	}
+	angle3 += 1;
+	if (angle3 > 127)
+		angle3 = 0;
 	FbColor(WHITE);
 	draw_cube();
-	FbPushBuffer();
+	FbPaintNewRows();
 	FbColor(BLACK);
 	draw_cube();
 }
