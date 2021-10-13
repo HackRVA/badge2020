@@ -23,6 +23,7 @@
 #include "badge_apps/smashout.h"
 #include "badge_apps/hacking_simulator.h"
 #include "game_of_life.h"
+#include "badge_apps/cube.h"
 #ifdef INCLUDE_IRXMIT
 #include "badge_apps/irxmit.h"
 #endif
@@ -526,8 +527,8 @@ const struct menu_t games_m[] = {
     {"Smashout", VERT_ITEM, FUNCTION, {(struct menu_t *)smashout_cb}},
     {"Hacking Simulator", VERT_ITEM, FUNCTION, {(struct menu_t *)hacking_simulator_cb}},
     {"Game of Life", VERT_ITEM, FUNCTION, {(struct menu_t *)game_of_life_cb}},
-#ifdef INCLUDE_IRXMIT
-    {"IR XMIT", VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb}},
+    {"Spinning Cube", VERT_ITEM, FUNCTION, {(struct menu_t *)cube_cb}},
+#ifdef INCLUDE_IRXMIT{"IR XMIT", VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb } },
 #endif
     {"Back", VERT_ITEM | LAST_ITEM, BACK, {NULL}},
 };

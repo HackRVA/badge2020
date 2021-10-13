@@ -140,6 +140,7 @@ enum st_program_state_t {
 };
 
 static struct dynmenu menu;
+static struct dynmenu_item menu_item[20];
 
 static enum st_program_state_t st_program_state = ST_GAME_INIT;
 
@@ -406,6 +407,7 @@ static void st_draw_menu(void)
 
 static void st_game_init(void)
 {
+	dynmenu_init(&menu, menu_item, 20);
 	FbInit();
 	FbColor(WHITE);
 	FbBackgroundColor(BLACK);

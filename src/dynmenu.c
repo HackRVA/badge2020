@@ -22,6 +22,12 @@ extern char *strcat(char *dest, const char *src);
 
 #include "dynmenu.h"
 
+void dynmenu_init(struct dynmenu *dm, struct dynmenu_item *item, unsigned char max_items)
+{
+	dm->item = item;
+	dm->max_items = max_items;
+}
+
 void dynmenu_set_colors(struct dynmenu *dm, int color, int selected_color)
 {
 	dm->color = color;
@@ -45,8 +51,12 @@ void dynmenu_add_item(struct dynmenu *dm, char *text, int next_state, unsigned c
 {
     int i;
 
-    if (dm->nitems >= ARRAYSIZE(dm->item))
+    if (dm->nitems >= dm->max_items) {
+#ifdef linux
+        printf("WARNING: dynmenu_add_item: failed to add menu item, max_items = %d\n", dm->max_items);
+#endif
         return;
+    }
 
     i = dm->nitems;
     strncpy(dm->item[i].text, text, sizeof(dm->item[i].text) - 1);

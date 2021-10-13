@@ -22,7 +22,6 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 #else
 #include <string.h>
 #include "colors.h"
-#include "menu.h"
 #include "buttons.h"
 #include "flash.h"
 #include "ir.h"
@@ -33,6 +32,7 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 
 #endif
 
+#include "dynmenu.h"
 #include "badge_apps/badge_monsters.h"
 
 #define INIT_APP_STATE 0
@@ -42,10 +42,10 @@ Dustin Firebaugh <dafirebaugh@gmail.com>
 #define TRADE_MONSTERS 4
 #define CHECK_THE_BUTTONS 5
 #define EXIT_APP 6
+#define ENABLE_ALL_MONSTERS 7
 
 static void app_init(void);
 static void game_menu(void);
-static void menu_clear(void);
 static void render_screen(void);
 static void render_monster(void);
 static void trade_monsters(void);
@@ -53,6 +53,9 @@ static void check_the_buttons(void);
 static void setup_main_menu(void);
 static void setup_monster_menu(void);
 static void exit_app(void);
+#ifdef __linux__
+static void enable_all_monsters(void);
+#endif
 
 typedef void (*state_to_function_map_fn_type)(void);
 
@@ -64,12 +67,14 @@ static state_to_function_map_fn_type state_to_function_map[] = {
     trade_monsters,
     check_the_buttons,
     exit_app,
+#ifdef __linux__
+    enable_all_monsters,
+#endif
 };
 
 #define TOTAL_BADGES 300
 #define BADGE_ID G_sysData.badgeId
 #define ARRAYSIZE(x) (sizeof((x)) / sizeof((x)[0]))
-
 
 /* These need to be protected from interrupts. */
 #define QUEUE_SIZE 5
@@ -89,8 +94,16 @@ static const struct point smiley_points[] =
 #include "badge_monster_drawings/smileymon.h"
 static const struct point freshmon_points[] =
 #include "badge_monster_drawings/freshmon.h"
-static const struct point mcturtle_points[] =
-#include "badge_monster_drawings/mcturtle.h"
+// static const struct point mcturtle_points[] =
+// #include "badge_monster_drawings/mcturtle.h"
+static const struct point boothole_points[] =
+#include "badge_monster_drawings/boothole.h"
+static const struct point ghostcat_points[] =
+#include "badge_monster_drawings/ghostcat.h"
+static const struct point bluekeep_points[] =
+#include "badge_monster_drawings/bluekeep.h"
+static const struct point smbghost_points[] =
+#include "badge_monster_drawings/smbghost.h"
 static const struct point goat_mon_points[] =
 #include "badge_monster_drawings/goat_mon.h"
 static const struct point hrvamon_points[] =
@@ -138,7 +151,11 @@ struct monster monsters[] = {
     {"zombieload", ARRAYSIZE(zombieload_points), 0, WHITE, zombieload_points, "This one has the delightful name of ZombieLoad"},
     {"octomon", ARRAYSIZE(octomon_points), 0, WHITE, octomon_points, "a monster made with 8 sides"},
     {"hrvamon", ARRAYSIZE(hrvamon_points), 0, WHITE, hrvamon_points, "come check out hackrva maker space Thursday nights at 7. 1600 Roseneath Road Suite E Richmond, VA 23230"},
-    {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "Turtles are reptiles with hard shells that protect them from predators"},
+    // {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "Turtles are reptiles with hard shells that protect them from predators"},
+    {"GHOSTCAT", ARRAYSIZE(ghostcat_points), 0, YELLOW, ghostcat_points, "GHOSTCAT Ghostcat is a high-risk file read / include vulnerability in Tomcat"},
+    {"BOOTHOLE", ARRAYSIZE(boothole_points), 0, GREEN, boothole_points, "BOOTHOLE is a vulnerability in GRUB2 allowing arbitrary code execution during secure boot"},
+    {"BLUEKEEP", ARRAYSIZE(bluekeep_points), 0, BLUE, bluekeep_points, "BLUEKEEP is a remote code execution vulnerability in Microsoft's Remote Desktop Protocol implementation"},
+    {"SMBGhost", ARRAYSIZE(smbghost_points), 0, WHITE, smbghost_points, "SMBGhost is a remote code execution vulnerability in Microsoft's SMBv3"},
     {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "this goat is scared because they are alone in the world"},
     {"freshmon", ARRAYSIZE(freshmon_points), 0, WHITE, freshmon_points, "a fusion of smirkmon and grinmon. This badge monster likes to troll people really hard for fun"},
     {"smileymon", ARRAYSIZE(smiley_points), 0, WHITE, smiley_points, "some nice words here"},
@@ -153,6 +170,9 @@ struct monster vendor_monsters[] = {
     {"vsmileymon", ARRAYSIZE(smiley_points), 0, CYAN, smiley_points, "some nice words here"},
     {"vgoatmon", ARRAYSIZE(smiley_points), 0, CYAN, goat_mon_points, "some nice words here"}
 };
+
+struct dynmenu menu;
+struct dynmenu_item menu_item[ARRAYSIZE(monsters) + ARRAYSIZE(vendor_monsters)];
 
 int initial_mon;
 
@@ -184,22 +204,6 @@ enum menu_level_t {
     DESCRIPTION
 } menu_level;
 
-struct menu_item
-{
-    char text[15];
-    state_to_function_map_fn_type next_state;
-    unsigned char cookie;
-};
-
-static struct menu
-{
-    char title[15];
-    struct menu_item item[20];
-    unsigned char nitems;
-    unsigned char current_item;
-    unsigned char menu_active;
-    unsigned char chosen_cookie;
-} menu;
 
 static void enable_monster(int monster_id)
 {
@@ -212,6 +216,20 @@ static void enable_monster(int monster_id)
         printf("enabling monster: %d\n", monster_id);
     #endif
 }
+
+#ifdef __linux__
+static void enable_all_monsters(void)
+{
+	int i;
+
+	for (i = 0; i < nmonsters; i++)
+		enable_monster(i);
+	FbClear();
+	FbMove(2, 2);
+	FbWriteString("ALL MONSTERS\nENABLED!");
+	app_state = RENDER_SCREEN;
+}
+#endif
 
 static unsigned int build_packet(unsigned char cmd, unsigned char start,
             unsigned char address, unsigned short badge_id, unsigned short payload)
@@ -270,43 +288,11 @@ static void check_for_incoming_packets(void)
     ENABLE_INTERRUPTS;
 }
 
-static void menu_clear(void)
-{
-    strncpy(menu.title, "", sizeof(menu.title) - 1);
-    menu.nitems = 0;
-    menu.current_item = 0;
-    menu.chosen_cookie = 0;
-}
-
-static void menu_add_item(char *text, int next_state, unsigned char cookie)
+static void draw_menu(void)
 {
     int i;
 
-    if (menu.nitems >= ARRAYSIZE(menu.item))
-        return;
-
-    i = menu.nitems;
-    strncpy(menu.item[i].text, text, sizeof(menu.item[i].text) - 1);
-    menu.item[i].next_state = state_to_function_map[next_state];
-    menu.item[i].cookie = cookie;
-    menu.nitems++;
-}
-
-static void draw_menu(void)
-{
-    int i, y, first_item, last_item;
-
-    first_item = menu.current_item - 4;
-    if (first_item < 0)
-        first_item = 0;
-    last_item = menu.current_item + 4;
-    if (last_item > menu.nitems - 1)
-        last_item = menu.nitems - 1;
-
-    FbClear();
-    FbColor(WHITE);
-    FbMove(8, 5);
-    FbWriteLine(menu.title);
+    dynmenu_draw(&menu);
     if(menu_level != MONSTER_MENU){
         int nunlocked = 0;
         char available_monsters[3];
@@ -335,45 +321,13 @@ static void draw_menu(void)
         FbWriteLine("/");
         FbWriteLine(available_monsters);
     }
-
-    y = LCD_YSIZE / 2 - 12 * (menu.current_item - first_item);
-    for (i = first_item; i <= last_item; i++)
-    {
-        if (i == menu.current_item)
-            FbColor(GREEN);
-        else
-            FbColor(WHITE);
-        FbMove(10, y);
-        FbWriteLine(menu.item[i].text);
-        y += 12;
-    }
-
-    FbColor(GREEN);
-    FbHorizontalLine(5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 - 2);
-    FbHorizontalLine(5, LCD_YSIZE / 2 + 10, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
-    FbVerticalLine(5, LCD_YSIZE / 2 - 2, 5, LCD_YSIZE / 2 + 10);
-    FbVerticalLine(LCD_XSIZE - 5, LCD_YSIZE / 2 - 2, LCD_XSIZE - 5, LCD_YSIZE / 2 + 10);
-
-
     app_state = RENDER_SCREEN;
-}
-
-static void menu_change_current_selection(int direction)
-{
-    int old = menu.current_item;
-    int new = old + direction;
-    if (new < 0)
-        new = menu.nitems - 1;
-    else if (new >= menu.nitems)
-        new = 0;
-    menu.current_item = new;
-    screen_changed |= (menu.current_item != old);
 }
 
 static void change_menu_level(enum menu_level_t level)
 {
     menu_level = level;
-    menu_clear();
+    dynmenu_clear(&menu);
     switch(level){
         case MAIN_MENU:
             setup_main_menu();
@@ -552,12 +506,14 @@ static void check_the_buttons(void)
         case MAIN_MENU:
             if (UP_BTN_AND_CONSUME)
             {
-                menu_change_current_selection(-1);
+                dynmenu_change_current_selection(&menu, -1);
+		screen_changed = 1;
                 something_changed = 1;
             }
             else if (DOWN_BTN_AND_CONSUME)
             {
-                menu_change_current_selection(1);
+                dynmenu_change_current_selection(&menu, 1);
+		screen_changed = 1;
                 something_changed = 1;
             }
             else if (LEFT_BTN_AND_CONSUME)
@@ -579,6 +535,11 @@ static void check_the_buttons(void)
                     case 2:
                         app_state = EXIT_APP;
                         break;
+#ifdef __linux__
+		    case 3:
+			app_state = ENABLE_ALL_MONSTERS;
+			break;
+#endif
                 }
             }
 
@@ -586,13 +547,15 @@ static void check_the_buttons(void)
         case MONSTER_MENU:
             if (UP_BTN_AND_CONSUME)
             {
-                menu_change_current_selection(-1);
+                dynmenu_change_current_selection(&menu, -1);
+		screen_changed = 1;
                 current_monster = menu.item[menu.current_item].cookie;
                 render_monster();
             }
             else if (DOWN_BTN_AND_CONSUME)
             {
-                menu_change_current_selection(1);
+                dynmenu_change_current_selection(&menu, 1);
+		screen_changed = 1;
                 current_monster = menu.item[menu.current_item].cookie;
                 render_monster();
             }
@@ -666,13 +629,13 @@ static void check_the_buttons(void)
 static void setup_monster_menu(void)
 {
     int i;
-    menu_clear();
+    dynmenu_clear(&menu);
     menu.menu_active = 0;
     strcpy(menu.title, "Monsters");
 
     for(i = 0; i < nmonsters; i++){
         if(monsters[i].status)
-            menu_add_item(monsters[i].name, RENDER_MONSTER, i);
+            dynmenu_add_item(&menu, monsters[i].name, RENDER_MONSTER, i);
     }
 
     #if 0
@@ -688,11 +651,15 @@ static void setup_monster_menu(void)
 
 static void setup_main_menu(void)
 {
-    menu_clear();
+    dynmenu_clear(&menu);
     strcpy(menu.title, "Badge Monsters");
-    menu_add_item("Monsters", RENDER_SCREEN, 0);
-    menu_add_item("Trade Monsters", TRADE_MONSTERS, 1);
-    menu_add_item("EXIT", EXIT_APP, 2);
+    dynmenu_add_item(&menu, "Monsters", RENDER_SCREEN, 0);
+    dynmenu_add_item(&menu, "Trade Monsters", TRADE_MONSTERS, 1);
+    dynmenu_add_item(&menu, "EXIT", EXIT_APP, 2);
+#ifdef __linux__
+    /* For testing purposes allow enabling all monsters on linux */
+    dynmenu_add_item(&menu, "Test Monsters", ENABLE_ALL_MONSTERS, 3);
+#endif
     screen_changed = 1;
 }
 
@@ -746,6 +713,7 @@ static void app_init(void)
     FbInit();
     app_state = INIT_APP_STATE;
     register_ir_packet_callback(ir_packet_callback);
+    dynmenu_init(&menu, menu_item, ARRAYSIZE(menu_item));
 
     change_menu_level(MAIN_MENU);
     app_state = GAME_MENU;
