@@ -327,7 +327,14 @@ static void draw_menu(void)
 static void change_menu_level(enum menu_level_t level)
 {
     menu_level = level;
-    dynmenu_clear(&menu);
+    static int which_item = -1;
+
+    if (which_item == -1)
+	which_item = initial_mon;
+
+    if (strcmp(menu.title, "Monsters") == 0)
+	which_item = menu.current_item;
+
     switch(level){
         case MAIN_MENU:
             setup_main_menu();
@@ -335,6 +342,9 @@ static void change_menu_level(enum menu_level_t level)
             break;
         case MONSTER_MENU:
             setup_monster_menu();
+            if (menu.max_items > which_item)
+		    menu.current_item = which_item; /* Stay on the same monster */
+            current_monster = menu.item[menu.current_item].cookie;
             screen_changed = 1;
             break;
         case DESCRIPTION:
@@ -619,6 +629,10 @@ static void setup_monster_menu(void)
         if(monsters[i].status)
             dynmenu_add_item(&menu, monsters[i].name, RENDER_MONSTER, i);
     }
+    if (current_monster < menu.max_items)
+        menu.current_item = current_monster;
+    else
+        current_monster = menu.current_item;
 
     #if 0
     for(i = 0; i < nvendor_monsters; i++){
