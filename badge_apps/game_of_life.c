@@ -61,7 +61,7 @@ static struct Grid
 			unsigned int y;
 		} coordinate;
 	} cells[GRID_SIZE];
-} grid;
+} grid, next_generation_grid;
 
 /* Program states.  Initial state is GAME_OF_LIFE_INIT */
 enum game_of_life_state_t
@@ -97,23 +97,31 @@ static void next_generation(unsigned int alive_count, unsigned int cell, int cur
 	{
 		if (alive_count == 2 || alive_count == 3)
 		{
-			grid.cells[current_index].alive = ALIVE;
+			next_generation_grid.cells[current_index].alive = ALIVE;
 		}
 		else
 		{
-			grid.cells[current_index].alive = DEAD;
+			next_generation_grid.cells[current_index].alive = DEAD;
 		}
 	}
 	else
 	{
 		if (alive_count == 3)
 		{ // only way a dead cell can be revived if it has exactly 3 alives neighbors
-			grid.cells[current_index].alive = ALIVE;
+			next_generation_grid.cells[current_index].alive = ALIVE;
 		}
 		else
 		{
-			grid.cells[current_index].alive = DEAD;
+			next_generation_grid.cells[current_index].alive = DEAD;
 		}
+	}
+}
+
+static void update_current_generation_grid()
+{
+	for (int i = 0; i < GRID_SIZE; i++)
+	{
+		grid.cells[i].alive = next_generation_grid.cells[i].alive;
 	}
 }
 
@@ -226,6 +234,8 @@ static void figure_out_alive_cells()
 		next_generation(alive_count, grid.cells[n].alive, n);
 		alive_count = 0;
 	}
+
+	update_current_generation_grid();
 }
 
 static void init_cells()
@@ -252,6 +262,13 @@ static void init_cells()
 			// reset before going to the next row
 			y = 0;
 		}
+	}
+
+	for (int i = 0; i < GRID_SIZE; i++)
+	{
+		next_generation_grid.cells[i].coordinate.x = grid.cells[i].coordinate.x;
+		next_generation_grid.cells[i].coordinate.y = grid.cells[i].coordinate.y;
+		next_generation_grid.cells[i].alive = grid.cells[i].alive;
 	}
 }
 
