@@ -142,26 +142,26 @@ struct monster
 };
 
 struct monster monsters[] = {
-    {"eddie", ARRAYSIZE(eddie_points), 0, WHITE, eddie_points, "Sometimes protective and Eddie is the perfect guy every girl wants to date"},
-    {"godzilla", ARRAYSIZE(godzilla_points), 0, WHITE, godzilla_points, "a cross between a gorilla and a whale"},
-    {"worm", ARRAYSIZE(worm_points), 0, WHITE, worm_points, "An earthworm is a tube-shaped, segmented worm found in the phylum Annelida."},
-    {"stacksmasher", ARRAYSIZE(stacksmasher_points), 0, WHITE, stacksmasher_points, "Stack smashing is a form of vulnerability where the stack of a computer application or OS is forced to overflow."},
-    {"heartbleed", ARRAYSIZE(heartbleed_points), 0, WHITE, heartbleed_points, "Heartbleed is a security bug in the OpenSSL cryptography library"},
-    {"spectre", ARRAYSIZE(spectre_points), 0, WHITE, spectre_points, "Spectre (security vulnerability) Spectre is a vulnerability that affects modern microprocessors that perform branch prediction."},
+    {"eddie", ARRAYSIZE(eddie_points), 0, YELLOW, eddie_points, "Sometimes protective and Eddie is the perfect guy every girl wants to date"},
+    {"godzilla", ARRAYSIZE(godzilla_points), 0, GREEN, godzilla_points, "a cross between a gorilla and a whale"},
+    {"worm", ARRAYSIZE(worm_points), 0, GREEN, worm_points, "An earthworm is a tube-shaped, segmented worm found in the phylum Annelida."},
+    {"stacksmasher", ARRAYSIZE(stacksmasher_points), 0, CYAN, stacksmasher_points, "Stack smashing is a form of vulnerability where the stack of a computer application or OS is forced to overflow."},
+    {"heartbleed", ARRAYSIZE(heartbleed_points), 0, RED, heartbleed_points, "Heartbleed is a security bug in the OpenSSL cryptography library"},
+    {"spectre", ARRAYSIZE(spectre_points), 0, CYAN, spectre_points, "Spectre (security vulnerability) Spectre is a vulnerability that affects modern microprocessors that perform branch prediction."},
     {"zombieload", ARRAYSIZE(zombieload_points), 0, WHITE, zombieload_points, "This one has the delightful name of ZombieLoad"},
-    {"octomon", ARRAYSIZE(octomon_points), 0, WHITE, octomon_points, "a monster made with 8 sides"},
+    {"octomon", ARRAYSIZE(octomon_points), 0, MAGENTA, octomon_points, "a monster made with 8 sides"},
     {"hrvamon", ARRAYSIZE(hrvamon_points), 0, WHITE, hrvamon_points, "come check out hackrva maker space Thursday nights at 7. 1600 Roseneath Road Suite E Richmond, VA 23230"},
     // {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "Turtles are reptiles with hard shells that protect them from predators"},
     {"GHOSTCAT", ARRAYSIZE(ghostcat_points), 0, YELLOW, ghostcat_points, "GHOSTCAT Ghostcat is a high-risk file read / include vulnerability in Tomcat"},
     {"BOOTHOLE", ARRAYSIZE(boothole_points), 0, GREEN, boothole_points, "BOOTHOLE is a vulnerability in GRUB2 allowing arbitrary code execution during secure boot"},
     {"BLUEKEEP", ARRAYSIZE(bluekeep_points), 0, BLUE, bluekeep_points, "BLUEKEEP is a remote code execution vulnerability in Microsoft's Remote Desktop Protocol implementation"},
-    {"SMBGhost", ARRAYSIZE(smbghost_points), 0, WHITE, smbghost_points, "SMBGhost is a remote code execution vulnerability in Microsoft's SMBv3"},
+    {"SMBGhost", ARRAYSIZE(smbghost_points), 0, BLUE, smbghost_points, "SMBGhost is a remote code execution vulnerability in Microsoft's SMBv3"},
     {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "this goat is scared because they are alone in the world"},
-    {"freshmon", ARRAYSIZE(freshmon_points), 0, WHITE, freshmon_points, "a fusion of smirkmon and grinmon. This badge monster likes to troll people really hard for fun"},
-    {"smileymon", ARRAYSIZE(smiley_points), 0, WHITE, smiley_points, "some nice words here"},
-    {"gophermon", ARRAYSIZE(gopher_points), 0, WHITE, gopher_points, "Gophers are small, furry rodents that burrow tunnels through yards of North America and Central America."},
+    {"freshmon", ARRAYSIZE(freshmon_points), 0, CYAN, freshmon_points, "a fusion of smirkmon and grinmon. This badge monster likes to troll people really hard for fun"},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, YELLOW, smiley_points, "some nice words here"},
+    {"gophermon", ARRAYSIZE(gopher_points), 0, CYAN, gopher_points, "Gophers are small, furry rodents that burrow tunnels through yards of North America and Central America."},
     {"tuxmon", ARRAYSIZE(tux_points), 0, CYAN, tux_points, "Tux is a penguin character and the official brand character of the Linux kernel."},
-    {"octocat", ARRAYSIZE(octocat_points), 0, WHITE, octocat_points, "GitHub's mascot is an anthropomorphized 'octocat' with five octopus-like arms."},
+    {"octocat", ARRAYSIZE(octocat_points), 0, MAGENTA, octocat_points, "GitHub's mascot is an anthropomorphized 'octocat' with five octopus-like arms."},
 };
 
 struct monster vendor_monsters[] = {
