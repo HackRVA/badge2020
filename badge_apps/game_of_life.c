@@ -72,6 +72,155 @@ static int is_next_row(int current_cell_index)
 	return (current_cell_index + 1) % ROW_SIZE == 0;
 }
 
+static int range(int num)
+{
+	if (num >= 0 && num < GRID_SIZE)
+	{
+		return 2;
+	}
+	else
+	{
+		return -1;
+	}
+}
+
+static void next_generation(unsigned int alive_count, unsigned int cell, int current_index)
+{
+	if (cell == 1)
+	{
+		if (alive_count == 2 || alive_count == 3)
+		{
+			grid.cells[current_index].alive = 1;
+		}
+		else
+		{
+			grid.cells[current_index].alive = 0;
+		}
+	}
+	else
+	{
+		if (alive_count == 3)
+		{ // only way a dead cell can be revived if it has exactly 3 alives neighbors
+			grid.cells[current_index].alive = 1;
+		}
+		else
+		{
+			grid.cells[current_index].alive = 0;
+		}
+	}
+}
+
+static void figure_out_alive_cells()
+{
+	unsigned int alive_count = 0;
+
+	for (int n = 0; n < GRID_SIZE; n++)
+	{
+		// LEFT neighbor
+		if (range(n - 1) == 2)
+		{
+
+			// LEFT not out of bound cond
+			if (grid.cells[n - 1].coordinate.x == grid.cells[n].coordinate.x)
+			{
+				if (grid.cells[n - 1].alive == 1)
+				{
+					alive_count++;
+				}
+			}
+		}
+
+		// RIGHT neighbor
+		if (range(n + 1) == 2)
+		{
+			// RIGHT not out of bound cond
+			if (grid.cells[n + 1].coordinate.x == grid.cells[n].coordinate.x)
+			{
+				if (grid.cells[n + 1].alive == 1)
+				{
+					alive_count++;
+				}
+			}
+		}
+
+		// TOP neighbor
+		if (range(n - ROW_SIZE) == 2)
+		{
+			// TOP not out of bound cond
+			if (grid.cells[n - ROW_SIZE].coordinate.x == (grid.cells[n].coordinate.x - 1))
+			{
+				if (grid.cells[n - ROW_SIZE].alive == 1)
+				{
+					alive_count++;
+				}
+			}
+		}
+
+		// BOTTOM neighbor
+		if (range(n + ROW_SIZE) == 2)
+		{
+
+			// BOTTOM not out of bound cond
+			if (grid.cells[n + ROW_SIZE].coordinate.x == (grid.cells[n].coordinate.x + 1))
+				if (grid.cells[n + ROW_SIZE].alive == 1)
+				{
+					alive_count++;
+				}
+		}
+
+		// TOP RIGHT neighbor
+		if (range(n - (ROW_SIZE - 1)) == 2)
+		{
+			if (grid.cells[n - (ROW_SIZE - 1)].coordinate.x == (grid.cells[n].coordinate.x - 1))
+			{
+				if (grid.cells[n - (ROW_SIZE - 1)].alive == 1)
+				{
+					alive_count++;
+				}
+			}
+		}
+
+		// TOP LEFT neighbor
+		if (range(n - (ROW_SIZE + 1)) == 2)
+		{
+			if (grid.cells[n - (ROW_SIZE + 1)].coordinate.x == (grid.cells[n].coordinate.x - 1))
+			{
+				if (grid.cells[n - (ROW_SIZE + 1)].alive == 1)
+				{
+					alive_count++;
+				}
+			}
+		}
+
+		// BOTTOM LEFT neighbor
+		if (range(n + (ROW_SIZE - 1)) == 2)
+		{
+			if (grid.cells[n + (ROW_SIZE - 1)].coordinate.x == (grid.cells[n].coordinate.x + 1))
+			{
+				if (grid.cells[n + (ROW_SIZE - 1)].alive == 1)
+				{
+					alive_count++;
+				}
+			}
+		}
+
+		// BOTTOM RIGHT
+		if (range(n + (ROW_SIZE + 1)) == 2)
+		{
+			if (grid.cells[n + (ROW_SIZE + 1)].coordinate.x == (grid.cells[n].coordinate.x + 1))
+			{
+				if (grid.cells[n + (ROW_SIZE + 1)].alive == 1)
+				{
+					alive_count++;
+				}
+			}
+		}
+
+		next_generation(alive_count, grid.cells[n].alive, n);
+		alive_count = 0;
+	}
+}
+
 static void init_cells()
 {
 	unsigned int x = 0;
@@ -146,6 +295,7 @@ static void check_buttons()
 {
 	if (BUTTON_PRESSED_AND_CONSUME)
 	{
+		figure_out_alive_cells();
 	}
 	else if (LEFT_BTN_AND_CONSUME)
 	{
