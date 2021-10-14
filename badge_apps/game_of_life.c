@@ -28,20 +28,27 @@ extern char *strcat(char *dest, const char *src);
 #include "build_bug_on.h"
 #include "xorshift.h"
 
-static int screen_changed = 0;
+static unsigned int gen_count = 0;
 
 #define ROW_SIZE 10
 #define COL_SIZE 10
 #define GRID_SIZE (ROW_SIZE * COL_SIZE)
 
-#define GRID_PADDING 8
+#define GRID_X_PADDING 8
+#define GRID_Y_PADDING 2
 #define CELL_SIZE 12
 #define CELL_PADDING 3
 
-#define STARTX(x) (GRID_PADDING + CELL_PADDING + ((x)*CELL_SIZE))
-#define ENDX(x) (GRID_PADDING + CELL_SIZE + ((x)*CELL_SIZE))
-#define STARTY(y) (GRID_PADDING + CELL_PADDING + ((y)*CELL_SIZE))
-#define ENDY(y) (GRID_PADDING + CELL_SIZE + ((y)*CELL_SIZE))
+#define ALIVE 1
+#define DEAD 0
+
+#define TRUE 1
+#define FALSE 0
+
+#define STARTX(x) (GRID_X_PADDING + CELL_PADDING + ((x)*CELL_SIZE))
+#define ENDX(x) (GRID_X_PADDING + CELL_SIZE + ((x)*CELL_SIZE))
+#define STARTY(y) (GRID_Y_PADDING + CELL_PADDING + ((y)*CELL_SIZE))
+#define ENDY(y) (GRID_Y_PADDING + CELL_SIZE + ((y)*CELL_SIZE))
 
 static struct Grid
 {
@@ -72,40 +79,40 @@ static int is_next_row(int current_cell_index)
 	return (current_cell_index + 1) % ROW_SIZE == 0;
 }
 
-static int range(int num)
+static int is_in_range(int num)
 {
 	if (num >= 0 && num < GRID_SIZE)
 	{
-		return 2;
+		return TRUE;
 	}
 	else
 	{
-		return -1;
+		return FALSE;
 	}
 }
 
 static void next_generation(unsigned int alive_count, unsigned int cell, int current_index)
 {
-	if (cell == 1)
+	if (cell == ALIVE)
 	{
 		if (alive_count == 2 || alive_count == 3)
 		{
-			grid.cells[current_index].alive = 1;
+			grid.cells[current_index].alive = ALIVE;
 		}
 		else
 		{
-			grid.cells[current_index].alive = 0;
+			grid.cells[current_index].alive = DEAD;
 		}
 	}
 	else
 	{
 		if (alive_count == 3)
 		{ // only way a dead cell can be revived if it has exactly 3 alives neighbors
-			grid.cells[current_index].alive = 1;
+			grid.cells[current_index].alive = ALIVE;
 		}
 		else
 		{
-			grid.cells[current_index].alive = 0;
+			grid.cells[current_index].alive = DEAD;
 		}
 	}
 }
@@ -117,7 +124,7 @@ static void figure_out_alive_cells()
 	for (int n = 0; n < GRID_SIZE; n++)
 	{
 		// LEFT neighbor
-		if (range(n - 1) == 2)
+		if (is_in_range(n - 1))
 		{
 
 			// LEFT not out of bound cond
@@ -131,7 +138,7 @@ static void figure_out_alive_cells()
 		}
 
 		// RIGHT neighbor
-		if (range(n + 1) == 2)
+		if (is_in_range(n + 1))
 		{
 			// RIGHT not out of bound cond
 			if (grid.cells[n + 1].coordinate.x == grid.cells[n].coordinate.x)
@@ -144,7 +151,7 @@ static void figure_out_alive_cells()
 		}
 
 		// TOP neighbor
-		if (range(n - ROW_SIZE) == 2)
+		if (is_in_range(n - ROW_SIZE))
 		{
 			// TOP not out of bound cond
 			if (grid.cells[n - ROW_SIZE].coordinate.x == (grid.cells[n].coordinate.x - 1))
@@ -157,7 +164,7 @@ static void figure_out_alive_cells()
 		}
 
 		// BOTTOM neighbor
-		if (range(n + ROW_SIZE) == 2)
+		if (is_in_range(n + ROW_SIZE))
 		{
 
 			// BOTTOM not out of bound cond
@@ -169,7 +176,7 @@ static void figure_out_alive_cells()
 		}
 
 		// TOP RIGHT neighbor
-		if (range(n - (ROW_SIZE - 1)) == 2)
+		if (is_in_range(n - (ROW_SIZE - 1)))
 		{
 			if (grid.cells[n - (ROW_SIZE - 1)].coordinate.x == (grid.cells[n].coordinate.x - 1))
 			{
@@ -181,7 +188,7 @@ static void figure_out_alive_cells()
 		}
 
 		// TOP LEFT neighbor
-		if (range(n - (ROW_SIZE + 1)) == 2)
+		if (is_in_range(n - (ROW_SIZE + 1)))
 		{
 			if (grid.cells[n - (ROW_SIZE + 1)].coordinate.x == (grid.cells[n].coordinate.x - 1))
 			{
@@ -193,7 +200,7 @@ static void figure_out_alive_cells()
 		}
 
 		// BOTTOM LEFT neighbor
-		if (range(n + (ROW_SIZE - 1)) == 2)
+		if (is_in_range(n + (ROW_SIZE - 1)))
 		{
 			if (grid.cells[n + (ROW_SIZE - 1)].coordinate.x == (grid.cells[n].coordinate.x + 1))
 			{
@@ -205,7 +212,7 @@ static void figure_out_alive_cells()
 		}
 
 		// BOTTOM RIGHT
-		if (range(n + (ROW_SIZE + 1)) == 2)
+		if (is_in_range(n + (ROW_SIZE + 1)))
 		{
 			if (grid.cells[n + (ROW_SIZE + 1)].coordinate.x == (grid.cells[n].coordinate.x + 1))
 			{
@@ -257,6 +264,20 @@ static void render_box(int grid_x, int grid_y, int color)
 	FbVerticalLine(ENDX(grid_x), STARTY(grid_y), ENDX(grid_x), ENDY(grid_y));
 }
 
+static void render_next_gen_text(unsigned int gen_count)
+{
+	char next_gen_text[15];
+	char gen_num_text[4];
+	FbColor(WHITE);
+	FbMove(LCD_XSIZE / 4, LCD_YSIZE - 7);
+
+	strcpy(next_gen_text, "NEXT GEN ");
+	itoa(gen_num_text, gen_count, 10);
+	strcat(next_gen_text, gen_num_text);
+
+	FbWriteLine(next_gen_text);
+}
+
 static void render_cell(int grid_x, int grid_y, int alive)
 {
 	int cell_color_state = alive ? BLUE : WHITE;
@@ -272,30 +293,23 @@ static void render_cells()
 	}
 }
 
-static void debug_print()
-{
-	for (int i = 0; i < GRID_SIZE; i++)
-	{
-		printf("%d %d %d \n", grid.cells[i].coordinate.x, grid.cells[i].coordinate.y, grid.cells[i].alive);
-	}
-}
-
 static void render_game()
 {
 
 	FbClear();
 
 	render_cells();
+	render_next_gen_text(gen_count);
 	FbSwapBuffers();
-
-	screen_changed = 0;
 }
 
 static void check_buttons()
 {
+
 	if (BUTTON_PRESSED_AND_CONSUME)
 	{
 		figure_out_alive_cells();
+		gen_count++;
 	}
 	else if (LEFT_BTN_AND_CONSUME)
 	{
@@ -317,7 +331,7 @@ static void check_buttons()
 static void render_splash_screen()
 {
 	FbColor(WHITE);
-	FbMove(10, LCD_YSIZE / 2);
+	FbMove(LCD_XSIZE - 110, LCD_YSIZE / 2);
 	FbWriteLine("Game of Life");
 	FbSwapBuffers();
 }
@@ -329,7 +343,6 @@ static void game_of_life_init(void)
 	FbClear();
 
 	game_of_life_state = GAME_OF_LIFE_SPLASH_SCREEN;
-	printf("grid size %d row size: %d\n", GRID_SIZE, ROW_SIZE);
 #endif
 }
 
