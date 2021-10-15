@@ -142,26 +142,26 @@ struct monster
 };
 
 struct monster monsters[] = {
-    {"eddie", ARRAYSIZE(eddie_points), 0, WHITE, eddie_points, "Sometimes protective and Eddie is the perfect guy every girl wants to date"},
-    {"godzilla", ARRAYSIZE(godzilla_points), 0, WHITE, godzilla_points, "a cross between a gorilla and a whale"},
-    {"worm", ARRAYSIZE(worm_points), 0, WHITE, worm_points, "An earthworm is a tube-shaped, segmented worm found in the phylum Annelida."},
-    {"stacksmasher", ARRAYSIZE(stacksmasher_points), 0, WHITE, stacksmasher_points, "Stack smashing is a form of vulnerability where the stack of a computer application or OS is forced to overflow."},
-    {"heartbleed", ARRAYSIZE(heartbleed_points), 0, WHITE, heartbleed_points, "Heartbleed is a security bug in the OpenSSL cryptography library"},
-    {"spectre", ARRAYSIZE(spectre_points), 0, WHITE, spectre_points, "Spectre (security vulnerability) Spectre is a vulnerability that affects modern microprocessors that perform branch prediction."},
-    {"zombieload", ARRAYSIZE(zombieload_points), 0, WHITE, zombieload_points, "This one has the delightful name of ZombieLoad"},
-    {"octomon", ARRAYSIZE(octomon_points), 0, WHITE, octomon_points, "a monster made with 8 sides"},
-    {"hrvamon", ARRAYSIZE(hrvamon_points), 0, WHITE, hrvamon_points, "come check out hackrva maker space Thursday nights at 7. 1600 Roseneath Road Suite E Richmond, VA 23230"},
+    {"eddie", ARRAYSIZE(eddie_points), 0, YELLOW, eddie_points, "Sometimes\nprotective and\nEddie is the\nperfect guy\nevery girl\nwants to date"},
+    {"godzilla", ARRAYSIZE(godzilla_points), 0, GREEN, godzilla_points, "a cross\nbetween a\ngorilla and\na whale"},
+    {"worm", ARRAYSIZE(worm_points), 0, GREEN, worm_points, "An earthworm\nis a tube\nshaped,\nsegmented worm\nfound in the\nphylum\nAnnelida."},
+    {"stacksmasher", ARRAYSIZE(stacksmasher_points), 0, CYAN, stacksmasher_points, "Stack smashing\nis a form of\nvulnerability\nwhere the\nstack of a\ncomputer\nprogram or OS\nis forced to\noverflow."},
+    {"heartbleed", ARRAYSIZE(heartbleed_points), 0, RED, heartbleed_points, "Heartbleed is\na security bug\nin the OpenSSL\ncryptography\nlibrary"},
+    {"spectre", ARRAYSIZE(spectre_points), 0, CYAN, spectre_points, "Spectre is a\nvulnerability\nthat affects\nmodern\nprocessors\nthat perform\nbranch\nprediction."},
+    {"zombieload", ARRAYSIZE(zombieload_points), 0, WHITE, zombieload_points, "This one has\nthe delightful\nname of\nZombieLoad"},
+    {"octomon", ARRAYSIZE(octomon_points), 0, MAGENTA, octomon_points, "a monster made\nwith 8 sides"},
+    {"hrvamon", ARRAYSIZE(hrvamon_points), 0, WHITE, hrvamon_points, "Come check out\nHackRVA maker\nspace Thursday\nnights at 7.\n\n1600 Roseneath\nRoad Suite E\nRichmond, VA\n23230"},
     // {"mcturtle", ARRAYSIZE(mcturtle_points), 0, WHITE, mcturtle_points, "Turtles are reptiles with hard shells that protect them from predators"},
-    {"GHOSTCAT", ARRAYSIZE(ghostcat_points), 0, YELLOW, ghostcat_points, "GHOSTCAT Ghostcat is a high-risk file read / include vulnerability in Tomcat"},
-    {"BOOTHOLE", ARRAYSIZE(boothole_points), 0, GREEN, boothole_points, "BOOTHOLE is a vulnerability in GRUB2 allowing arbitrary code execution during secure boot"},
-    {"BLUEKEEP", ARRAYSIZE(bluekeep_points), 0, BLUE, bluekeep_points, "BLUEKEEP is a remote code execution vulnerability in Microsoft's Remote Desktop Protocol implementation"},
-    {"SMBGhost", ARRAYSIZE(smbghost_points), 0, WHITE, smbghost_points, "SMBGhost is a remote code execution vulnerability in Microsoft's SMBv3"},
-    {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "this goat is scared because they are alone in the world"},
-    {"freshmon", ARRAYSIZE(freshmon_points), 0, WHITE, freshmon_points, "a fusion of smirkmon and grinmon. This badge monster likes to troll people really hard for fun"},
-    {"smileymon", ARRAYSIZE(smiley_points), 0, WHITE, smiley_points, "some nice words here"},
-    {"gophermon", ARRAYSIZE(gopher_points), 0, WHITE, gopher_points, "Gophers are small, furry rodents that burrow tunnels through yards of North America and Central America."},
-    {"tuxmon", ARRAYSIZE(tux_points), 0, CYAN, tux_points, "Tux is a penguin character and the official brand character of the Linux kernel."},
-    {"octocat", ARRAYSIZE(octocat_points), 0, WHITE, octocat_points, "GitHub's mascot is an anthropomorphized 'octocat' with five octopus-like arms."},
+    {"GHOSTCAT", ARRAYSIZE(ghostcat_points), 0, YELLOW, ghostcat_points, "GHOSTCAT is a\nhigh-risk file\nread / include\nvulnerability\nin Tomcat"},
+    {"BOOTHOLE", ARRAYSIZE(boothole_points), 0, GREEN, boothole_points, "BOOTHOLE is a\nvulnerability\nin GRUB2\nallowing\narbitrary code\nexecution\nduring secure\nboot"},
+    {"BLUEKEEP", ARRAYSIZE(bluekeep_points), 0, BLUE, bluekeep_points, "BLUEKEEP is a\nremote code\nexecution\nvulnerability\nin Microsoft's\nRemote Desktop\nProtocol\nimplementation"},
+    {"SMBGhost", ARRAYSIZE(smbghost_points), 0, BLUE, smbghost_points, "SMBGhost is a\nremote code\nexecution\nvulnerability\nin Microsoft's\nSMBv3"},
+    {"goat_mon", ARRAYSIZE(goat_mon_points), 0, WHITE, goat_mon_points, "This goat is\nscared because\nthey are alone\nin the world"},
+    {"freshmon", ARRAYSIZE(freshmon_points), 0, CYAN, freshmon_points, "a fusion of\nsmirkmon and\ngrinmon. This\nbadge monster\nlikes to troll\npeople really\nhard for fun"},
+    {"smileymon", ARRAYSIZE(smiley_points), 0, YELLOW, smiley_points, "Have a nice\nday!"},
+    {"gophermon", ARRAYSIZE(gopher_points), 0, CYAN, gopher_points, "Gophers are\nsmall, furry\nrodents that\nburrow tunnels\nthrough yards\nof North\nAmerica and\nCentral\nAmerica."},
+    {"tuxmon", ARRAYSIZE(tux_points), 0, CYAN, tux_points, "Tux is a\npenguin\ncharacter and\nthe official\nbrand\ncharacter of\nthe Linux\nkernel."},
+    {"octocat", ARRAYSIZE(octocat_points), 0, MAGENTA, octocat_points, "GitHub's mascot\nis an anthro-\npomorphized\n'octocat' with\nfive octopus-\nlike arms."},
 };
 
 struct monster vendor_monsters[] = {
@@ -327,7 +327,14 @@ static void draw_menu(void)
 static void change_menu_level(enum menu_level_t level)
 {
     menu_level = level;
-    dynmenu_clear(&menu);
+    static int which_item = -1;
+
+    if (which_item == -1)
+	which_item = initial_mon;
+
+    if (strcmp(menu.title, "Monsters") == 0)
+	which_item = menu.current_item;
+
     switch(level){
         case MAIN_MENU:
             setup_main_menu();
@@ -335,6 +342,9 @@ static void change_menu_level(enum menu_level_t level)
             break;
         case MONSTER_MENU:
             setup_monster_menu();
+            if (menu.max_items > which_item)
+		    menu.current_item = which_item; /* Stay on the same monster */
+            current_monster = menu.item[menu.current_item].cookie;
             screen_changed = 1;
             break;
         case DESCRIPTION:
@@ -345,33 +355,15 @@ static void change_menu_level(enum menu_level_t level)
 
 static void show_message(char *message)
 {
-    char msg[16];
-    char *s;
-    int y, len;
     #ifdef __linux__
         printf("%s\n", message);
     #endif
 
     FbClear();
     FbColor(WHITE);
-    y = 5;
 
-    s = message;
-    do {
-	FbMove(8, y);
-	len = strlen(s);
-	if (len >= 15) {
-	    memcpy(msg, s, 15);
-	    msg[15] = '\0';
-	    FbWriteLine(msg);
-	    s += 15;
-	} else {
-	    FbWriteLine(s);
-	    break;
-	}
-	y += 10;
-    } while (1);
-
+    FbMove(8, 5);
+    FbWriteString(message);
     FbMove(5, 120);
     FbWriteLine("<Back");
 
@@ -637,6 +629,10 @@ static void setup_monster_menu(void)
         if(monsters[i].status)
             dynmenu_add_item(&menu, monsters[i].name, RENDER_MONSTER, i);
     }
+    if (current_monster < menu.max_items)
+        menu.current_item = current_monster;
+    else
+        current_monster = menu.current_item;
 
     #if 0
     for(i = 0; i < nvendor_monsters; i++){
