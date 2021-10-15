@@ -2,6 +2,8 @@
 
 An implementation of Conway's Game of Life
 
+ Author: Paul Chang <paulc1231@gmail.com>
+ (c) 2021 Paul Chang
 **********************************************/
 #ifdef __linux__
 
