@@ -22,7 +22,7 @@
 #include "badge_apps/spacetripper.h"
 #include "badge_apps/smashout.h"
 #include "badge_apps/hacking_simulator.h"
-#include "game_of_life.h"
+#include "badge_apps/game_of_life.h"
 #include "badge_apps/cube.h"
 #ifdef INCLUDE_IRXMIT
 #include "badge_apps/irxmit.h"
@@ -102,7 +102,7 @@ struct menu_t *getSelectedMenuStack(unsigned char item)
 }
 
 /*
-  currently the char routine draws Y in decreasing (up), 
+  currently the char routine draws Y in decreasing (up),
   so 1st Y position has to offset down CHAR_HEIGHT to account for that
 */
 
@@ -154,7 +154,7 @@ struct menu_t *display_menu(struct menu_t *menu,
     }
 
     cursor_x = MENU_LEFT;
-    //cursor_y = CHAR_HEIGHT;
+    // cursor_y = CHAR_HEIGHT;
     cursor_y = 2; // CHAR_HEIGHT;
     FbMove(cursor_x, cursor_y);
 
@@ -262,7 +262,7 @@ void closeMenuAndReturn()
     runningApp = NULL;
 }
 
-/* 
+/*
    NOTE-
      apps will call this but since this returns to the callback
      code will execute up the the fuction return()
@@ -300,7 +300,7 @@ void menus()
         G_menuStack[G_menuCnt].currMenu = (struct menu_t *)main_m;
         G_menuStack[G_menuCnt].selectedMenu = NULL;
         G_currMenu = (struct menu_t *)main_m;
-        //selectedMenu = G_currMenu;
+        // selectedMenu = G_currMenu;
         G_selectedMenu = NULL;
         G_selectedMenu = display_menu(G_currMenu, G_selectedMenu, MAIN_MENU_STYLE);
     }
@@ -326,7 +326,7 @@ void menus()
             G_menuCnt--;
             G_currMenu = G_menuStack[G_menuCnt].currMenu;
             G_selectedMenu = G_menuStack[G_menuCnt].selectedMenu;
-            //G_selectedMenu = G_currMenu;
+            // G_selectedMenu = G_currMenu;
             break;
 
         case TEXT:                /* maybe highlight if clicked?? */
@@ -341,7 +341,7 @@ void menus()
             if (G_menuCnt == MAX_MENU_DEPTH)
                 G_menuCnt--;                                         /* too deep, undo */
             G_currMenu = (struct menu_t *)G_selectedMenu->data.menu; /* go into this menu */
-            //selectedMenu = G_currMenu;
+            // selectedMenu = G_currMenu;
             G_selectedMenu = NULL;
             break;
 
@@ -388,7 +388,7 @@ void menus()
         {
             G_selectedMenu++;
 
-            //Last item should never be a skipped item!!
+            // Last item should never be a skipped item!!
             while (((G_selectedMenu->attrib & SKIP_ITEM) || (G_selectedMenu->attrib & HIDDEN_ITEM)) && (!(G_selectedMenu->attrib & LAST_ITEM)))
                 G_selectedMenu++;
 
@@ -424,7 +424,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
         L_menuCnt = 0;
         L_menuStack[L_menuCnt] = L_menu;
         L_currMenu = L_menu;
-        //L_selectedMenu = L_menu;
+        // L_selectedMenu = L_menu;
         L_selectedMenu = NULL;
         L_selectedMenu = display_menu(L_currMenu, L_selectedMenu, style);
         return;
@@ -461,7 +461,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
             if (L_menuCnt == MAX_MENU_DEPTH)
                 L_menuCnt--;                                         /* too deep, undo */
             L_currMenu = (struct menu_t *)L_selectedMenu->data.menu; /* go into this menu */
-            //L_selectedMenu = L_currMenu;
+            // L_selectedMenu = L_currMenu;
             L_selectedMenu = NULL;
             L_selectedMenu = display_menu(L_currMenu, L_selectedMenu, style);
             break;
@@ -508,7 +508,7 @@ void genericMenu(struct menu_t *L_menu, MENU_STYLE style)
         {
             L_selectedMenu++;
 
-            //Last item should never be a skipped item!!
+            // Last item should never be a skipped item!!
             while (L_selectedMenu->attrib & SKIP_ITEM)
                 L_selectedMenu++;
 
@@ -625,14 +625,14 @@ void rvasec_splash_cb()
         LCDBars();
         FbSwapBuffers();
         green(50);
-        //if(buzzer)
+        // if(buzzer)
         setNote(100, 4092);
     }
     else if (wait < 40)
     {
         drawLCD4(HACKRVA4, 0);
         FbSwapBuffers();
-        //PowerSaveIdle();
+        // PowerSaveIdle();
     }
     else if (wait < 80)
     {
@@ -707,13 +707,13 @@ void rvasec_splash_cb()
     {
         if (!(wait % 1700))
         {
-            setNote(40 - (spkr_cnter++), 4048); //DO NOT EFFING CHANGE THIS
+            setNote(40 - (spkr_cnter++), 4048); // DO NOT EFFING CHANGE THIS
             spkr_cnter += 25;
         }
         if (spkr_cnter > 100)
             spkr_cnter = 0;
 
-        //PowerSaveIdle();
+        // PowerSaveIdle();
     }
     else if (buzzer && (wait < 50050))
         buzzer = 2;

@@ -1,20 +1,23 @@
 /*********************************************
 
-This is a badge app template.
-
+An implementation of Conway's Game of Life
 
 **********************************************/
 #ifdef __linux__
+
 #include <stdio.h>
 #include <sys/time.h> /* for gettimeofday */
 #include <string.h>	  /* for memset */
 
 #include "../linux/linuxcompat.h"
 #include "../linux/bline.h"
+
 #else
+
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "timer1_int.h" /* for wclock */
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
@@ -29,6 +32,8 @@ extern char *strcat(char *dest, const char *src);
 #include "xorshift.h"
 
 static unsigned int gen_count = 0;
+static volatile int current_time;
+static volatile int last_time;
 
 #define ROW_SIZE 10
 #define COL_SIZE 10
@@ -72,16 +77,23 @@ enum game_of_life_state_t
 	GAME_OF_LIFE_EXIT,
 };
 
+enum game_of_life_cmd_t
+{
+	CMD_PAUSE,
+	CMD_RESUME
+};
+
 static enum game_of_life_state_t game_of_life_state = GAME_OF_LIFE_INIT;
+static enum game_of_life_cmd_t game_of_life_cmd = CMD_RESUME;
 
 static int is_next_row(int current_cell_index)
 {
 	return (current_cell_index + 1) % ROW_SIZE == 0;
 }
 
-static int is_in_range(int num)
+static int is_in_range(int current_index)
 {
-	if (num >= 0 && num < GRID_SIZE)
+	if (current_index >= 0 && current_index < GRID_SIZE)
 	{
 		return TRUE;
 	}
@@ -107,7 +119,7 @@ static void next_generation(unsigned int alive_count, unsigned int cell, int cur
 	else
 	{
 		if (alive_count == 3)
-		{ // only way a dead cell can be revived if it has exactly 3 alives neighbors
+		{ // only way a dead cell can be revived if it has exactly 3 alive neighbors
 			next_generation_grid.cells[current_index].alive = ALIVE;
 		}
 		else
@@ -138,7 +150,7 @@ static void figure_out_alive_cells()
 			// LEFT not out of bound cond
 			if (grid.cells[n - 1].coordinate.x == grid.cells[n].coordinate.x)
 			{
-				if (grid.cells[n - 1].alive == 1)
+				if (grid.cells[n - 1].alive == ALIVE)
 				{
 					alive_count++;
 				}
@@ -151,7 +163,7 @@ static void figure_out_alive_cells()
 			// RIGHT not out of bound cond
 			if (grid.cells[n + 1].coordinate.x == grid.cells[n].coordinate.x)
 			{
-				if (grid.cells[n + 1].alive == 1)
+				if (grid.cells[n + 1].alive == ALIVE)
 				{
 					alive_count++;
 				}
@@ -164,7 +176,7 @@ static void figure_out_alive_cells()
 			// TOP not out of bound cond
 			if (grid.cells[n - ROW_SIZE].coordinate.x == (grid.cells[n].coordinate.x - 1))
 			{
-				if (grid.cells[n - ROW_SIZE].alive == 1)
+				if (grid.cells[n - ROW_SIZE].alive == ALIVE)
 				{
 					alive_count++;
 				}
@@ -177,10 +189,12 @@ static void figure_out_alive_cells()
 
 			// BOTTOM not out of bound cond
 			if (grid.cells[n + ROW_SIZE].coordinate.x == (grid.cells[n].coordinate.x + 1))
-				if (grid.cells[n + ROW_SIZE].alive == 1)
+			{
+				if (grid.cells[n + ROW_SIZE].alive == ALIVE)
 				{
 					alive_count++;
 				}
+			}
 		}
 
 		// TOP RIGHT neighbor
@@ -188,7 +202,7 @@ static void figure_out_alive_cells()
 		{
 			if (grid.cells[n - (ROW_SIZE - 1)].coordinate.x == (grid.cells[n].coordinate.x - 1))
 			{
-				if (grid.cells[n - (ROW_SIZE - 1)].alive == 1)
+				if (grid.cells[n - (ROW_SIZE - 1)].alive == ALIVE)
 				{
 					alive_count++;
 				}
@@ -200,7 +214,7 @@ static void figure_out_alive_cells()
 		{
 			if (grid.cells[n - (ROW_SIZE + 1)].coordinate.x == (grid.cells[n].coordinate.x - 1))
 			{
-				if (grid.cells[n - (ROW_SIZE + 1)].alive == 1)
+				if (grid.cells[n - (ROW_SIZE + 1)].alive == ALIVE)
 				{
 					alive_count++;
 				}
@@ -212,19 +226,19 @@ static void figure_out_alive_cells()
 		{
 			if (grid.cells[n + (ROW_SIZE - 1)].coordinate.x == (grid.cells[n].coordinate.x + 1))
 			{
-				if (grid.cells[n + (ROW_SIZE - 1)].alive == 1)
+				if (grid.cells[n + (ROW_SIZE - 1)].alive == ALIVE)
 				{
 					alive_count++;
 				}
 			}
 		}
 
-		// BOTTOM RIGHT
+		// BOTTOM RIGHT neighbor
 		if (is_in_range(n + (ROW_SIZE + 1)))
 		{
 			if (grid.cells[n + (ROW_SIZE + 1)].coordinate.x == (grid.cells[n].coordinate.x + 1))
 			{
-				if (grid.cells[n + (ROW_SIZE + 1)].alive == 1)
+				if (grid.cells[n + (ROW_SIZE + 1)].alive == ALIVE)
 				{
 					alive_count++;
 				}
@@ -236,6 +250,33 @@ static void figure_out_alive_cells()
 	}
 
 	update_current_generation_grid();
+}
+
+static void move_to_next_gen_every_second()
+{
+#ifdef __linux__
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+
+	volatile int current_time = tv.tv_sec;
+#else
+	volatile int current_time = get_time();
+#endif
+	// TODO: figure out why doing a mod 60 is important here. Probably worth asking Stephen.
+	if ((current_time % 60) != (last_time % 60))
+	{
+		if (game_of_life_cmd == CMD_RESUME)
+		{
+			last_time = current_time;
+			figure_out_alive_cells();
+			gen_count++;
+			return;
+		}
+
+		/* endgame */
+		return;
+	}
 }
 
 static void init_cells()
@@ -322,13 +363,7 @@ static void render_game()
 
 static void check_buttons()
 {
-
-	if (BUTTON_PRESSED_AND_CONSUME)
-	{
-		figure_out_alive_cells();
-		gen_count++;
-	}
-	else if (LEFT_BTN_AND_CONSUME)
+	if (LEFT_BTN_AND_CONSUME)
 	{
 		game_of_life_state = GAME_OF_LIFE_EXIT;
 	}
@@ -338,10 +373,13 @@ static void check_buttons()
 	}
 	else if (UP_BTN_AND_CONSUME)
 	{
+		game_of_life_cmd = CMD_RESUME;
 	}
 	else if (DOWN_BTN_AND_CONSUME)
 	{
+		game_of_life_cmd = CMD_PAUSE;
 	}
+
 	render_game();
 }
 
@@ -376,6 +414,7 @@ static void game_of_life_splash_screen()
 
 static void game_of_life_run()
 {
+	move_to_next_gen_every_second();
 	check_buttons();
 }
 
