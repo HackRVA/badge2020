@@ -37,13 +37,13 @@ static unsigned int gen_count = 0;
 static volatile int current_time;
 static volatile int last_time;
 
-#define ROW_SIZE 10
-#define COL_SIZE 10
+#define ROW_SIZE 12
+#define COL_SIZE 12
 #define GRID_SIZE (ROW_SIZE * COL_SIZE)
 
 #define GRID_X_PADDING 8
 #define GRID_Y_PADDING 2
-#define CELL_SIZE 12
+#define CELL_SIZE 10
 #define CELL_PADDING 3
 
 #define ALIVE 1
@@ -131,7 +131,7 @@ static void next_generation(unsigned int alive_count, unsigned int cell, int cur
 	}
 }
 
-static void update_current_generation_grid()
+static void update_current_generation_grid(void)
 {
 	for (int i = 0; i < GRID_SIZE; i++)
 	{
@@ -139,7 +139,7 @@ static void update_current_generation_grid()
 	}
 }
 
-static void figure_out_alive_cells()
+static void figure_out_alive_cells(void)
 {
 	unsigned int alive_count = 0;
 
@@ -254,7 +254,7 @@ static void figure_out_alive_cells()
 	update_current_generation_grid();
 }
 
-static void move_to_next_gen_every_second()
+static void move_to_next_gen_every_second(void)
 {
 #ifdef __linux__
 	struct timeval tv;
@@ -281,7 +281,7 @@ static void move_to_next_gen_every_second()
 	}
 }
 
-static void init_cells()
+static void init_cells(void)
 {
 	unsigned int x = 0;
 	unsigned int y = 0;
@@ -344,18 +344,16 @@ static void render_cell(int grid_x, int grid_y, int alive)
 	render_box(grid_x, grid_y, cell_color_state);
 }
 
-static void render_cells()
+static void render_cells(void)
 {
-
 	for (int i = 0; i <= GRID_SIZE - 1; i++)
 	{
 		render_cell(grid.cells[i].coordinate.x, grid.cells[i].coordinate.y, grid.cells[i].alive);
 	}
 }
 
-static void render_game()
+static void render_game(void)
 {
-
 	FbClear();
 
 	render_cells();
@@ -363,7 +361,7 @@ static void render_game()
 	FbSwapBuffers();
 }
 
-static void check_buttons()
+static void check_buttons(void)
 {
 	if (LEFT_BTN_AND_CONSUME)
 	{
@@ -385,7 +383,7 @@ static void check_buttons()
 	render_game();
 }
 
-static void render_splash_screen()
+static void render_splash_screen(void)
 {
 	FbColor(WHITE);
 	FbMove(LCD_XSIZE - 110, LCD_YSIZE / 2);
@@ -403,7 +401,7 @@ static void game_of_life_init(void)
 #endif
 }
 
-static void game_of_life_splash_screen()
+static void game_of_life_splash_screen(void)
 {
 	render_splash_screen();
 
@@ -414,13 +412,13 @@ static void game_of_life_splash_screen()
 	}
 }
 
-static void game_of_life_run()
+static void game_of_life_run(void)
 {
 	move_to_next_gen_every_second();
 	check_buttons();
 }
 
-static void game_of_life_exit()
+static void game_of_life_exit(void)
 {
 	game_of_life_state = GAME_OF_LIFE_INIT; /* So that when we start again, we do not immediately exit */
 	returnToMenus();
