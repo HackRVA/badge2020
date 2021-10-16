@@ -130,6 +130,16 @@ static const struct point tux_points[] =
 #include "badge_monster_drawings/tuxmon.h"
 static const struct point octocat_points[] =
 #include "badge_monster_drawings/octocat.h"
+static const struct point sourdough_points[] =
+#include "badge_monster_drawings/sourdough_bread.h"
+static const struct point babyyoda_points[] =
+#include "badge_monster_drawings/babyyoda.h"
+static const struct point babyyoda1_points[] =
+#include "badge_monster_drawings/babyyoda1.h"
+static const struct point btc_points[] =
+#include "badge_monster_drawings/btc.h"
+static const struct point mythosaur_points[] =
+#include "badge_monster_drawings/mythosaur.h"
 
 struct monster
 {
@@ -162,6 +172,11 @@ struct monster monsters[] = {
     {"gophermon", ARRAYSIZE(gopher_points), 0, CYAN, gopher_points, "Gophers are\nsmall, furry\nrodents that\nburrow tunnels\nthrough yards\nof North\nAmerica and\nCentral\nAmerica."},
     {"tuxmon", ARRAYSIZE(tux_points), 0, CYAN, tux_points, "Tux is a\npenguin\ncharacter and\nthe official\nbrand\ncharacter of\nthe Linux\nkernel."},
     {"octocat", ARRAYSIZE(octocat_points), 0, MAGENTA, octocat_points, "GitHub's mascot\nis an anthro-\npomorphized\n'octocat' with\nfive octopus-\nlike arms."},
+    {"sourdoughmon", ARRAYSIZE(sourdough_points), 0, WHITE, sourdough_points, "Before I break \ndown and rye, \nI want you \nto know that \nI loaf you."},
+    {"babyyodamon", ARRAYSIZE(babyyoda_points), 0, CYAN, babyyoda_points, "Baby Yoda. \nThat's it."},
+    {"babyyodamon", ARRAYSIZE(babyyoda1_points), 0, CYAN, babyyoda1_points, "Baby Yoda. \nThat's it."},
+    {"mythosaurmon", ARRAYSIZE(mythosaur_points), 0, RED, mythosaur_points, "You are \nMandalorian! \nYour ancestors \nrode the great \nMythosaur..."},
+    {"bitcoinmon", ARRAYSIZE(btc_points), 0, YELLOW, btc_points, "a real bitcoin."},
 };
 
 struct monster vendor_monsters[] = {
@@ -671,11 +686,6 @@ static void load_from_flash(void){
     load from flash should load a list of monsterIDs that have been enabled
     for each monsterID, it should run enable_monster() function
     */
-   #if 0
-   int i;
-   for(i = 0; i < ARRAYSIZE(monstersIDs); i++)
-      enable_monster(monsterID);
-   #endif
 }
 
 static void save_to_flash(void){
