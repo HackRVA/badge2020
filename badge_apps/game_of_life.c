@@ -62,11 +62,6 @@ static struct Grid
 	struct Cell
 	{
 		unsigned char alive;
-		struct Coordinate
-		{
-			unsigned int x;
-			unsigned int y;
-		} coordinate;
 	} cells[GRID_SIZE];
 } grid, next_generation_grid;
 
@@ -87,11 +82,6 @@ enum game_of_life_cmd_t
 
 static enum game_of_life_state_t game_of_life_state = GAME_OF_LIFE_INIT;
 static enum game_of_life_cmd_t game_of_life_cmd = CMD_RESUME;
-
-static int is_next_row(int current_cell_index)
-{
-	return (current_cell_index + 1) % ROW_SIZE == 0;
-}
 
 static int is_in_range(int current_index)
 {
@@ -133,10 +123,17 @@ static void next_generation(unsigned int alive_count, unsigned int cell, int cur
 
 static void update_current_generation_grid(void)
 {
-	for (int i = 0; i < GRID_SIZE; i++)
-	{
-		grid.cells[i].alive = next_generation_grid.cells[i].alive;
-	}
+	grid = next_generation_grid;
+}
+
+static int get_cell_x_pos(int cell_index)
+{
+	return cell_index / ROW_SIZE;
+}
+
+static int get_cell_y_pos(int cell_index)
+{
+	return cell_index % COL_SIZE;
 }
 
 static void figure_out_alive_cells(void)
@@ -150,7 +147,7 @@ static void figure_out_alive_cells(void)
 		{
 
 			// LEFT not out of bound cond
-			if (grid.cells[n - 1].coordinate.x == grid.cells[n].coordinate.x)
+			if (get_cell_x_pos(n - 1) == get_cell_x_pos(n))
 			{
 				if (grid.cells[n - 1].alive == ALIVE)
 				{
@@ -163,7 +160,7 @@ static void figure_out_alive_cells(void)
 		if (is_in_range(n + 1))
 		{
 			// RIGHT not out of bound cond
-			if (grid.cells[n + 1].coordinate.x == grid.cells[n].coordinate.x)
+			if (get_cell_x_pos(n + 1) == get_cell_x_pos(n))
 			{
 				if (grid.cells[n + 1].alive == ALIVE)
 				{
@@ -176,7 +173,7 @@ static void figure_out_alive_cells(void)
 		if (is_in_range(n - ROW_SIZE))
 		{
 			// TOP not out of bound cond
-			if (grid.cells[n - ROW_SIZE].coordinate.x == (grid.cells[n].coordinate.x - 1))
+			if (get_cell_x_pos(n - ROW_SIZE) == (get_cell_x_pos(n) - 1))
 			{
 				if (grid.cells[n - ROW_SIZE].alive == ALIVE)
 				{
@@ -190,7 +187,7 @@ static void figure_out_alive_cells(void)
 		{
 
 			// BOTTOM not out of bound cond
-			if (grid.cells[n + ROW_SIZE].coordinate.x == (grid.cells[n].coordinate.x + 1))
+			if (get_cell_x_pos(n + ROW_SIZE) == (get_cell_x_pos(n) + 1))
 			{
 				if (grid.cells[n + ROW_SIZE].alive == ALIVE)
 				{
@@ -202,7 +199,7 @@ static void figure_out_alive_cells(void)
 		// TOP RIGHT neighbor
 		if (is_in_range(n - (ROW_SIZE - 1)))
 		{
-			if (grid.cells[n - (ROW_SIZE - 1)].coordinate.x == (grid.cells[n].coordinate.x - 1))
+			if (get_cell_x_pos(n - (ROW_SIZE - 1)) == (get_cell_x_pos(n) - 1))
 			{
 				if (grid.cells[n - (ROW_SIZE - 1)].alive == ALIVE)
 				{
@@ -214,7 +211,7 @@ static void figure_out_alive_cells(void)
 		// TOP LEFT neighbor
 		if (is_in_range(n - (ROW_SIZE + 1)))
 		{
-			if (grid.cells[n - (ROW_SIZE + 1)].coordinate.x == (grid.cells[n].coordinate.x - 1))
+			if (get_cell_x_pos(n - (ROW_SIZE + 1)) == (get_cell_x_pos(n) - 1))
 			{
 				if (grid.cells[n - (ROW_SIZE + 1)].alive == ALIVE)
 				{
@@ -226,7 +223,7 @@ static void figure_out_alive_cells(void)
 		// BOTTOM LEFT neighbor
 		if (is_in_range(n + (ROW_SIZE - 1)))
 		{
-			if (grid.cells[n + (ROW_SIZE - 1)].coordinate.x == (grid.cells[n].coordinate.x + 1))
+			if (get_cell_x_pos(n + (ROW_SIZE - 1)) == (get_cell_x_pos(n) + 1))
 			{
 				if (grid.cells[n + (ROW_SIZE - 1)].alive == ALIVE)
 				{
@@ -238,7 +235,7 @@ static void figure_out_alive_cells(void)
 		// BOTTOM RIGHT neighbor
 		if (is_in_range(n + (ROW_SIZE + 1)))
 		{
-			if (grid.cells[n + (ROW_SIZE + 1)].coordinate.x == (grid.cells[n].coordinate.x + 1))
+			if (get_cell_x_pos(n + (ROW_SIZE + 1)) == (get_cell_x_pos(n) + 1))
 			{
 				if (grid.cells[n + (ROW_SIZE + 1)].alive == ALIVE)
 				{
@@ -283,36 +280,12 @@ static void move_to_next_gen_every_second(void)
 
 static void init_cells(void)
 {
-	unsigned int x = 0;
-	unsigned int y = 0;
-
 	for (int i = 0; i < GRID_SIZE; i++)
 	{
 		grid.cells[i].alive = xorshift((unsigned int *)&timestamp) % 2;
-
-		if (!is_next_row(i))
-		{
-			grid.cells[i].coordinate.x = x;
-			grid.cells[i].coordinate.y = y;
-			y++;
-		}
-
-		if (is_next_row(i))
-		{
-			grid.cells[i].coordinate.x = x;
-			grid.cells[i].coordinate.y = y;
-			x++;
-			// reset before going to the next row
-			y = 0;
-		}
 	}
 
-	for (int i = 0; i < GRID_SIZE; i++)
-	{
-		next_generation_grid.cells[i].coordinate.x = grid.cells[i].coordinate.x;
-		next_generation_grid.cells[i].coordinate.y = grid.cells[i].coordinate.y;
-		next_generation_grid.cells[i].alive = grid.cells[i].alive;
-	}
+	next_generation_grid = grid;
 }
 
 static void render_box(int grid_x, int grid_y, int color)
@@ -348,7 +321,7 @@ static void render_cells(void)
 {
 	for (int i = 0; i <= GRID_SIZE - 1; i++)
 	{
-		render_cell(grid.cells[i].coordinate.x, grid.cells[i].coordinate.y, grid.cells[i].alive);
+		render_cell(get_cell_x_pos(i), get_cell_y_pos(i), grid.cells[i].alive);
 	}
 }
 
