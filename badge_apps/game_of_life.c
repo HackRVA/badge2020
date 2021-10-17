@@ -20,6 +20,7 @@ An implementation of Conway's Game of Life
 #include "menu.h"
 #include "buttons.h"
 #include "timer1_int.h" /* for wclock */
+#include "fb.h"
 
 /* TODO: I shouldn't have to declare these myself. */
 #define size_t int
