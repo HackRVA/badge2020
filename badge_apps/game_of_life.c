@@ -189,6 +189,13 @@ static void figure_out_alive_cells(void)
 	update_current_generation_grid();
 }
 
+#ifndef __linux__
+static int get_time(void)
+{
+	return 3600 * (int) wclock.hour + 60 * (int) wclock.min + (int) wclock.sec;
+}
+#endif
+
 static void move_to_next_gen_every_second(void)
 {
 #ifdef __linux__
