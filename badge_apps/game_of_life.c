@@ -287,7 +287,7 @@ static void render_end_game_screen(void)
 	FbClear();
 	FbColor(WHITE);
 	FbMove(20, 40);
-	FbWriteString("Thank you\nfor planning!\n\n\nPress button\nto leave");
+	FbWriteString("Thank you\nfor playing!\n\n\nPress button\nto leave");
 	FbSwapBuffers();
 
 	if (BUTTON_PRESSED_AND_CONSUME)
