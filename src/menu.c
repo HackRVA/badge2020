@@ -506,7 +506,7 @@ const struct menu_t games_m[] = {
    {"Badge Monsters",VERT_ITEM, FUNCTION, {(struct menu_t *)badge_monsters_cb} },
    {"Space Tripper", VERT_ITEM, FUNCTION, {(struct menu_t *)spacetripper_cb} },
    {"Smashout",      VERT_ITEM, FUNCTION, {(struct menu_t *)smashout_cb} },
-   {"Hacking Simulator", VERT_ITEM, FUNCTION, {(struct menu_t *)hacking_simulator_cb} },
+   {"Hacking Sim",   VERT_ITEM, FUNCTION, {(struct menu_t *)hacking_simulator_cb} },
    {"Spinning Cube", VERT_ITEM, FUNCTION, {(struct menu_t *)cube_cb} },
    {"Game of Life", VERT_ITEM, FUNCTION, {(struct menu_t *)game_of_life_cb} }
 #ifdef INCLUDE_IRXMIT
