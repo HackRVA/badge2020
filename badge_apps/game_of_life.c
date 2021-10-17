@@ -164,12 +164,13 @@ static void figure_out_alive_cells(void)
 	// neighbors: LEFT, RIGHT, TOP, DOWN, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
 	int neighbor_x_offset[8] = { -1, 1, 0, 0, -1, -1, 1, 1};
 	int neighbor_y_offset[8] = { 0, 0, -1, 1, -1, 1, -1, 1};
+	int n;
 
-	for (int n = 0; n < GRID_SIZE; n++)
+	for (n = 0; n < GRID_SIZE; n++)
 	{
-		int neighbor_x, neighbor_y;
+		int i, neighbor_x, neighbor_y;
 
-		for (int i = 0; i < 8; i++)
+		for (i = 0; i < 8; i++)
 		{
 			neighbor_x = get_cell_x_pos(n) + neighbor_x_offset[i];
 			neighbor_y = get_cell_y_pos(n) + neighbor_y_offset[i];
@@ -215,7 +216,9 @@ static void move_to_next_gen_every_second(void)
 
 static void init_cells(void)
 {
-	for (int i = 0; i < GRID_SIZE; i++)
+	int i;
+
+	for (i = 0; i < GRID_SIZE; i++)
 	{
 		grid.cells[i].alive = xorshift((unsigned int *)&timestamp) % 2;
 	}
@@ -254,7 +257,9 @@ static void render_cell(int grid_x, int grid_y, int alive)
 
 static void render_cells(void)
 {
-	for (int i = 0; i < GRID_SIZE; i++)
+	int i;
+
+	for (i = 0; i < GRID_SIZE; i++)
 	{
 		render_cell(get_cell_x_pos(i), get_cell_y_pos(i), grid.cells[i].alive);
 	}
