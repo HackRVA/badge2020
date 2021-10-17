@@ -285,11 +285,7 @@ static void render_end_game_screen(void)
 
 static void check_buttons(void)
 {
-	if (LEFT_BTN_AND_CONSUME)
-	{
-		game_of_life_state = GAME_OF_LIFE_EXIT;
-	}
-	else if (RIGHT_BTN_AND_CONSUME)
+	if (LEFT_BTN_AND_CONSUME || RIGHT_BTN_AND_CONSUME)
 	{
 		game_of_life_state = GAME_OF_LIFE_EXIT;
 	}
@@ -336,6 +332,10 @@ static void game_of_life_splash_screen(void)
 	{
 		init_cells();
 		game_of_life_state = GAME_OF_LIFE_RUN;
+	}
+	else if (LEFT_BTN_AND_CONSUME || RIGHT_BTN_AND_CONSUME)
+	{
+		game_of_life_state = GAME_OF_LIFE_EXIT;
 	}
 }
 
