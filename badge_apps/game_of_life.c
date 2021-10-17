@@ -357,7 +357,7 @@ static void game_of_life_exit(void)
 	returnToMenus();
 }
 
-static int game_of_life_cb(void)
+int game_of_life_cb(void)
 {
 	switch (game_of_life_state)
 	{
