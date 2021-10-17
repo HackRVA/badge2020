@@ -22,6 +22,7 @@
 #include "badge_apps/spacetripper.h"
 #include "badge_apps/smashout.h"
 #include "badge_apps/hacking_simulator.h"
+#include "badge_apps/game_of_life.h"
 #include "badge_apps/cube.h"
 #ifdef INCLUDE_IRXMIT
 #include "badge_apps/irxmit.h"
@@ -505,8 +506,9 @@ const struct menu_t games_m[] = {
    {"Badge Monsters",VERT_ITEM, FUNCTION, {(struct menu_t *)badge_monsters_cb} },
    {"Space Tripper", VERT_ITEM, FUNCTION, {(struct menu_t *)spacetripper_cb} },
    {"Smashout",      VERT_ITEM, FUNCTION, {(struct menu_t *)smashout_cb} },
-   {"Hacking Simulator", VERT_ITEM, FUNCTION, {(struct menu_t *)hacking_simulator_cb} },
+   {"Hacking Sim",   VERT_ITEM, FUNCTION, {(struct menu_t *)hacking_simulator_cb} },
    {"Spinning Cube", VERT_ITEM, FUNCTION, {(struct menu_t *)cube_cb} },
+   {"Game of Life", VERT_ITEM, FUNCTION, {(struct menu_t *)game_of_life_cb} },
 #ifdef INCLUDE_IRXMIT
    {"IR XMIT",       VERT_ITEM, FUNCTION, {(struct menu_t *)irxmit_cb} },
 #endif
@@ -699,5 +701,4 @@ const unsigned char *splash_word_things[] = {"Cognition Module",
             returnToMenus();
     }
     
-
 

@@ -18,12 +18,13 @@ MAZE=maze
 USERNAME=username
 LUNARLANDER=lunarlander
 HACKING_SIMULATOR=hacking_simulator
+GAME_OF_LIFE=game_of_life
 SPACETRIPPER=spacetripper
 CUBE=cube
 
 all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/badge_monsters bin/fixup_monster bin/username \
 	bin/sample_app bin/smashout bin/ghost-detector bin/lunarlander bin/${HACKING_SIMULATOR} bin/${SPACETRIPPER} \
-	bin/${CUBE}
+	bin/${GAME_OF_LIFE} bin/${CUBE}
 
 # we need to depend on ${BIN}/.t not on ${BIN} because BIN is a directory and the
 # timestamp changes whenever the directory contents change, and we need to depend
@@ -83,6 +84,9 @@ bin/${CUBE}:	${BIN} ${APPDIR}/${CUBE}.c linuxcompat.o ${LINUX_OBJS}
 
 bin/hacking_simulator:	${BIN} ${APPDIR}/${HACKING_SIMULATOR}.c linuxcompat.o bline.o ${LINUX_OBJS} dynmenu.o
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} dynmenu.o -o bin/${HACKING_SIMULATOR} -I . -I ${BADGE_INC} ${APPDIR}/${HACKING_SIMULATOR}.c ${GTKLDFLAGS}
+
+bin/game_of_life:	${BIN} ${APPDIR}/${GAME_OF_LIFE}.c linuxcompat.o bline.o ${LINUX_OBJS} 
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${GAME_OF_LIFE} -I . -I ${BADGE_INC} ${APPDIR}/${GAME_OF_LIFE}.c ${GTKLDFLAGS}
 
 dynmenu.o:
 	$(CC) -c ${CFLAGS} -I../include ../src/dynmenu.c
