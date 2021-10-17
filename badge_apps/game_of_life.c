@@ -34,6 +34,7 @@ extern char *strcat(char *dest, const char *src);
 #include "xorshift.h"
 
 static unsigned int gen_count = 0;
+static unsigned int max_gen = 100;
 static volatile int current_time;
 static volatile int last_time;
 
@@ -85,14 +86,35 @@ static enum game_of_life_cmd_t game_of_life_cmd = CMD_RESUME;
 
 static int is_in_range(int current_index)
 {
-	if (current_index >= 0 && current_index < GRID_SIZE)
+	return current_index >= 0 && current_index < GRID_SIZE;
+}
+
+static int is_valid_pos(int pos)
+{
+	return pos >= 0 && pos < ROW_SIZE;
+}
+
+static int find_index(int neighbor_x_pos, int neighbor_y_pos)
+{
+	// Note: this formula only works if X and Y starting pos is 1 instead of 0
+	return COL_SIZE * ((neighbor_x_pos + 1) - 1) + ((neighbor_y_pos + 1 ) - 1);
+}
+
+static int is_cell_alive(struct Grid *grid, int neighbor_x_pos, int neighbor_y_pos)
+{
+	if (is_valid_pos(neighbor_x_pos) && is_valid_pos(neighbor_y_pos))
 	{
-		return TRUE;
-	}
-	else
-	{
+		int index = find_index(neighbor_x_pos, neighbor_y_pos);
+
+		if (is_in_range(index))
+		{
+			return grid->cells[index].alive == ALIVE;
+		}
+
 		return FALSE;
 	}
+
+	return FALSE;
 }
 
 static void next_generation(unsigned int alive_count, unsigned int cell, int current_index)
@@ -139,108 +161,22 @@ static int get_cell_y_pos(int cell_index)
 static void figure_out_alive_cells(void)
 {
 	unsigned int alive_count = 0;
+	// neighbors: LEFT, RIGHT, TOP, DOWN, TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT
+	int neighbor_x_offset[8] = { -1, 1, 0, 0, -1, -1, 1, 1};
+	int neighbor_y_offset[8] = { 0, 0, -1, 1, -1, 1, -1, 1};
 
 	for (int n = 0; n < GRID_SIZE; n++)
 	{
-		// LEFT neighbor
-		if (is_in_range(n - 1))
+		int neighbor_x, neighbor_y;
+
+		for (int i = 0; i < 8; i++)
 		{
+			neighbor_x = get_cell_x_pos(n) + neighbor_x_offset[i];
+			neighbor_y = get_cell_y_pos(n) + neighbor_y_offset[i];
 
-			// LEFT not out of bound cond
-			if (get_cell_x_pos(n - 1) == get_cell_x_pos(n))
+			if (is_cell_alive(&grid, neighbor_x, neighbor_y))
 			{
-				if (grid.cells[n - 1].alive == ALIVE)
-				{
-					alive_count++;
-				}
-			}
-		}
-
-		// RIGHT neighbor
-		if (is_in_range(n + 1))
-		{
-			// RIGHT not out of bound cond
-			if (get_cell_x_pos(n + 1) == get_cell_x_pos(n))
-			{
-				if (grid.cells[n + 1].alive == ALIVE)
-				{
-					alive_count++;
-				}
-			}
-		}
-
-		// TOP neighbor
-		if (is_in_range(n - ROW_SIZE))
-		{
-			// TOP not out of bound cond
-			if (get_cell_x_pos(n - ROW_SIZE) == (get_cell_x_pos(n) - 1))
-			{
-				if (grid.cells[n - ROW_SIZE].alive == ALIVE)
-				{
-					alive_count++;
-				}
-			}
-		}
-
-		// BOTTOM neighbor
-		if (is_in_range(n + ROW_SIZE))
-		{
-
-			// BOTTOM not out of bound cond
-			if (get_cell_x_pos(n + ROW_SIZE) == (get_cell_x_pos(n) + 1))
-			{
-				if (grid.cells[n + ROW_SIZE].alive == ALIVE)
-				{
-					alive_count++;
-				}
-			}
-		}
-
-		// TOP RIGHT neighbor
-		if (is_in_range(n - (ROW_SIZE - 1)))
-		{
-			if (get_cell_x_pos(n - (ROW_SIZE - 1)) == (get_cell_x_pos(n) - 1))
-			{
-				if (grid.cells[n - (ROW_SIZE - 1)].alive == ALIVE)
-				{
-					alive_count++;
-				}
-			}
-		}
-
-		// TOP LEFT neighbor
-		if (is_in_range(n - (ROW_SIZE + 1)))
-		{
-			if (get_cell_x_pos(n - (ROW_SIZE + 1)) == (get_cell_x_pos(n) - 1))
-			{
-				if (grid.cells[n - (ROW_SIZE + 1)].alive == ALIVE)
-				{
-					alive_count++;
-				}
-			}
-		}
-
-		// BOTTOM LEFT neighbor
-		if (is_in_range(n + (ROW_SIZE - 1)))
-		{
-			if (get_cell_x_pos(n + (ROW_SIZE - 1)) == (get_cell_x_pos(n) + 1))
-			{
-				if (grid.cells[n + (ROW_SIZE - 1)].alive == ALIVE)
-				{
-					alive_count++;
-				}
-			}
-		}
-
-		// BOTTOM RIGHT neighbor
-		if (is_in_range(n + (ROW_SIZE + 1)))
-		{
-			if (get_cell_x_pos(n + (ROW_SIZE + 1)) == (get_cell_x_pos(n) + 1))
-			{
-				if (grid.cells[n + (ROW_SIZE + 1)].alive == ALIVE)
-				{
-					alive_count++;
-				}
+				alive_count++;
 			}
 		}
 
@@ -272,7 +208,6 @@ static void move_to_next_gen_every_second(void)
 			gen_count++;
 			return;
 		}
-
 		/* endgame */
 		return;
 	}
@@ -299,7 +234,7 @@ static void render_box(int grid_x, int grid_y, int color)
 
 static void render_next_gen_text(unsigned int gen_count)
 {
-	char next_gen_text[15];
+	char next_gen_text[13];
 	char gen_num_text[4];
 	FbColor(WHITE);
 	FbMove(LCD_XSIZE / 4, LCD_YSIZE - 7);
@@ -319,7 +254,7 @@ static void render_cell(int grid_x, int grid_y, int alive)
 
 static void render_cells(void)
 {
-	for (int i = 0; i <= GRID_SIZE - 1; i++)
+	for (int i = 0; i < GRID_SIZE; i++)
 	{
 		render_cell(get_cell_x_pos(i), get_cell_y_pos(i), grid.cells[i].alive);
 	}
@@ -332,6 +267,20 @@ static void render_game(void)
 	render_cells();
 	render_next_gen_text(gen_count);
 	FbSwapBuffers();
+}
+
+static void render_end_game_screen(void)
+{
+	FbClear();
+	FbColor(WHITE);
+	FbMove(20, 40);
+	FbWriteString("Thank you\nfor planning!\n\n\nPress button\nto leave");
+	FbSwapBuffers();
+
+	if (BUTTON_PRESSED_AND_CONSUME)
+	{
+		game_of_life_state = GAME_OF_LIFE_EXIT;
+	}
 }
 
 static void check_buttons(void)
@@ -354,24 +303,29 @@ static void check_buttons(void)
 	}
 
 	render_game();
+
+	if (gen_count == max_gen)
+	{
+		game_of_life_cmd = CMD_PAUSE;
+		render_end_game_screen();
+	}
+
 }
 
 static void render_splash_screen(void)
 {
 	FbColor(WHITE);
-	FbMove(LCD_XSIZE - 110, LCD_YSIZE / 2);
-	FbWriteLine("Game of Life");
+	FbMove(10, 30);
+	FbWriteString("Game of Life\n\n\n\nLeft/Right Dpad\nto exit");
 	FbSwapBuffers();
 }
 
 static void game_of_life_init(void)
 {
-#ifdef __linux__
 	FbInit();
 	FbClear();
 
 	game_of_life_state = GAME_OF_LIFE_SPLASH_SCREEN;
-#endif
 }
 
 static void game_of_life_splash_screen(void)
