@@ -124,12 +124,14 @@ enum myprogram_state_t {
 };
 
 static enum myprogram_state_t myprogram_state = MYPROGRAM_INIT;
+static int screen_changed = 0;
 
 static void myprogram_init(void)
 {
 	FbInit();
 	FbClear();
 	myprogram_state = MYPROGRAM_RUN;
+	screen_changed = 1;
 }
 
 static void check_buttons()
@@ -146,10 +148,13 @@ static void check_buttons()
 
 static void draw_screen()
 {
+	if (!screen_changed)
+		return;
 	FbColor(WHITE);
 	FbMove(10, LCD_YSIZE / 2);
 	FbWriteLine("HOWDY!");
 	FbSwapBuffers();
+	screen_changed = 0;
 }
 
 static void myprogram_run()
