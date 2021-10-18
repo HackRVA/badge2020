@@ -97,8 +97,7 @@ static int is_valid_pos(int pos)
 
 static int find_index(int neighbor_x_pos, int neighbor_y_pos)
 {
-	// Note: this formula only works if X and Y starting pos is 1 instead of 0
-	return COL_SIZE * ((neighbor_x_pos + 1) - 1) + ((neighbor_y_pos + 1 ) - 1);
+	return COL_SIZE * neighbor_x_pos + neighbor_y_pos;
 }
 
 static int is_cell_alive(struct Grid *grid, int neighbor_x_pos, int neighbor_y_pos)
