@@ -147,7 +147,7 @@ static void check_buttons()
 static void draw_screen()
 {
 	FbColor(WHITE);
-	FbMove(10, SCREEN_YDIM / 2);
+	FbMove(10, LCD_YSIZE / 2);
 	FbWriteLine("HOWDY!");
 	FbSwapBuffers();
 }
