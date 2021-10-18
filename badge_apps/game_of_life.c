@@ -43,7 +43,7 @@ static volatile int last_time;
 #define COL_SIZE 12
 #define GRID_SIZE (ROW_SIZE * COL_SIZE)
 
-#define GRID_X_PADDING 8
+#define GRID_X_PADDING 2
 #define GRID_Y_PADDING 2
 #define CELL_SIZE 10
 #define CELL_PADDING 3
