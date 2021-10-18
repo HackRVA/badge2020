@@ -167,7 +167,8 @@ volatile int timestamp = 0;
 
 static GtkWidget *vbox, *window, *drawing_area;
 #define SCALE_FACTOR 6
-#define GTK_SCREEN_WIDTH (LCD_XSIZE * SCALE_FACTOR)
+#define EXTRA_WIDTH 200
+#define GTK_SCREEN_WIDTH (LCD_XSIZE * SCALE_FACTOR + EXTRA_WIDTH)
 #define GTK_SCREEN_HEIGHT (LCD_YSIZE * SCALE_FACTOR)
 static int real_screen_width = GTK_SCREEN_WIDTH;
 static int real_screen_height = GTK_SCREEN_HEIGHT;
@@ -176,6 +177,7 @@ static int screen_offset_x = 0;
 static int screen_offset_y = 0;
 static gint timer_tag;
 #define NCOLORS 9 
+#define FLARE_LED_COLOR (NCOLORS - 1)
 GdkColor huex[NCOLORS];
 static int (*badge_function)(void);
 static int time_to_quit = 0;
@@ -903,6 +905,32 @@ static gint key_press_cb(UNUSED GtkWidget* widget, GdkEventKey* event, UNUSED gp
 	return TRUE;
 }
 
+static void draw_led_text(GtkWidget *widget, int x, int y)
+{
+#define LETTER_SPACING 12
+	/* Literally draws L E D */
+	/* Draw L */
+	gdk_draw_line(widget->window, gc, x, y, x, y - 10);
+	gdk_draw_line(widget->window, gc, x, y, x + 8, y);
+
+	x += LETTER_SPACING;
+
+	/* Draw E */
+	gdk_draw_line(widget->window, gc, x, y, x, y - 10);
+	gdk_draw_line(widget->window, gc, x, y, x + 8, y);
+	gdk_draw_line(widget->window, gc, x, y - 5, x + 5, y - 5);
+	gdk_draw_line(widget->window, gc, x, y - 10, x + 8, y - 10);
+
+	x += LETTER_SPACING;
+
+	/* Draw D */
+	gdk_draw_line(widget->window, gc, x, y, x, y - 10);
+	gdk_draw_line(widget->window, gc, x, y, x + 8, y);
+	gdk_draw_line(widget->window, gc, x, y - 10, x + 8, y - 10);
+	gdk_draw_line(widget->window, gc, x + 8, y - 10, x + 10, y - 5);
+	gdk_draw_line(widget->window, gc, x + 8, y, x + 10, y - 5);
+}
+
 static int drawing_area_expose(GtkWidget *widget, UNUSED GdkEvent *event, UNUSED gpointer p)
 {
 	/* Draw the screen */
@@ -911,7 +939,7 @@ static int drawing_area_expose(GtkWidget *widget, UNUSED GdkEvent *event, UNUSED
 
 	timer++;
 	g_timer++;
-	w = real_screen_width / LCD_XSIZE;
+	w = (real_screen_width - EXTRA_WIDTH) / LCD_XSIZE;
 	if (w < 1)
 		w = 1;
 	h = real_screen_height / LCD_YSIZE;
@@ -926,13 +954,19 @@ static int drawing_area_expose(GtkWidget *widget, UNUSED GdkEvent *event, UNUSED
 		}
 	}
 
+	/* Draw a vertical line demarcating the right edge of the screen */
+	gdk_gc_set_foreground(gc, &huex[WHITE]);
+	gdk_draw_line(widget->window, gc, LCD_XSIZE * w + 1, 0, LCD_XSIZE * w + 1, real_screen_height - 1);
+
 	/* Draw simulated flare LED */
-	if (timer & 0x008) {
-		gdk_gc_set_foreground(gc, &huex[NCOLORS - 1]);
-		x = LCD_XSIZE - w;
-		y = 0;
-		gdk_draw_rectangle(widget->window, gc, 1 /* filled */, x * w, y * h, w * 5, h * 5);
-	}
+	x = LCD_XSIZE * w + EXTRA_WIDTH / 4;
+	y = (LCD_YSIZE * h) / 2 - EXTRA_WIDTH / 4;
+	draw_led_text(widget, LCD_XSIZE * w + EXTRA_WIDTH / 2 - 20, y - 10);
+	gdk_gc_set_foreground(gc, &huex[FLARE_LED_COLOR]);
+	gdk_draw_rectangle(widget->window, gc, 1 /* filled */, x, y, EXTRA_WIDTH / 2, EXTRA_WIDTH / 2);
+	gdk_gc_set_foreground(gc, &huex[WHITE]);
+	gdk_draw_rectangle(widget->window, gc, 0 /* not filled */, x, y, EXTRA_WIDTH / 2, EXTRA_WIDTH / 2);
+
 	return 0;
 }
 
@@ -963,11 +997,11 @@ static gint drawing_area_configure(GtkWidget *w, UNUSED GdkEventConfigure *event
 
 void flareled(unsigned char r, unsigned char g, unsigned char b)
 {
-	gdk_colormap_free_colors(gtk_widget_get_colormap(drawing_area), &huex[NCOLORS - 1], 1);
-	huex[NCOLORS - 1].red = (unsigned short) r * 256;
-	huex[NCOLORS - 1].green = (unsigned short) g * 256;
-	huex[NCOLORS - 1].blue = (unsigned short) b * 256;
-	gdk_colormap_alloc_color(gtk_widget_get_colormap(drawing_area), &huex[NCOLORS - 1], FALSE, FALSE);
+	gdk_colormap_free_colors(gtk_widget_get_colormap(drawing_area), &huex[FLARE_LED_COLOR], 1);
+	huex[FLARE_LED_COLOR].red = (unsigned short) r * 256;
+	huex[FLARE_LED_COLOR].green = (unsigned short) g * 256;
+	huex[FLARE_LED_COLOR].blue = (unsigned short) b * 256;
+	gdk_colormap_alloc_color(gtk_widget_get_colormap(drawing_area), &huex[FLARE_LED_COLOR], FALSE, FALSE);
 }
 
 static void setup_gtk_colors(void)
@@ -980,6 +1014,7 @@ static void setup_gtk_colors(void)
 	gdk_color_parse("red", &huex[RED]);
 	gdk_color_parse("cyan", &huex[CYAN]);
 	gdk_color_parse("MAGENTA", &huex[MAGENTA]);
+	gdk_color_parse("blue", &huex[FLARE_LED_COLOR]);
 }
 
 static void setup_gtk_window_and_drawing_area(GtkWidget **window, GtkWidget **vbox, GtkWidget **drawing_area)
