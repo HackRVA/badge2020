@@ -234,11 +234,13 @@ static void detect_high_swapbuffers_rate(void)
 	int total_time, start_time, end_time, frames, mspf;
 
 	swapbuf_timestamp[swapbuf_index] = g_timer;
-	swapbuf_index = (swapbuf_index + 1) % SWAPBUF_PERF_TICKS;
+	swapbuf_index++;
+	if (swapbuf_index >= SWAPBUF_PERF_TICKS)
+		swapbuf_index = 0;
 	start_time = 0;
 	end_time = 0;
 	frames = 0;
-	for (i = 0; i < 30; i++) {
+	for (i = 0; i < SWAPBUF_PERF_TICKS; i++) {
 		if (swapbuf_timestamp[i] == 0)
 			continue;
 		frames++;
@@ -254,9 +256,9 @@ static void detect_high_swapbuffers_rate(void)
 	if (frames > 0) {
 		total_time = end_time - start_time;
 		if (total_time > 0) {
-			mspf = 1000 * (total_time / g_callback_hz) / frames;
+			mspf = (1000 * total_time) / g_callback_hz / frames;
 			if (mspf > 0 && mspf < 100) {
-				printf("Warning, high SwapBuffers() rate detected.\n");
+				printf("Warning, high SwapBuffers() rate detected (%d milliseconds per frame)\n", mspf);
 				printf("Performance on badge likely to be terrible.\n");
 			}
 		}
