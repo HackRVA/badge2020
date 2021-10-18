@@ -15,6 +15,7 @@ Test flair LED
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "fb.h"
 #endif
 
 #include "build_bug_on.h"
@@ -144,8 +145,7 @@ static void test_flair_exit()
 	returnToMenus();
 }
 
-/* You will need to rename test_flair_cb() something else. */
-int test_flair_cb(void)
+int test_flair_led_cb(void)
 {
 	switch (test_flair_state) {
 	case TEST_FLAIR_INIT:
@@ -166,7 +166,7 @@ int test_flair_cb(void)
 #ifdef __linux__
 int main(int argc, char *argv[])
 {
-        start_gtk(&argc, &argv, test_flair_cb, 30);
+        start_gtk(&argc, &argv, test_flair_led_cb, 30);
         return 0;
 }
 #endif
