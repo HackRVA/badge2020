@@ -24,6 +24,7 @@
 
 #include "bline.h"
 #include "linuxcompat.h"
+#include "stacktrace.h"
 #include "../include/build_bug_on.h"
 
 #define FIFO_TO_BADGE "/tmp/fifo-to-badge"
@@ -232,6 +233,7 @@ static void detect_high_swapbuffers_rate(void)
 {
 	int i;
 	int total_time, start_time, end_time, frames, mspf;
+	static int stacktrace_printed = 0;
 
 	swapbuf_timestamp[swapbuf_index] = g_timer;
 	swapbuf_index++;
@@ -260,6 +262,10 @@ static void detect_high_swapbuffers_rate(void)
 			if (mspf > 0 && mspf < 100) {
 				printf("Warning, high SwapBuffers() rate detected (%d milliseconds per frame)\n", mspf);
 				printf("Performance on badge likely to be terrible.\n");
+				if ((stacktrace_printed % 30) == 0) {
+					stacktrace("High SwapBuffers Rate\n");
+				}
+				stacktrace_printed++;
 			}
 		}
 	}

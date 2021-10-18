@@ -1,11 +1,11 @@
 
-CFLAGS=-g -pthread -fsanitize=address -Wall -Wextra --pedantic -g
+CFLAGS=-g -pthread -fsanitize=address -Wall -Wextra --pedantic -g -rdynamic
 GTKCFLAGS:=$(subst -I,-isystem ,$(shell pkg-config --cflags gtk+-2.0))
 GTKLDFLAGS:=$(shell pkg-config --libs gtk+-2.0) $(shell pkg-config --libs gthread-2.0)
 
 BADGE_SRC=../src
 BADGE_INC=../include
-LINUX_OBJS=linuxcompat.o bline.o achievements.o xorshift.o
+LINUX_OBJS=linuxcompat.o bline.o achievements.o xorshift.o stacktrace.o
 
 APPDIR=../badge_apps
 MAZEPICS=${APPDIR}/maze_drawings
@@ -115,6 +115,9 @@ bin/${MAZE}:	${BIN} ${APPDIR}/${MAZE}.c linuxcompat.o bline.o xorshift.o achieve
 
 bin/${USERNAME}:	${BIN} ${APPDIR}/${USERNAME}.c
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/${USERNAME} -I . -I ${BADGE_INC} ${APPDIR}/${USERNAME}.c ${GTKLDFLAGS}
+
+stacktrace.o:	stacktrace.c stacktrace.h
+	$(CC) ${CFLAGS} ${GTKFLAGS} -c -I . stacktrace.c
 
 linuxcompat.o:	linuxcompat.c linuxcompat.h
 	$(CC) ${CFLAGS} ${GTKCFLAGS} -c -I . linuxcompat.c -o linuxcompat.o
