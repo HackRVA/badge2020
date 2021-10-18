@@ -27,6 +27,8 @@
 #include "stacktrace.h"
 #include "../include/build_bug_on.h"
 
+static char *program_title;
+
 #define FIFO_TO_BADGE "/tmp/fifo-to-badge"
 
 /* Define only one of these as 1 */
@@ -1021,6 +1023,7 @@ static void setup_gtk_window_and_drawing_area(GtkWidget **window, GtkWidget **vb
 {
 	GdkRectangle cliprect;
 	int i;
+	char window_title[1024];
 
 	*window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	setup_window_geometry(*window);
@@ -1041,6 +1044,9 @@ static void setup_gtk_window_and_drawing_area(GtkWidget **window, GtkWidget **vb
         gtk_container_add(GTK_CONTAINER(*window), *vbox);
         gtk_box_pack_start(GTK_BOX(*vbox), *drawing_area, TRUE /* expand */, TRUE /* fill */, 0);
         gtk_window_set_default_size(GTK_WINDOW(*window), real_screen_width, real_screen_height);
+	snprintf(window_title, sizeof(window_title), "HackRVA Badge Emulator - %s", program_title);
+	free(program_title);
+	gtk_window_set_title(GTK_WINDOW(*window), window_title);
 
 	for (i = 0; i < NCOLORS; i++)
 		gdk_colormap_alloc_color(gtk_widget_get_colormap(*drawing_area), &huex[i], FALSE, FALSE);
@@ -1074,6 +1080,7 @@ static gint advance_game(__attribute__((unused)) gpointer data)
 
 void start_gtk(int *argc, char ***argv, int (*main_badge_function)(void), int callback_hz)
 {
+	program_title = strdup((*argv)[0]);
 	gtk_set_locale();
 	gtk_init(argc, argv);
 	setup_gtk_colors();
