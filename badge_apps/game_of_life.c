@@ -73,6 +73,7 @@ enum game_of_life_state_t
 	GAME_OF_LIFE_INIT,
 	GAME_OF_LIFE_SPLASH_SCREEN,
 	GAME_OF_LIFE_RUN,
+	GAME_OF_LIFE_RENDER,
 	GAME_OF_LIFE_EXIT,
 };
 
@@ -295,29 +296,45 @@ static void render_end_game_screen(void)
 	}
 }
 
+static void game_of_life_render(void)
+{
+	static unsigned int prev_gen_count = (unsigned int) -1;
+
+	if (prev_gen_count == gen_count) {
+		game_of_life_state = GAME_OF_LIFE_RUN;
+		return;
+	}
+
+	prev_gen_count = gen_count;
+	render_game();
+
+	game_of_life_state = GAME_OF_LIFE_RUN;
+}
+
 static void check_buttons(void)
 {
 	if (LEFT_BTN_AND_CONSUME || RIGHT_BTN_AND_CONSUME)
 	{
 		game_of_life_state = GAME_OF_LIFE_EXIT;
+		return;
 	}
-	else if (UP_BTN_AND_CONSUME)
+	if (UP_BTN_AND_CONSUME)
 	{
 		game_of_life_cmd = CMD_RESUME;
+		return;
 	}
-	else if (DOWN_BTN_AND_CONSUME)
+	if (DOWN_BTN_AND_CONSUME)
 	{
 		game_of_life_cmd = CMD_PAUSE;
+		return;
 	}
-
-	render_game();
-
 	if (gen_count == max_gen)
 	{
 		game_of_life_cmd = CMD_PAUSE;
 		render_end_game_screen();
+		return;
 	}
-
+	game_of_life_state = GAME_OF_LIFE_RENDER;
 }
 
 static void render_splash_screen(void)
@@ -382,6 +399,9 @@ int game_of_life_cb(void)
 		break;
 	case GAME_OF_LIFE_RUN:
 		game_of_life_run();
+		break;
+	case GAME_OF_LIFE_RENDER:
+		game_of_life_render();
 		break;
 	case GAME_OF_LIFE_EXIT:
 		game_of_life_exit();
