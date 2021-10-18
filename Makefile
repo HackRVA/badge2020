@@ -55,7 +55,7 @@ SRC_APPS_C = \
 	badge_apps/lunarlander.c badge_apps/spacetripper.c \
 	badge_apps/hacking_simulator.c badge_apps/smashout.c \
 	badge_apps/game_of_life.c \
-	badge_apps/cube.c
+	badge_apps/cube.c badge_apps/about_badge.c
 
 SRC_USB_C = USB/usb_device.c  USB/usb_function_cdc.c USB/usb_descriptors.c
 
