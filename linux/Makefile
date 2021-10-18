@@ -24,7 +24,7 @@ CUBE=cube
 
 all:	${LINUX_OBJS} bin/${MAZE} bin/${IRXMIT} bin/${LASERTAG} bin/badge_monsters bin/fixup_monster bin/username \
 	bin/sample_app bin/smashout bin/ghost-detector bin/lunarlander bin/${HACKING_SIMULATOR} bin/${SPACETRIPPER} \
-	bin/${GAME_OF_LIFE} bin/${CUBE}
+	bin/${GAME_OF_LIFE} bin/${CUBE} bin/test_flair_led
 
 # we need to depend on ${BIN}/.t not on ${BIN} because BIN is a directory and the
 # timestamp changes whenever the directory contents change, and we need to depend
@@ -60,6 +60,9 @@ bin/badge_monsters:	${BIN} ${APPDIR}/badge_monsters.c linuxcompat.o bline.o dynm
 bin/sample_app:	${BIN} ${APPDIR}/sample_app.c linuxcompat.o bline.o ${LINUX_OBJS} \
 			${MONSTERS}/smileymon.h
 	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/sample_app -I . -I ${BADGE_INC} ${APPDIR}/sample_app.c ${GTKLDFLAGS}
+
+bin/test_flair_led:	${BIN} ${APPDIR}/test_flair_led.c linuxcompat.o bline.o ${LINUX_OBJS}
+	$(CC) ${CFLAGS} ${GTKCFLAGS} ${LINUX_OBJS} -o bin/test_flair_led -I . -I ${BADGE_INC} ${APPDIR}/test_flair_led.c ${GTKLDFLAGS}
 
 bin/fixup_monster:	${BIN} fixup_monster.c
 	$(CC) ${CFLAGS} -o bin/fixup_monster fixup_monster.c 
