@@ -19,6 +19,8 @@ Test flair LED
 
 #include "build_bug_on.h"
 
+#define ARRAYSIZE(x) (sizeof((x)) / sizeof((x)[0]))
+
 /* Program states.  Initial state is TEST_FLAIR_INIT */
 enum test_flair_state_t {
 	TEST_FLAIR_INIT,
@@ -51,17 +53,83 @@ static void check_buttons()
 	}
 }
 
+struct rgb_color {
+	unsigned char r, g, b;
+};
+
+static const struct rgb_color rainbow[] = {
+	{ 255, 0, 0 },		/* red */
+	{ 255, 125, 0 },	/* orange */
+	{ 255, 255, 0 },	/* yellow */
+	{ 125, 255, 0 },	/* light green */
+	{ 0, 255, 0 },		/* green */
+	{ 0, 255, 125 },	/* blueish-green */
+	{ 0, 255, 255 },	/* cyan */
+	{ 0, 125, 255 },	/* light blue */
+	{ 0, 0, 255 },		/* blue */
+	{ 125, 0, 255 },	/* purple */
+	{ 255, 0, 255 },	/* magenta */
+	{ 255, 0, 125 },	/* magenta-ish red */
+};
+
+static int get_delta(int c, int goal)
+{
+	int d;
+	const int rate = 5;
+
+	if (c > goal) {
+		if (c - goal > rate)
+			d = -rate;
+		else
+			d = goal - c;
+		return d;
+	}
+	if (c < goal) {
+		if (goal - c > rate)
+			d = rate;
+		else
+			d = goal - c;
+		return d;
+	}
+	return 0;
+}
+
+static int limit_255(int x)
+{
+	if (x < 0)
+		return 0;
+	if (x > 255)
+		return 255;
+	return x;
+}
+
 static void update_led_color()
 {
-	static unsigned char r = 0;
-	static unsigned char g = 0;
-	static unsigned char b = 0;
+	static int current_cardinal_color = 0;
+	static int r = 255;
+	static int g = 0;
+	static int b = 0;
+	int dr, dg, db;
 
-	r = (r + 1) & 0x0ff;
-	g = (g + 2) & 0x0ff;
-	b = (g + 3) & 0x0ff;
+	int next_cardinal_color = current_cardinal_color + 1;
+	if ((size_t) next_cardinal_color >= ARRAYSIZE(rainbow))
+		next_cardinal_color = 0;
 
-	flareled(r, g, b);
+	dr = get_delta(r, rainbow[next_cardinal_color].r);
+	dg = get_delta(g, rainbow[next_cardinal_color].g);
+	db = get_delta(b, rainbow[next_cardinal_color].b);
+
+	if (dr == 0 && dg == 0 && db == 0) {
+		current_cardinal_color++;
+		if ((size_t) current_cardinal_color >= ARRAYSIZE(rainbow))
+			current_cardinal_color = 0;
+	}
+
+	r = limit_255(r + dr);
+	g = limit_255(g + dg);
+	b = limit_255(b + db);
+
+	flareled((unsigned char) r, (unsigned char) g, (unsigned char) b);
 }
 
 static void test_flair_run()
