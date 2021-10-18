@@ -284,15 +284,21 @@ static void render_game(void)
 
 static void render_end_game_screen(void)
 {
-	FbClear();
-	FbColor(WHITE);
-	FbMove(20, 40);
-	FbWriteString("Thank you\nfor playing!\n\n\nPress button\nto leave");
-	FbSwapBuffers();
+	static int already_rendered = 0;
+
+	if (!already_rendered) {
+		FbClear();
+		FbColor(WHITE);
+		FbMove(20, 40);
+		FbWriteString("Thank you\nfor playing!\n\n\nPress button\nto leave");
+		FbSwapBuffers();
+		already_rendered = 1;
+	}
 
 	if (BUTTON_PRESSED_AND_CONSUME)
 	{
 		game_of_life_state = GAME_OF_LIFE_EXIT;
+		already_rendered = 0;
 	}
 }
 
