@@ -338,15 +338,22 @@ static void game_of_life_init(void)
 
 static void game_of_life_splash_screen(void)
 {
-	render_splash_screen();
+	static char already_rendered_splash_screen = 0;
+
+	if (!already_rendered_splash_screen) {
+		render_splash_screen();
+		already_rendered_splash_screen = 1;
+	}
 
 	if (BUTTON_PRESSED_AND_CONSUME)
 	{
+		already_rendered_splash_screen = 0;
 		init_cells();
 		game_of_life_state = GAME_OF_LIFE_RUN;
 	}
 	else if (LEFT_BTN_AND_CONSUME || RIGHT_BTN_AND_CONSUME)
 	{
+		already_rendered_splash_screen = 0;
 		game_of_life_state = GAME_OF_LIFE_EXIT;
 	}
 }
