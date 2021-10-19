@@ -10,6 +10,7 @@
 #include "fb.h"
 #endif
 
+#include "xorshift.h"
 #include <string.h>
 
 #define ARRAYSIZE(x) (sizeof((x)) / sizeof((x)[0]))
@@ -168,20 +169,43 @@ static void draw_cube(void)
 
 static void docube(void)
 {
+	static int count = 0;
+	static int d1 = 1, d2 = 1, d3 = 1;
+	static unsigned int xorshift_state = 0xa5a5a5a5;
+
 	memcpy(&cubept, &cubept2, sizeof(cubept2));
 	FbColor(WHITE);
 	yrotate(cubept2, cubept, ARRAYSIZE(cubept), angle);
 	zrotate(cubept, cubept3, ARRAYSIZE(cubept), angle2);
 	xrotate(cubept3, cubept, ARRAYSIZE(cubept), angle2);
-	angle2 += 1;
+
+	angle2 += d1;
 	if (angle2 > 127)
-		angle2 = 0;
-	angle += 1;
+		angle2 = angle2 - 127;
+	else if (angle2 < 0)
+		angle2 += 127;
+
+	angle += d2;
 	if (angle > 127)
-		angle = 0;
-	angle3 += 1;
+		angle = angle - 127;
+	else if (angle < 0)
+		angle += 127;
+
+	angle3 += d3;
 	if (angle3 > 127)
-		angle3 = 0;
+		angle3 = angle3 - 127;
+	else if (angle3 < 0)
+		angle3 += 127;
+
+	count++;
+	if ((count & 0x7f) == 0) {
+		d1 = (xorshift(&xorshift_state) % 3) - 1;
+		d2 = (xorshift(&xorshift_state) % 3) - 1;
+		d3 = (xorshift(&xorshift_state) % 3) - 1;
+		if (d1 == 0 && d2 == 0 && d3 == 0)
+			d1 = 1;
+	}
+
 	FbColor(WHITE);
 	draw_cube();
 	FbPaintNewRows();
