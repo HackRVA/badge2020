@@ -14,6 +14,7 @@
 #include "colors.h"
 #include "menu.h"
 #include "buttons.h"
+#include "fb.h"
 #endif
 
 #include "build_bug_on.h"
