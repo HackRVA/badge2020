@@ -56,7 +56,7 @@ static void draw_screen()
 	FbClear();
 	FbMove(2, 2);
 	FbWriteString("THIS BADGE WAS\nBUILT AND\nPROGRAMMED BY\nHACKRVA MEMBERS\n"
-			"\nVISIT\n\nhttps://\ngithub.com\n/HackRVA/\nbadge2020\n\nFOR MORE\nINFORMATION");
+			"\nVISIT\n\nhttps://\nhackrva.github.\nio/badge2020/\n\nFOR MORE\nINFORMATION");
 	FbSwapBuffers();
 	screen_changed = 0;
 }
