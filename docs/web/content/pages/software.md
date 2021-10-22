@@ -4,7 +4,7 @@ date: Last Modified
 permalink: /software.html
 eleventyNavigation:
   key: software 
-  order: 2
+  order: 3
   title: Badge Software
 ---
 

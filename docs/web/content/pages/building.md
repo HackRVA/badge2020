@@ -4,7 +4,7 @@ date: Last Modified
 permalink: /building_the_badge.html
 eleventyNavigation:
   key: building 
-  order: 1
+  order: 2
   title: Building the Badge
 ---
 Building the Badge
