@@ -22,12 +22,12 @@ module.exports = function(eleventyConfig) {
       // You bet we throw an error on missing alt (alt="" works okay)
       throw new Error(`Missing \`alt\` on responsiveimage from: ${src}`);
     }
-    src = './badge2020/content/images/'+src
+    src = 'content/images/'+src
     let metadata = await Image(src, {
       widths: [400, 600, 800, 1000, 1200, 1400, 1600, 1900],
       formats: ['webp', 'jpeg', 'png'],
-      urlPath: "/badge2020/content/images/",
-      outputDir: "./docs/content/images/"
+      urlPath: "/badge2020/content/pages/images/",
+      outputDir: "./_site/content/images/"
     });
 
     let lowsrc = metadata.jpeg[0];
@@ -116,7 +116,7 @@ module.exports = function(eleventyConfig) {
   
   //   return coll;
   // });
-    
+
 
    // Creates custom collection "results" for search
    const searchFilter = require("./filters/searchFilter");
@@ -179,13 +179,14 @@ module.exports = function(eleventyConfig) {
   // Don't process folders with static assets e.g. images
   eleventyConfig.addPassthroughCopy("favicon.ico");
   eleventyConfig.addPassthroughCopy("images/")
-  eleventyConfig.addPassthroughCopy("content/images/")
+  eleventyConfig.addPassthroughCopy({ "content/pages/images/": "images" })
   eleventyConfig.addPassthroughCopy("admin");
   eleventyConfig.addPassthroughCopy("_includes/assets/");
   eleventyConfig.addPassthroughCopy("_includes/experimental/");
 
   /* Markdown Plugins */
   let markdownIt = require("markdown-it");
+
   let markdownItAnchor = require("markdown-it-anchor");
   let markdownItEmoji = require("markdown-it-emoji");
   let markdownItFootnote = require("markdown-it-footnote");

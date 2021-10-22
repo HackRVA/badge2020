@@ -17,31 +17,38 @@ eleventyNavigation:
 
 ### Lunar Rescue
 a lunar lander type game in which you must rescue your fellow astronauts and transport them to the lunar base
-![lunar rescue](/badge2020/content/images/lunar-lander.jpg)
+
+![lunar rescue](images/lunar-lander.jpg)
 
 ### Badge Monsters
 You've heard of Pokemon Go? This is not at all like that. Not at all.
-![badge monsters](/badge2020/content/images/badge-monsters.jpg)
+
+![badge monsters](images/badge-monsters.jpg)
 
 ### Space Tripper
 Something akin the 1979 Super Startrek BASIC game, but running on the badge.
-![space tripper](/badge2020/content/images/space-tripper.jpg)
+
+![space tripper](images/space-tripper.jpg)
 
 ### Smashout
 Similar to Breakout on the ATARI VCS
-![smashout](/badge2020/content/images/smashout.jpg)
+
+![smashout](images/smashout.jpg)
 
 ### Hacking Sim
 Route the Inter Tubes to make the data flow
-![hacking sim](/badge2020/content/images/hacking-sim.jpg)
+
+![hacking sim](images/hacking-sim.jpg)
 
 ### Spinning Cube
 Does what it says on the tin
-![spinning cube](/badge2020/content/images/cube.jpg)
+
+![spinning cube](images/cube.jpg)
 
 ### Game of Life
 Conway's game of life
-![game of life](/badge2020/content/images/game-of-life.jpg)
+
+![game of life](images/game-of-life.jpg)
 
 ## Other
 | <span style="color:grey;">name</span>     | <span style="color:grey;">description</span> |
