@@ -18,10 +18,33 @@ On an ubuntu-based system, `sudo apt-get install build-essentials`. Other system
 will also need some GTK libs, `sudo apt-get install libgtk2.0-dev` at
 least (again, it will differ on systems not based on debian.)
 
-To compile the badge firmware to run on the badge, you will need
-another compiler, the Microchip XC32 compiler.
+(NOTE: you can skip this next step until later, when you actually want to
+flash the badge firmware. You do not need to do this step if all you want to do is
+run your badge app on linux.) To compile the badge firmware to run on the badge,
+you will need another compiler, the Microchip XC32 compiler.
 The commands to install it can be found in the docker file in
 [`docker/badge-compiler/Dockerfile`](https://github.com/HackRVA/badge2020/blob/master/docker/badge-compiler/Dockerfile)
+
+Here I've quoted the necessary commands, but the Dockerfile is the canonical source.
+
+```
+# Microchip tools require i386 compatability libs
+dpkg --add-architecture i386 \
+    && apt-get update -yq \
+    && apt-get install -yq --no-install-recommends curl build-essential \
+    libc6:i386 libstdc++6:i386
+
+# Download and install XC32 compiler
+curl -fSL -A "Mozilla/4.0" -o /tmp/xc32.run "http://ww1.microchip.com/downloads/en/DeviceDoc/xc32-v1.34-full-install-linux-installer.run" \
+    && chmod a+x /tmp/xc32.run \
+    && /tmp/xc32.run --mode unattended --unattendedmodeui none \
+        --netservername localhost \
+    && rm /tmp/xc32.run
+
+```
+
+Finally add /opt/microchip/xc32/v1.34/bin to your PATH.
+
 
 Step 1: Clone the linux badge environment:
 
