@@ -1,6 +1,6 @@
 # Badge2020 Documentation
-This is a static site built with [eleventy](https://www.11ty.dev/) that builds a documentation site to gh-pages.
-Ideally we will put documentation here that is intended to be public facing.
+This is a place to store public facing documentation.
+This uses a static site generator [eleventy](https://www.11ty.dev/) that builds a documentation site to gh-pages.
 
 ## Adding Content
 
@@ -36,19 +36,25 @@ I haven't figured out how to get this to play nicely with images yet. So, you wi
 ## Running the site locally
 You will need to install node (probably something version 12 or higher) and npm.
 
-### install the `node_modules` by running:
+Most package managers have an ancient version of node that probably won't work.
+The easiest way to install node and npm is with the Node Version Manager (nvm).
+
+### Node Version Manager
+Follow these instructions
+https://github.com/nvm-sh/nvm#install--update-script
+
+You should now be able to run node and npm.
 ```
-npm install
+npm -v
 ```
 
 ### run the site locally:
 ```
-npm start
+sh run_local.sh
 ```
 the site should be served up on `http://localhost:8080`
 
 ### deploy to gh-pages
 ```
-npm run build
-npm run deploy
+sh deploy_to_gh-pages.sh
 ```
