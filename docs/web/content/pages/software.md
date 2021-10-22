@@ -7,19 +7,43 @@ eleventyNavigation:
   order: 2
   title: Badge Software
 ---
-### Games
 
-| <span style="color:grey;">name</span>     | <span style="color:grey;">description</span> |
-| ----------- | ---------- |
-| Lunar Rescue | a lunar lander type game in which you must rescue your fellow astronauts and transport them to the lunar base |
-| Badge Monsters | you've heard of Pokemon Go? This is not at all like that. Not at all. |
-| Space Tripper | Something akin the 1979 Super Startrek BASIC game, but running on the badge. |
-| Smashout | Similar to Breakout on the ATARI VCS |
-| Hacking Sim | Route the Inter Tubes to make the data flow |
-| Spinning Cube | Does what it says on the tin |
-| Game of Life | Conway's game of life |
+<style>
+  img {
+    width: 400px !important;
+  }
+</style>
+## Games
 
-### Other
+### Lunar Rescue
+a lunar lander type game in which you must rescue your fellow astronauts and transport them to the lunar base
+![lunar rescue](/badge2020/content/images/lunar-lander.jpg)
+
+### Badge Monsters
+You've heard of Pokemon Go? This is not at all like that. Not at all.
+![badge monsters](/badge2020/content/images/badge-monsters.jpg)
+
+### Space Tripper
+Something akin the 1979 Super Startrek BASIC game, but running on the badge.
+![space tripper](/badge2020/content/images/space-tripper.jpg)
+
+### Smashout
+Similar to Breakout on the ATARI VCS
+![smashout](/badge2020/content/images/smashout.jpg)
+
+### Hacking Sim
+Route the Inter Tubes to make the data flow
+![hacking sim](/badge2020/content/images/hacking-sim.jpg)
+
+### Spinning Cube
+Does what it says on the tin
+![spinning cube](/badge2020/content/images/cube.jpg)
+
+### Game of Life
+Conway's game of life
+![game of life](/badge2020/content/images/game-of-life.jpg)
+
+## Other
 | <span style="color:grey;">name</span>     | <span style="color:grey;">description</span> |
 | ----------- | ---------- |
 | Schedule    | The Schedule badge app shows you the schedule for the 2021 RVAsec conference. |

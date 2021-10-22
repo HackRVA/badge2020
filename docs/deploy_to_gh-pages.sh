@@ -6,5 +6,6 @@ if [ ! -d "$DIR" ]; then
   cd web && npm install
 fi
 
-cd web && npm run build
-cd web && npm run deploy
+cd web 
+npm run build
+npm run deploy
