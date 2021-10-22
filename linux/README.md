@@ -11,12 +11,14 @@ every little thing. When you are reasonably sure that your code is working,
 then you can flash it to the badge and check if it works as expected in the
 real badge environment.
 
-Step 0: Install the compilers on your linux system.
+<h2>Step 0: Install the compilers on your linux system.</h2>
 
 For the badge emulator, you'll need your system's native compiler.
 On an ubuntu-based system, `sudo apt-get install build-essentials`. Other systems will differ. You
 will also need some GTK libs, `sudo apt-get install libgtk2.0-dev` at
 least (again, it will differ on systems not based on debian.)
+
+<h2>Step 1: Install Microchip XC32 Compiler</h2>
 
 (NOTE: you can skip this next step until later, when you actually want to
 flash the badge firmware. You do not need to do this step if all you want to do is
@@ -46,13 +48,18 @@ curl -fSL -A "Mozilla/4.0" -o /tmp/xc32.run "http://ww1.microchip.com/downloads/
 Finally add /opt/microchip/xc32/v1.34/bin to your PATH.
 
 
-Step 1: Clone the linux badge environment:
+<h2>Step 2: Clone the linux badge environment:</h2>
 
 ```
 	git clone git@github.com:HackRVA/badge2020.git
 ```
 
-Step 2: Write your code:
+or, if you don't have a github account, you can download the ZIP file
+from this page: https://github.com/HackRVA/badge2020 (click the green
+"Code" button and select the "Download Zip" option, then unzip the file.
+
+
+<h2>Step 3: Write your code:</h2>
 
 ```
 	cd badge2020
@@ -152,7 +159,7 @@ or print messages on the screen, receive user input, etc. Unfortunately,
 the header files and documentation for that type of thing is not currently
 very good. Feel free to improve the situation.
 
-Step 4: Build and run your app on linux:
+<h2>Step 5: Build and run your app on linux:</h2>
 
 ```bash
 you@yourmachine ~/github/badge2020/linux $ make bin/sample_app
@@ -162,7 +169,7 @@ cc -pthread -fsanitize=address -Wall --pedantic -g -c ../src/achievements.c -I .
 cc -pthread -fsanitize=address -Wall --pedantic -g -pthread -isystem /usr/include/gtk-2.0 -isystem /usr/lib/x86_64-linux-gnu/gtk-2.0/include -isystem /usr/include/gio-unix-2.0/ -isystem /usr/include/cairo -isystem /usr/include/pango-1.0 -isystem /usr/include/atk-1.0 -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/libpng12 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/libpng12 -isystem /usr/include/pango-1.0 -isystem /usr/include/harfbuzz -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/freetype2 -c ../badge_apps/xorshift.c -o xorshift.o
 cc -pthread -fsanitize=address -Wall --pedantic -g -pthread -isystem /usr/include/gtk-2.0 -isystem /usr/lib/x86_64-linux-gnu/gtk-2.0/include -isystem /usr/include/gio-unix-2.0/ -isystem /usr/include/cairo -isystem /usr/include/pango-1.0 -isystem /usr/include/atk-1.0 -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/libpng12 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/libpng12 -isystem /usr/include/pango-1.0 -isystem /usr/include/harfbuzz -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/freetype2 linuxcompat.o bline.o achievements.o xorshift.o -o bin/sample_app -I . -I ../include ../badge_apps/sample_app.c -lgtk-x11-2.0 -lgdk-x11-2.0 -lpangocairo-1.0 -latk-1.0 -lcairo -lgdk_pixbuf-2.0 -lgio-2.0 -lpangoft2-1.0 -lpango-1.0 -lgobject-2.0 -lglib-2.0 -lfontconfig -lfreetype -lgthread-2.0 -pthread -lglib-2.0
 you@yourmachine ~/github/badge2020/linux $ bin/sample_app
-````
+```
 
 ![image of sample_app running](https://raw.githubusercontent.com/smcameron/hackrva-badge-boost/master/badgeboost.jpg)
 
@@ -174,12 +181,11 @@ the screen too frequently, and if it thinks you are, you may see this warning:
 	Performance on badge likely to be terrible.
 ```
 
-Step 4:  Get your app running on the badge.
+<h2>Step 6:  Get your app running on the badge.</h2>
 
-3. Modify the Makefile to know about your files by adding them
-   to the SRC_APPS_C variable.
+1. Modify the Makefile to know about your files by adding them to the SRC_APPS_C variable.
 
-4. Add a your header file into include/badge_apps/myapp.h (Substitute your appname for "myapp".)
+2. Add a your header file into include/badge_apps/myapp.h (Substitute your appname for "myapp".)
 In this header, put in a single function that is your app callback.  For instance:
 
 ```c
@@ -191,7 +197,7 @@ In this header, put in a single function that is your app callback.  For instanc
 	#endif
 ```
 
-5. Modify src/menu.c:
+3. Modify src/menu.c:
 
 ```diff
 diff --git a/src/menu.c b/src/menu.c
@@ -215,7 +221,8 @@ index 175d1d4..f0aad9a 100644
 };
 ```
 
-7. Maybe disable other apps.  If you're using the free compiler, and it complains
+<h2>Step 7. Maybe disable other apps.</h2>
+f you're using the free compiler, and it complains
 '...Compiler option (Optimize for size) ignored ...", then you may have to disable
 other apps for your app to fit. If your app is too big, the badge will crash loop.
 I don't know a way to check beforehand if your app is too big.
@@ -248,14 +255,14 @@ index 15d2a89..30f9132 100644
  };
 ```
 
-8. Build it for the badge...
+<h2>Step 8. Build it for the badge...</h2>
 
 Type `make` in the top level directory of the `badge2020` project...
 
-9. Flash the badge
+<h2>Step 9.  Flash the badge</h2>
 
 Press the button on the badge as you simultaneously plug it into the USB port
-of your computer.  A green LED should be flashing.
+of your computer, then release the button.  A white LED should be flashing.
 
 Next, run `sudo tools/bootloadit`. This will flash the firmware for the badge.
 
