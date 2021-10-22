@@ -25,13 +25,11 @@ Hello, World!
 ```
 
 ### Images
-Add images to the `./content/images/` dir.
+Add images to the `web/content/pages/images/` dir.
+Files in this directory get passed through to this directory in the build: `/badge2020/images/`
 
-gh-pages requires a pathPrefix.  
-> i.e. the site may be served at `https://hackrva.github.io/badge2020/` the prefix would be `/badge2020`
-
-I haven't figured out how to get this to play nicely with images yet. So, you will have to link the images in the markdown file with the path prefix included.
-> e.g. `![Hello, world](/badge2020/content/images/hello.jpg)`
+in the markdown files, reference the images from a relative path.
+> e.g. `images/someImage.jpg`
 
 ## Running the site locally
 You will need to install node (probably something version 12 or higher) and npm.

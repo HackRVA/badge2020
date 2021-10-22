@@ -47,6 +47,7 @@ Does what it says on the tin
 
 ### Game of Life
 Conway's game of life
+
 ![game of life](images/game-of-life.jpg)
 
 ## Other
