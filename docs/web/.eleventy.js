@@ -5,6 +5,7 @@ const htmlmin = require("html-minifier");
 const svgContents = require("eleventy-plugin-svg-contents");
 const mdIterator = require('markdown-it-for-inline')
 const embedEverything = require("eleventy-plugin-embed-everything");
+const lazyImagesPlugin = require('eleventy-plugin-lazyimages');
 const pluginTOC = require('eleventy-plugin-nesting-toc');
 const eleventyNavigationPlugin = require("@11ty/eleventy-navigation");
 const Image = require("@11ty/eleventy-img");
@@ -234,6 +235,8 @@ module.exports = function(eleventyConfig) {
       listType: "ol"
     })
   );
+
+  eleventyConfig.addPlugin(lazyImagesPlugin);
 
   return {
     templateFormats: ["md", "njk", "html", "liquid"],
