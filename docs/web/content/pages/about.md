@@ -14,7 +14,7 @@ eleventyNavigation:
 </style>
 ## Technical Details
 
-TODO -- add some technical details
+![tech-specs](images/BadgeDataSheet.jpg)
 
 ## HackRVA
 
