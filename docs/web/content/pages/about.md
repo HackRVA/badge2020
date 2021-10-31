@@ -16,6 +16,8 @@ eleventyNavigation:
 
 ![tech-specs](images/BadgeDataSheet.jpg)
 
+> note: this datasheet is from a previous year, but the details should be the same.
+
 ## HackRVA
 
 Of the period of several months the badge team meets at [hackrva](https://hackrva.org) to design the badge, etch the circuit boards, populate the boards with components, and write software.

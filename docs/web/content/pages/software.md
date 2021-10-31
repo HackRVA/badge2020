@@ -27,6 +27,7 @@ You've heard of Pokemon Go? This is not at all like that. Not at all.
 
 ### Space Tripper
 Something akin the 1979 Super Startrek BASIC game, but running on the badge.
+An explainer video for Space Tripper can be found here: https://www.youtube.com/watch?v=nUO3E5aWsC4
 
 ![space tripper](images/space-tripper.jpg)
 
