@@ -7,7 +7,11 @@ device pic32MX270F256D
 set poweroptions.powerenable true
 set voltagevalue 3.3
 hwtool pickit3 -p
-program "tools/bootloader_2019.hex" 
+#program "tools/bootloader_2019.hex" 
+# has LED
+program "tools/bootloader-20200128.hex" 
+#no led
+#program "tools/bootload_2019_alt.hex" 
 quit
 END
 
