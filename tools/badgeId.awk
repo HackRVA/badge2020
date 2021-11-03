@@ -57,6 +57,7 @@ $0 !~/^:[0-9A-Fa-f]+$/ { # unmatch
 	AddressL=substr(Address,3,2);
 	Recordtype=substr($0,8,2);
 	Datalength=hex2dec(Bytecount);
+	DEAD_offset=8
 
 	if (length(Recordtype)<2) {
 		printf("%d ; Recordtype too short\n",NR); print $0;
@@ -131,6 +132,8 @@ $0 !~/^:[0-9A-Fa-f]+$/ { # unmatch
 	mysum = 0;
 	# check data
 	for(i=0;i<Datalength;i++) {
+		# +10 to skip to the dddd data field ":bbaaaarrdddd..ddcc"
+		# i*2 because each byte is 2 hex digits.
 		d=substr($0,10+i*2,2);
 		if (length(d)<2) {
 			printf("%d ; Data too short\n",NR); print $0;
@@ -141,14 +144,18 @@ $0 !~/^:[0-9A-Fa-f]+$/ { # unmatch
                 # i==4 bcs thats where first 'de' part of hex pair started in hex
 		# :08c0500043444546dead00004b
 		#          ^byte 1 ^byte 4
-		if (i == 4) { 
+		#
+		# Beware, different compiler may put it in different place,
+		# so you might have to change the 10 and 11 here.
+		#
+		if (i == DEAD_offset) {
 			flag1 = d;
 			mySum = (sum + hex2dec(hexHi))%256; # our sum if we intercept
 		}
 		sum = (sum + hex2dec(d))%256;
 
                 # PEB- find our flag data.
-		if (i == 5) { 
+		if (i == DEAD_offset + 1) {
 		    if (flag1 == "de") {
 			flag2 = d;
 		        if (flag2 == "ad") { #replace checksum with ours
@@ -167,10 +174,10 @@ $0 !~/^:[0-9A-Fa-f]+$/ { # unmatch
 		    }
 		}
 
-		if (i < 4) { 
+		if (i < DEAD_offset) {
 		        printf(d);
 		}
-		if (i > 5) { 
+		if (i > DEAD_offset + 1) {
 		        printf(d);
 		}
 	}
